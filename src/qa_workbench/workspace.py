@@ -12,6 +12,7 @@ from qa_workbench.release.records import RELEASE_SCHEMA
 from qa_workbench.requirements.schema import REQUIREMENT_SCHEMA
 from qa_workbench.requirements.schema import REVIEW_POLICY as REQUIREMENT_REVIEW
 from qa_workbench.review.policy import ReviewPolicy
+from qa_workbench.sectest.records import SEC_SCHEMA
 from qa_workbench.storage.evidence import EVIDENCE_SCHEMA
 from qa_workbench.storage.repository import MarkdownRepository
 from qa_workbench.storage.validation import RecordSchema
@@ -32,6 +33,7 @@ def all_schemas() -> list[RecordSchema]:
         API_SCHEMA,
         BUG_SCHEMA,
         RELEASE_SCHEMA,
+        SEC_SCHEMA,
     ]
 
 

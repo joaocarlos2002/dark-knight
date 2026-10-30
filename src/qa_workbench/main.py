@@ -27,6 +27,7 @@ from qa_workbench.release.cli import release_app
 from qa_workbench.reports.cli import reports_app
 from qa_workbench.requirements.cli import requirements_app
 from qa_workbench.review.cli import review_app
+from qa_workbench.sectest.cli import security_tests_app
 from qa_workbench.security.cli import security_app
 from qa_workbench.suites.cli import suites_app
 from qa_workbench.testcases.cli import cases_app
@@ -60,6 +61,7 @@ app.add_typer(browser_app, name="browser")
 app.add_typer(gitlab_app, name="gitlab")
 app.add_typer(bugs_app, name="bugs")
 app.add_typer(release_app, name="release")
+app.add_typer(security_tests_app, name="security-tests")
 app.command("doctor", help="Check that everything the workbench needs is ready.")(
     doctor_command
 )
