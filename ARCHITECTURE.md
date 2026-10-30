@@ -50,6 +50,11 @@ src/qa_workbench/
     importer.py    Import into a project, preserving source and author
     coverage.py    Which requirements have related test cases
     cli.py         `qa-workbench requirements ...` commands
+  plans/
+    schema.py      TP record schema: scope, risks, criteria, schedule, selection
+    builder.py     PlanDraft, create/update, readable Markdown body
+    selection.py   Explainable recommendation and verification of a selection
+    cli.py         `qa-workbench plans ...` commands
   review/
     policy.py      Review and AI-provenance rules, as schema checks (pure)
     service.py     Submit for review, record human decisions, list pending
@@ -200,6 +205,36 @@ time the case is updated through the workbench).
   values, every rule combination, valid and refused transitions, use-case
   scenarios). A case can combine several techniques, and the derived conditions
   appear in its body.
+
+### Test plans and selection
+
+`qa-workbench plans create | list | show | recommend | verify` manages `TP`
+records. A plan holds the fields of the specification: scope (with in and out
+of scope items), objectives, strategy, test levels and types, environments,
+profiles, data, dependencies, risks (each with a level and a mitigation), entry
+and exit criteria, suites, owners, and an optional schedule. A plan needs
+objectives and entry and exit criteria, and plans follow the same review rules
+as AI-generated requirements and cases.
+
+- **Selection with rationale:** a plan stores `selection`, a list of
+  inclusions and exclusions. Each one must have at least one reason, and each
+  reason names a factor (changed requirements, affected features, defect
+  history, dependencies, criticality, coverage, time, regression risk, previous
+  results, or readiness) and a detail. The selection is plain data in the plan,
+  so the user can read and edit it.
+- **Recommendation:** `plans recommend` proposes a selection from the changed
+  requirements (`--requirement`, repeatable) and an optional time budget
+  (`--budget`, in minutes). Only `active` cases are eligible. A case is
+  included when it covers a changed requirement, is critical or high priority,
+  is the only active case covering a changed requirement, or is a smoke or
+  sanity baseline; every other case is excluded with the reason. With a budget,
+  the most relevant cases are kept until it is used up, and cases without an
+  estimate are included but not counted. The output lists what it could not
+  consider (defect history, previous results, and dependencies do not exist as
+  data yet) instead of pretending to.
+- **Verification:** `plans verify` checks that every selected case exists and
+  that included cases are active. Kinds this repository does not store are
+  reported as not checked rather than assumed fine.
 
 ### Human review of AI-generated records
 
