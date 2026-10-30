@@ -9,6 +9,10 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- Executions with a validated lifecycle (created, planned, awaiting approval,
+  running, results, finalized), five execution types, data rules tied to state,
+  approvals, and sealing on finalization, plus `executions create|move|list|show|
+  states` and `evidence add|list|verify` (REQ-017, REQ-018).
 - Reusable test suites with many-to-many case membership (union of the suite
   and case sides), safe add/remove, verification, and
   `suites create|list|show|add|remove|membership|verify` (REQ-015).
