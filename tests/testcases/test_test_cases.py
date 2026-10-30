@@ -355,3 +355,18 @@ def test_a_case_covers_the_requirement_it_names(repo: MarkdownRepository) -> Non
 
     assert item.covered
     assert item.cases == (case.id,)
+
+
+def test_an_estimate_in_minutes_can_be_stored(repo: MarkdownRepository) -> None:
+    record = create_test_case(repo, _draft(estimated_minutes=15))
+
+    assert record.metadata["estimated_minutes"] == 15
+
+
+@pytest.mark.parametrize("value", [0, -5])
+def test_an_estimate_must_be_a_positive_whole_number(
+    repo: MarkdownRepository, value: int
+) -> None:
+    assert "estimated_minutes must be a whole number of minutes" in _problems(
+        repo, estimated_minutes=value
+    )

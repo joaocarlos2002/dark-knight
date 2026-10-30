@@ -47,6 +47,7 @@ class TestCaseDraft:
     technique_data: dict[str, Any] = field(default_factory=dict)
     origin: str = "manual"
     author: str | None = None
+    estimated_minutes: int | None = None
 
     def to_fields(self, status: str = DRAFT) -> dict[str, Any]:
         """Frontmatter fields; empty optional values are left out."""
@@ -80,6 +81,8 @@ class TestCaseDraft:
             "technique_data": self.technique_data,
         }
         fields.update({key: value for key, value in optional.items() if value})
+        if self.estimated_minutes is not None:
+            fields["estimated_minutes"] = self.estimated_minutes
         return fields
 
 

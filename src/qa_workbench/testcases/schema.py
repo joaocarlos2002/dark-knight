@@ -126,9 +126,20 @@ def _check_secrets(metadata: Mapping[str, Any], problems: list[str]) -> None:
             )
 
 
+def _check_estimate(metadata: Mapping[str, Any], problems: list[str]) -> None:
+    estimate = metadata.get("estimated_minutes")
+    if estimate is None:
+        return
+    if isinstance(estimate, bool) or not isinstance(estimate, int) or estimate < 1:
+        problems.append(
+            "estimated_minutes must be a whole number of minutes, 1 or more."
+        )
+
+
 def check_test_case(metadata: Mapping[str, Any]) -> list[str]:
     """Rules of a test case that a schema cannot express declaratively."""
     problems: list[str] = []
+    _check_estimate(metadata, problems)
     _check_steps(metadata, problems)
     _check_techniques(metadata, problems)
     _check_secrets(metadata, problems)
