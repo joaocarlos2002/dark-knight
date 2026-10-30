@@ -5,6 +5,13 @@ All notable changes to Dark Knight QA are documented in this file.
 The project follows [Semantic Versioning](https://semver.org/). Release tags
 use the `vMAJOR.MINOR.PATCH` format.
 
+## [Unreleased]
+
+### Added
+
+- Responsive Textual application shell, opened with `qa-workbench tui`
+  (REQ-004, REQ-005, NFR-006, NFR-007).
+
 ## [0.2.0] - 2026-10-30
 
 ### Added
