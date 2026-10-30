@@ -31,37 +31,22 @@ SECTIONS: tuple[NavSection, ...] = (
         ),
     ),
     NavSection(
-        "EXECUTION",
+        "OPERATIONS",
         (
-            NavItem("test-execution", "Test Execution"),
-            NavItem("browser-agent", "Browser Agent"),
-            NavItem("automation", "Automation"),
-        ),
-    ),
-    NavSection(
-        "ANALYSIS",
-        (
-            NavItem("issue-testing", "Issue Testing"),
+            NavItem("executions", "Executions"),
+            NavItem("browser-preview", "Browser Preview"),
             NavItem("bug-hunting", "Bug Hunting"),
-            NavItem("release-analysis", "Release Analysis"),
-        ),
-    ),
-    NavSection(
-        "INTEGRATIONS",
-        (
-            NavItem("pipelines", "Pipelines"),
-            NavItem("issues", "Issues"),
             NavItem("api-testing", "API Testing"),
             NavItem("security", "Security"),
         ),
     ),
     NavSection(
-        "SYSTEM",
+        "INTELLIGENCE",
         (
-            NavItem("reports", "Reports"),
-            NavItem("knowledge", "Knowledge"),
             NavItem("ai-agent", "AI Agent"),
-            NavItem("settings", "Settings"),
+            NavItem("release-analysis", "Release Analysis"),
+            NavItem("pipelines", "Pipelines"),
+            NavItem("knowledge-base", "Knowledge Base"),
         ),
     ),
 )

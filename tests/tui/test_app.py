@@ -179,14 +179,14 @@ def test_palette_opens_with_ctrl_k_and_navigates() -> None:
     async def scenario(app: WorkbenchApp, pilot) -> None:
         await pilot.press("ctrl+k")
         await pilot.pause()
-        await pilot.press(*"reports")
+        await pilot.press(*"pipelines")
         await pilot.pause(0.5)
         await pilot.press("enter")
         await pilot.pause()
-        assert _title(app) == "REPORTS"
+        assert _title(app) == "PIPELINES"
         sidebar = app.query_one("#sidebar", OptionList)
         assert sidebar.highlighted_option is not None
-        assert sidebar.highlighted_option.id == "reports"
+        assert sidebar.highlighted_option.id == "pipelines"
 
     _run((140, 40), scenario)
 
