@@ -24,6 +24,14 @@ def _now() -> datetime:
     return datetime.now().astimezone()
 
 
+def _step_line(step: Mapping[str, Any]) -> str:
+    outcome = step.get("outcome") or "in progress"
+    line = f"{step.get('number', '?')}. {step.get('action', '')} - {outcome}"
+    if step.get("observed"):
+        line += f": {step['observed']}"
+    return line
+
+
 def render_body(metadata: Mapping[str, Any]) -> str:
     """The readable record of an execution, built from its fields."""
 
@@ -34,11 +42,14 @@ def render_body(metadata: Mapping[str, Any]) -> str:
     listed = "\n".join(f"- {item}" for item in evidence) if evidence else ""
     case = metadata.get("test_case")
     conclusion = metadata.get("reason") or metadata.get("result") or ""
+    steps = metadata.get("steps_executed") or []
+    executed = "\n".join(_step_line(s) for s in steps if isinstance(s, dict))
     return (
         "\n\n".join(
             [
                 f"# {metadata.get('id', 'Execution')}",
                 section("Objective", f"Validate {case}." if case else ""),
+                section("Executed steps", executed),
                 section("Expected result", metadata.get("expected_result")),
                 section("Observed result", metadata.get("observed_result")),
                 section("Evidence", listed),
@@ -65,6 +76,7 @@ def create_execution(
     commit: str | None = None,
     automation_tool: str | None = None,
     requires_approval: bool = False,
+    rerun_of: str | None = None,
 ) -> Record:
     """Create an execution in the ``created`` state.
 
@@ -101,6 +113,7 @@ def create_execution(
         "commit": commit,
         "automation_tool": automation_tool,
         "requires_approval": True if requires_approval else None,
+        "rerun_of": rerun_of,
     }
     fields.update({key: value for key, value in optional.items() if value})
     return repository.create("EXEC", fields, render_body)
@@ -117,6 +130,7 @@ def move(
     bugs: Sequence[str] = (),
     notes: str | None = None,
     approved_by: str | None = None,
+    failure_type: str | None = None,
 ) -> Record:
     """Move an execution to ``target`` after checking the lifecycle and the data.
 
@@ -167,6 +181,7 @@ def move(
         "evidence": [*(metadata.get("evidence") or []), *evidence] or None,
         "bugs": [*(metadata.get("bugs") or []), *bugs] or None,
         "notes": notes.strip() if notes else None,
+        "failure_type": failure_type,
     }
     changes.update({key: value for key, value in optional.items() if value})
     return repository.update(

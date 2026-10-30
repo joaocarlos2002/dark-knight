@@ -10,6 +10,7 @@ from datetime import datetime
 from typing import Any
 
 from qa_workbench.executions.states import RESULT_NAMES, STATUS_NAMES, State
+from qa_workbench.storage.ids import parse_id
 from qa_workbench.storage.validation import RecordSchema
 
 MANUAL = "manual"
@@ -23,6 +24,19 @@ EXECUTION_TYPES = frozenset(
 HUMAN_TYPES = frozenset({MANUAL, ASSISTED_MANUAL})
 MACHINE_TYPES = frozenset({AGENT_DRIVEN, AUTOMATED})
 
+PRODUCT = "product"
+FAILURE_TYPES = frozenset({PRODUCT, "test", "infrastructure", "evidence_collection"})
+STEP_OUTCOMES = frozenset({"passed", "failed", "blocked", "skipped", "interrupted"})
+_STEP_KEYS = {
+    "number",
+    "action",
+    "started_at",
+    "finished_at",
+    "outcome",
+    "observed",
+    "evidence",
+    "failure_type",
+}
 _NOT_STARTED = {State.CREATED.value, State.PLANNED.value, State.AWAITING_APPROVAL.value}
 _NEEDS_REASON = {
     State.BLOCKED.value,
@@ -127,6 +141,155 @@ def _check_approval(metadata: Mapping[str, Any]) -> list[str]:
     return problems
 
 
+def _aware(value: Any) -> bool:
+    return isinstance(value, datetime) and value.tzinfo is not None
+
+
+def _check_step(number: int, step: Any, last: bool, status: Any) -> list[str]:
+    if not isinstance(step, dict):
+        return [f"step {number} must be a mapping."]
+    problems: list[str] = []
+    extra = set(step) - _STEP_KEYS
+    if extra:
+        problems.append(f"step {number} has unknown fields: {sorted(extra)}.")
+    if step.get("number") != number:
+        problems.append(
+            f"step {number} is numbered {step.get('number')!r}; steps are numbered "
+            "1, 2, 3... in order."
+        )
+    if not _text(step, "action"):
+        problems.append(f"step {number} needs an action.")
+    if not _aware(step.get("started_at")):
+        problems.append(f"step {number} needs started_at with a timezone.")
+    finished = step.get("finished_at")
+    if finished is not None and not _aware(finished):
+        problems.append(f"step {number}: finished_at needs a timezone.")
+    elif (
+        _aware(finished)
+        and _aware(step.get("started_at"))
+        and finished < step["started_at"]
+    ):
+        problems.append(f"step {number} finished before it started.")
+    outcome = step.get("outcome")
+    if outcome is None:
+        if not last:
+            problems.append(
+                f"step {number} has no outcome but it is not the last step."
+            )
+        elif status != State.RUNNING.value:
+            problems.append(
+                f"step {number} is still in progress but the execution is {status}."
+            )
+    elif outcome not in STEP_OUTCOMES:
+        problems.append(
+            f"step {number}: outcome {outcome!r} is not allowed; use one of: "
+            f"{', '.join(sorted(STEP_OUTCOMES))}."
+        )
+    if outcome == "failed":
+        if not _text(step, "observed"):
+            problems.append(f"failed step {number} needs the observed result.")
+        if step.get("failure_type") not in FAILURE_TYPES:
+            problems.append(f"failed step {number} needs a failure_type.")
+    kind = step.get("failure_type")
+    if kind is not None and kind not in FAILURE_TYPES:
+        problems.append(f"step {number}: failure_type {kind!r} is not allowed.")
+    for item in step.get("evidence") or []:
+        try:
+            if parse_id(str(item)).prefix != "EVD":
+                problems.append(f"step {number}: {item} is not an evidence id.")
+        except ValueError:
+            problems.append(f"step {number}: {item!r} is not an evidence id.")
+    return problems
+
+
+def _check_steps_record(metadata: Mapping[str, Any]) -> list[str]:
+    steps = metadata.get("steps_executed")
+    if steps is None:
+        return []
+    if not isinstance(steps, list):
+        return ["steps_executed must be a list."]
+    status = metadata.get("status")
+    problems: list[str] = []
+    for number, step in enumerate(steps, start=1):
+        problems += _check_step(number, step, number == len(steps), status)
+    effective = metadata.get("result") if status == State.FINALIZED.value else status
+    if effective == State.PASSED.value:
+        bad = [
+            index
+            for index, step in enumerate(steps, start=1)
+            if isinstance(step, dict)
+            and step.get("outcome") not in {"passed", "skipped"}
+        ]
+        if bad:
+            problems.append(
+                f"a passed execution cannot have steps that did not pass (step "
+                f"{', '.join(map(str, bad))})."
+            )
+    return problems
+
+
+def _check_failures(metadata: Mapping[str, Any]) -> list[str]:
+    problems: list[str] = []
+    kind = metadata.get("failure_type")
+    if kind is not None and kind not in FAILURE_TYPES:
+        problems.append(
+            f"failure_type {kind!r} is not allowed; use one of: "
+            f"{', '.join(sorted(FAILURE_TYPES))}."
+        )
+    status = metadata.get("status")
+    effective = metadata.get("result") if status == State.FINALIZED.value else status
+    if effective == State.FAILED.value and kind is None:
+        problems.append(
+            "a failed execution needs a failure_type: product, test, "
+            "infrastructure, or evidence_collection."
+        )
+    if metadata.get("bugs") and kind != PRODUCT:
+        problems.append(
+            "bugs can only be linked to a product failure; record infrastructure, "
+            "test, and evidence-collection problems without a defect."
+        )
+    return problems
+
+
+def _check_recoveries(metadata: Mapping[str, Any]) -> list[str]:
+    items = metadata.get("recoveries")
+    if items is None:
+        return []
+    if not isinstance(items, list):
+        return ["recoveries must be a list."]
+    problems: list[str] = []
+    for number, item in enumerate(items, start=1):
+        if not isinstance(item, dict):
+            problems.append(f"recovery {number} must be a mapping.")
+            continue
+        if item.get("action") not in {"resume", "abandon"}:
+            problems.append(f"recovery {number}: action must be resume or abandon.")
+        if not _text(item, "note"):
+            problems.append(f"recovery {number} needs a note.")
+        if not _aware(item.get("timestamp")):
+            problems.append(f"recovery {number} needs a timestamp with a timezone.")
+    return problems
+
+
+def _check_preconditions(metadata: Mapping[str, Any]) -> list[str]:
+    items = metadata.get("preconditions_checked")
+    if items is None:
+        return []
+    if not isinstance(items, list):
+        return ["preconditions_checked must be a list."]
+    problems: list[str] = []
+    for number, item in enumerate(items, start=1):
+        if (
+            not isinstance(item, dict)
+            or not _text(item, "text")
+            or not isinstance(item.get("checked"), bool)
+        ):
+            problems.append(
+                f"precondition {number} needs a text and checked true/false."
+            )
+    return problems
+
+
 def check_execution(metadata: Mapping[str, Any]) -> list[str]:
     """Rules tying an execution's data to its state."""
     return (
@@ -134,6 +297,10 @@ def check_execution(metadata: Mapping[str, Any]) -> list[str]:
         + _check_result(metadata)
         + _check_times(metadata)
         + _check_approval(metadata)
+        + _check_steps_record(metadata)
+        + _check_failures(metadata)
+        + _check_preconditions(metadata)
+        + _check_recoveries(metadata)
     )
 
 
@@ -151,8 +318,12 @@ EXECUTION_SCHEMA = RecordSchema(
         "project": ("PROJ",),
         "evidence": ("EVD",),
         "bugs": ("BUG",),
+        "rerun_of": ("EXEC",),
     },
-    choices={"execution_type": EXECUTION_TYPES, "result": RESULT_NAMES},
+    choices={
+        "execution_type": EXECUTION_TYPES,
+        "result": RESULT_NAMES,
+    },
     text_lists=(),
     extra_checks=(check_execution,),
 )
