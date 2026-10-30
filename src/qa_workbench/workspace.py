@@ -1,6 +1,7 @@
 """The record kinds of a project and how to open its repository."""
 
 from qa_workbench.api.records import API_SCHEMA
+from qa_workbench.bughunt.schema import BUG_SCHEMA
 from qa_workbench.core.config import AppConfig
 from qa_workbench.executions.schema import EXECUTION_SCHEMA
 from qa_workbench.plans.schema import REVIEW_POLICY as PLAN_REVIEW
@@ -8,9 +9,11 @@ from qa_workbench.plans.schema import TEST_PLAN_SCHEMA
 from qa_workbench.projects.errors import ProjectStateError
 from qa_workbench.projects.repository import ProjectRepository
 from qa_workbench.publishing.schema import COMMENT_SCHEMA
+from qa_workbench.release.records import RELEASE_SCHEMA
 from qa_workbench.requirements.schema import REQUIREMENT_SCHEMA
 from qa_workbench.requirements.schema import REVIEW_POLICY as REQUIREMENT_REVIEW
 from qa_workbench.review.policy import ReviewPolicy
+from qa_workbench.sectest.records import SEC_SCHEMA
 from qa_workbench.storage.evidence import EVIDENCE_SCHEMA
 from qa_workbench.storage.repository import MarkdownRepository
 from qa_workbench.storage.validation import RecordSchema
@@ -29,6 +32,9 @@ def all_schemas() -> list[RecordSchema]:
         TEST_PLAN_SCHEMA,
         EXECUTION_SCHEMA,
         API_SCHEMA,
+        BUG_SCHEMA,
+        RELEASE_SCHEMA,
+        SEC_SCHEMA,
         COMMENT_SCHEMA,
     ]
 

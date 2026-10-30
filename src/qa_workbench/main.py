@@ -9,6 +9,7 @@ import typer
 from qa_workbench.ai.cli import ai_app
 from qa_workbench.api.cli import api_app
 from qa_workbench.browser.cli import browser_app, doctor_command, preview_channel
+from qa_workbench.bughunt.cli import bugs_app
 from qa_workbench.core.config import AppConfig, ConfigurationError
 from qa_workbench.core.console import ensure_utf8_output
 from qa_workbench.core.logging import configure_logging
@@ -23,9 +24,11 @@ from qa_workbench.projects.cli import project_app
 from qa_workbench.projects.errors import ProjectError
 from qa_workbench.projects.repository import ProjectRepository
 from qa_workbench.publishing.cli import comments_app
+from qa_workbench.release.cli import release_app
 from qa_workbench.reports.cli import reports_app
 from qa_workbench.requirements.cli import requirements_app
 from qa_workbench.review.cli import review_app
+from qa_workbench.sectest.cli import security_tests_app
 from qa_workbench.security.cli import security_app
 from qa_workbench.suites.cli import suites_app
 from qa_workbench.testcases.cli import cases_app
@@ -57,6 +60,9 @@ app.add_typer(edits_app, name="edits")
 app.add_typer(api_app, name="api")
 app.add_typer(browser_app, name="browser")
 app.add_typer(gitlab_app, name="gitlab")
+app.add_typer(bugs_app, name="bugs")
+app.add_typer(release_app, name="release")
+app.add_typer(security_tests_app, name="security-tests")
 app.add_typer(comments_app, name="comments")
 app.command("doctor", help="Check that everything the workbench needs is ready.")(
     doctor_command

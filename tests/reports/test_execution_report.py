@@ -11,6 +11,7 @@ from qa_workbench.executions.recovery import record_correction, recover
 from qa_workbench.executions.service import create_execution, move
 from qa_workbench.reports.execution import render_execution_report
 from qa_workbench.storage.repository import MarkdownRepository
+from qa_workbench.workspace import all_schemas
 
 SECTIONS = [
     "# Execution report EXEC-001",
@@ -347,9 +348,7 @@ def test_the_machine_run_names_its_tool(repo: MarkdownRepository) -> None:
     assert "- Automation tool: playwright" in identification
 
 
-def test_referenced_defects_that_are_not_stored_are_said_so(
-    repo: MarkdownRepository,
-) -> None:
+def _failed_with_bug(repo: MarkdownRepository) -> str:
     make_case(repo)
     run_execution(repo)
     move(
@@ -360,10 +359,28 @@ def test_referenced_defects_that_are_not_stored_are_said_so(
         failure_type="product",
         bugs=["BUG-007"],
     )
+    return _section(render_execution_report(repo, "EXEC-001"), "Traceability")
 
-    traceability = _section(render_execution_report(repo, "EXEC-001"), "Traceability")
+
+def test_defects_without_a_record_schema_are_said_not_to_be_stored(
+    tmp_path: Path,
+) -> None:
+    schemas = [s for s in all_schemas() if s.prefix != "BUG"]
+    older = MarkdownRepository(tmp_path / "older", schemas)
+
+    traceability = _failed_with_bug(older)
 
     assert "Defects: BUG-007 (referenced; defect records are not stored yet)" in (
+        traceability
+    )
+
+
+def test_a_referenced_defect_without_a_record_is_reported_as_missing(
+    repo: MarkdownRepository,
+) -> None:
+    traceability = _failed_with_bug(repo)
+
+    assert "Defects: BUG-007 (referenced; no such defect record was found)" in (
         traceability
     )
 

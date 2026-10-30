@@ -9,6 +9,18 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- Bug hunting: `BUG` records classified as reproduced, suspected, false positive,
+  environment unavailable, or inconclusive; a defect is never confirmed without
+  steps, expected and observed results, intact evidence, and two reproductions,
+  with `batman bugs record|reclassify|list|show` (REQ-032).
+- Release analysis from real commits, merge requests, and changed files: explainable
+  risk areas, impacted cases, recommended suites, and a regression recommendation,
+  saved as sealed `REL` records, with `batman release analyze|list|show` (REQ-032).
+- Authorized security checks: explicit, scoped, expiring, audited authorization;
+  passive checks for headers, disclosure, cookies, CORS, HTTPS redirect, and
+  unauthenticated access; confirmed findings kept apart from hypotheses; sanitized
+  results with no certification claim, with `batman security-tests ...` (REQ-031).
+- Execution reports now say whether a referenced defect record exists.
 - Approved comment publishing: drafts that require real evidence and authorized
   links, approval bound to the exact text, outcomes recorded as published, failed,
   or unknown, and an audit trail, with `batman comments draft|publish|list|show`
