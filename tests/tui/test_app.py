@@ -1,9 +1,11 @@
 import asyncio
 from collections.abc import Awaitable, Callable
+from datetime import UTC, datetime
 
 import pytest
 from textual.widgets import OptionList, Static
 
+from qa_workbench.projects.models import Environment, Project
 from qa_workbench.tui.app import WorkbenchApp
 
 
@@ -121,3 +123,48 @@ def test_help_shortcut_does_not_break_the_shell(size: tuple[int, int]) -> None:
         assert app.is_running
 
     _run(size, scenario)
+
+
+def _project() -> Project:
+    now = datetime(2026, 1, 1, 10, 0, tzinfo=UTC)
+    return Project(
+        id="PROJ-007",
+        name="Shop",
+        repository="acme/shop",
+        environments=[Environment(name="staging", url="https://s.example.com")],
+        created_at=now,
+        updated_at=now,
+    )
+
+
+def _run_with(project: Project, scenario) -> None:
+    async def runner() -> None:
+        app = WorkbenchApp(project)
+        async with app.run_test(size=(140, 40)) as pilot:
+            await pilot.pause()
+            await scenario(app, pilot)
+
+    asyncio.run(runner())
+
+
+def test_opened_project_is_shown_in_header_status_bar_and_context() -> None:
+    async def scenario(app: WorkbenchApp, pilot) -> None:
+        header = str(app.query_one("#header-project", Static).render())
+        status = str(app.query_one("#status-bar", Static).render())
+        context = str(app.query_one("#context", Static).render())
+        assert header == "PROJ-007 / Shop"
+        assert status.startswith("PROJ-007 │")
+        assert "staging" in context
+        assert "acme/shop" in context
+
+    _run_with(_project(), scenario)
+
+
+def test_without_a_project_the_shell_says_so() -> None:
+    async def scenario(app: WorkbenchApp, pilot) -> None:
+        assert str(app.query_one("#header-project", Static).render()) == "no project"
+        assert str(app.query_one("#status-bar", Static).render()).startswith(
+            "No project"
+        )
+
+    _run((140, 40), scenario)

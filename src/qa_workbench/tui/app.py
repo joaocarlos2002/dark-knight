@@ -7,6 +7,7 @@ from textual.events import Resize
 from textual.widgets import OptionList, Static
 from textual.widgets.option_list import Option
 
+from qa_workbench.projects.models import Project
 from qa_workbench.tui import navigation
 from qa_workbench.tui.layout import ShellLayout, WidthClass, layout_for
 from qa_workbench.tui.status import Status, format_status
@@ -15,8 +16,25 @@ from qa_workbench.tui.theme import SHELL_CSS
 _HELP = "F1 menu · F2 context · Enter open · Ctrl+Q quit"
 
 
-def _status_bar_text() -> str:
-    return f"No project │ {format_status(Status.READY)} │ F1 Menu │ F2 Context │ ? Help"
+def _status_bar_text(project: Project | None) -> str:
+    label = project.id if project else "No project"
+    return f"{label} │ {format_status(Status.READY)} │ F1 Menu │ F2 Context │ ? Help"
+
+
+def _header_project_text(project: Project | None) -> str:
+    return f"{project.id} / {project.name}" if project else "no project"
+
+
+def _context_text(project: Project | None) -> str:
+    if project is None:
+        return "CONTEXT\n\nProject  none\nEnvironment  -\nRepository  -"
+    environments = ", ".join(e.name for e in project.environments) or "-"
+    return (
+        "CONTEXT\n\n"
+        f"Project  {project.name}\n"
+        f"Environment  {environments}\n"
+        f"Repository  {project.repository or '-'}"
+    )
 
 
 class WorkbenchApp(App[None]):
@@ -31,22 +49,25 @@ class WorkbenchApp(App[None]):
         Binding("ctrl+q", "quit", "Quit"),
     ]
 
-    def __init__(self) -> None:
+    def __init__(self, project: Project | None = None) -> None:
         super().__init__()
+        self._project = project
         self._shell_layout: ShellLayout | None = None
         self._sidebar_visible = True
         self._context_visible = True
         self._current = navigation.find_item(navigation.DEFAULT_KEY)
 
     def compose(self) -> ComposeResult:
-        yield Static("QA WORKBENCH", id="header")
+        with Horizontal(id="header"):
+            yield Static("QA WORKBENCH", id="header-title")
+            yield Static(_header_project_text(self._project), id="header-project")
         with Horizontal(id="body"):
             yield OptionList(*self._sidebar_options(), id="sidebar")
             with Vertical(id="main"):
                 yield Static(id="page-title")
                 yield Static(id="page-body")
-            yield Static(self._context_text(), id="context")
-        yield Static(_status_bar_text(), id="status-bar")
+            yield Static(_context_text(self._project), id="context")
+        yield Static(_status_bar_text(self._project), id="status-bar")
 
     def on_mount(self) -> None:
         self._show_page(self._current)
@@ -119,7 +140,3 @@ class WorkbenchApp(App[None]):
             options.append(Option(section.title, disabled=True))
             options.extend(Option(item.title, id=item.key) for item in section.items)
         return options
-
-    @staticmethod
-    def _context_text() -> str:
-        return "CONTEXT\n\nProject  none\nEnvironment  -\nBranch  -\nAI provider  -"

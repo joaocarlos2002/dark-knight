@@ -187,6 +187,15 @@ Supported overrides are `DARK_KNIGHT_CONFIG_DIR`, `DARK_KNIGHT_DATA_DIR`,
 `DARK_KNIGHT_LOG_LEVEL`, and `DARK_KNIGHT_LOG_FILE`. Secrets are redacted from
 application logs; do not place credentials in configuration files.
 
+Projects are managed from the CLI and stored under the data directory:
+
+```bash
+uv run qa-workbench project create "Shop" --repository acme/shop \
+  --environment staging=https://staging.example.com
+uv run qa-workbench project list
+uv run qa-workbench tui --project PROJ-001
+```
+
 Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
 
 ## License
