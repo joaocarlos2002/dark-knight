@@ -9,6 +9,9 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- Immutable history for finalized records (sealed with SHA-256, corrections as
+  hash-chained events) and evidence registration with integrity verification
+  (NFR-004, NFR-008).
 - Rebuildable SQLite full-text index and search over Markdown records, with
   incremental sync and explicit errors for damaged indexes (REQ-008, REQ-032).
 - Markdown frontmatter repository: UTF-8 records with YAML frontmatter,
