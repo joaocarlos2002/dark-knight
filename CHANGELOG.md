@@ -9,6 +9,11 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- Reusable TUI components (status badge, metric and detail panels, data table,
+  searchable log viewer, empty/loading/error states, confirmation dialog) and
+  a command palette on `Ctrl+K` (REQ-004, REQ-005, NFR-006, NFR-007).
+- Centralized keyboard shortcuts, configurable through a `[shortcuts]` table in
+  `config.toml`, with conflict and reserved-key detection.
 - Project lifecycle: `qa-workbench project create|list|show|archive`, stored
   as `project.yaml` and `README.md`, and `qa-workbench tui --project`
   (REQ-002, REQ-003).
