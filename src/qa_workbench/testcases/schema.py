@@ -4,6 +4,7 @@ from collections.abc import Mapping
 from typing import Any
 
 from qa_workbench.core.secrets import find_secrets
+from qa_workbench.review.policy import ReviewPolicy, review_checks
 from qa_workbench.storage.validation import RecordSchema
 from qa_workbench.testcases.techniques import (
     TECHNIQUE_NAMES,
@@ -12,7 +13,8 @@ from qa_workbench.testcases.techniques import (
 )
 
 DRAFT = "draft"
-STATUSES = frozenset({DRAFT, "in_review", "active", "deprecated"})
+STATUSES = frozenset({DRAFT, "in_review", "active", "rejected", "deprecated"})
+REVIEW_POLICY = ReviewPolicy(approved_status="active", rejected_status="rejected")
 PRIORITIES = frozenset({"high", "medium", "low"})
 CRITICALITIES = frozenset({"critical", "major", "minor", "trivial"})
 TYPES = frozenset(
@@ -156,5 +158,5 @@ TEST_CASE_SCHEMA = RecordSchema(
         "tags",
         "techniques",
     ),
-    extra_checks=(check_test_case,),
+    extra_checks=(check_test_case, review_checks(REVIEW_POLICY)),
 )
