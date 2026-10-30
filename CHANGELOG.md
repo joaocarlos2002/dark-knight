@@ -9,6 +9,14 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- AI provider contract (availability, models, completion, streaming, tools,
+  structured output, cancellation, timeouts, typed errors), engine selection
+  (`own`, `opencode`, `auto`), and the built-in agent whose answers separate
+  facts, hypotheses, recommendations, and inconclusive findings, demote facts
+  without a verifiable source, and treat outside text as untrusted data
+  (REQ-028, REQ-029). `batman ai status|ask`.
+- Ollama adapter (local runtime) and OpenCode adapter on its documented server
+  API, with explicit unsupported-capability errors and cancellation (REQ-028).
 - A random fullscreen Batman edit plays before the workbench opens, chosen from
   `assets/batman-edits` (configurable with `[startup] edits_dir`), with the
   terminal minimized first on Windows, no player controls, any key or click to
