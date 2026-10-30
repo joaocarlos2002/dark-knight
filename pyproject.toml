@@ -13,6 +13,7 @@ authors = [
     { name = "Dark Knight QA contributors" },
 ]
 dependencies = [
+    "textual>=8.2,<9.0",
     "typer>=0.16,<1.0",
 ]
 
