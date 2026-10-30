@@ -156,3 +156,46 @@ def test_tui_refuses_an_unknown_project(monkeypatch: pytest.MonkeyPatch) -> None
     assert result.exit_code == 1
     assert "PROJ-404 was not found" in _plain(result.output)
     assert started == []
+
+
+def test_tui_applies_shortcut_overrides_from_config(
+    monkeypatch: pytest.MonkeyPatch, isolated_data: Path, tmp_path: Path
+) -> None:
+    from qa_workbench.tui.app import WorkbenchApp
+
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    (config_dir / "config.toml").write_text(
+        '[shortcuts]\ntoggle_context = "f3"\n', encoding="utf-8"
+    )
+    keys: list[str] = []
+    monkeypatch.setattr(
+        WorkbenchApp,
+        "run",
+        lambda self: keys.append(self._workbench_keymap.key_for("toggle_context")),
+    )
+
+    result = runner.invoke(app, ["tui"])
+
+    assert result.exit_code == 0
+    assert keys == ["f3"]
+
+
+def test_tui_refuses_conflicting_shortcuts(
+    monkeypatch: pytest.MonkeyPatch, isolated_data: Path, tmp_path: Path
+) -> None:
+    from qa_workbench.tui.app import WorkbenchApp
+
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    (config_dir / "config.toml").write_text(
+        '[shortcuts]\ntoggle_context = "f1"\n', encoding="utf-8"
+    )
+    started: list[bool] = []
+    monkeypatch.setattr(WorkbenchApp, "run", lambda self: started.append(True))
+
+    result = runner.invoke(app, ["tui"])
+
+    assert result.exit_code == 1
+    assert "F1 is assigned to both" in _plain(result.output)
+    assert started == []
