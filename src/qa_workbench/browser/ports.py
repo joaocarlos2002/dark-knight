@@ -1,5 +1,6 @@
 """What the Browser Agent needs from a browser, independent of Playwright."""
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import StrEnum
 from pathlib import Path
@@ -29,6 +30,13 @@ class LaunchOptions:
     artifacts_dir: Path
     video: bool = True
     trace: bool = True
+    # Decides, per request URL, whether the browser may fetch it. ``None`` means
+    # no filter. Blocked requests are aborted and recorded, never silent.
+    allow_request: Callable[[str], bool] | None = None
+    # Host names the browser may resolve at all; everything else fails to resolve
+    # at the network layer, which also stops redirects and subresources that the
+    # request filter never sees. ``None`` means no restriction.
+    allowed_hosts: tuple[str, ...] | None = None
 
 
 @dataclass(frozen=True)
