@@ -1,9 +1,16 @@
-# Changelog
+﻿# Changelog
 
 All notable changes to Dark Knight QA are documented in this file.
 
 The project follows [Semantic Versioning](https://semver.org/). Release tags
 use the `vMAJOR.MINOR.PATCH` format.
+
+## [Unreleased]
+
+### Added
+
+- Python quality CI with tests, ruff lint, and format checks (NFR-009).
+- Tests for configuration failure paths.
 
 ## [0.1.0] - 2026-10-30
 
