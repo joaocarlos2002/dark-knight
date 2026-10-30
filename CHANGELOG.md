@@ -11,6 +11,7 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 - Python quality CI with tests, ruff lint, and format checks (NFR-009).
 - Tests for configuration failure paths.
+- Architecture overview and expanded contribution workflow (NFR-009).
 
 ## [0.1.0] - 2026-10-30
 
