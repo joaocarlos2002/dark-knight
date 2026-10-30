@@ -1,0 +1,47 @@
+name: Bug report
+description: Report a reproducible problem in Dark Knight QA.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Remove secrets, credentials, personal data, and private evidence before submitting.
+        For vulnerabilities, use the Security tab instead.
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: Which release or commit is affected?
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Include OS, Python version, and relevant dependency versions.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Provide the smallest reliable reproduction.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Sanitized evidence
+      description: Add relevant logs or screenshots after removing sensitive data.

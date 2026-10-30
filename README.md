@@ -191,6 +191,17 @@ The product architecture, requirements, acceptance criteria, visual direction, a
 | [Requirements](docs/requirements.md) | Functional and non-functional requirements |
 | [Issue Catalog](docs/issue-catalog.md) | Planned implementation tasks and issues |
 
+### Community and project policies
+
+- [Contributing guide](CONTRIBUTING.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Security policy](SECURITY.md)
+- [Support guide](SUPPORT.md)
+
+The repository is currently in the foundation phase. Contributions should
+start from the existing issues and preserve the documented Markdown-first,
+cross-platform, and evidence-driven architecture.
+
 ### Roadmap
 
 - [ ] Foundation: CLI, TUI, project management.

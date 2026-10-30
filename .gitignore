@@ -10,7 +10,6 @@ dist/
 build/
 *.egg-info/
 .data/
-docs/
 .env
 .env.*
 !.env.example

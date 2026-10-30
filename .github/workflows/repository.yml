@@ -1,0 +1,48 @@
+name: Repository checks
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  repository:
+    name: Repository hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Check for accidental secrets and generated files
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git ls-files | grep -E '(^|/)(\.env|.*\.(pem|key|p12|pfx))$'; then
+            echo "Tracked secret-like file detected."
+            exit 1
+          fi
+          if git ls-files | grep -E '(^|/)(__pycache__|\.pytest_cache|dist|build)/'; then
+            echo "Tracked generated directory detected."
+            exit 1
+          fi
+
+      - name: Validate required community files
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f CONTRIBUTING.md
+          test -f CODE_OF_CONDUCT.md
+          test -f SECURITY.md
+          test -f SUPPORT.md
+          test -f .github/PULL_REQUEST_TEMPLATE.md
+          test -f .github/ISSUE_TEMPLATE/config.yml
+
+      - name: Validate documentation is tracked
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f docs/issue-catalog.md
+          test -f docs/requirements.md

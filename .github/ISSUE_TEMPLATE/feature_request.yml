@@ -1,0 +1,36 @@
+name: Feature request
+description: Propose a focused improvement aligned with the roadmap.
+title: "[Feature]: "
+labels:
+  - type:feature
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and user value
+      description: What problem does this solve, and for whom?
+    validations:
+      required: true
+  - type: textarea
+    id: requirements
+    attributes:
+      label: Related requirements
+      description: Link requirement IDs and existing issues where applicable.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Proposed scope
+      description: Include explicit non-goals and possible alternatives.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: List verifiable criteria as checkboxes.
+      placeholder: |
+        - [ ] ...
+    validations:
+      required: true
