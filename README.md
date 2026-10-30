@@ -125,6 +125,38 @@ REQUIREMENT
 
 Every link exists to answer one question: **why do we believe this result?**
 
+## Install and run
+
+The package installs everything the workbench needs (the terminal interface,
+the CLI, and their libraries) and adds one command to your terminal:
+
+```bash
+batman
+```
+
+Running `batman` with no arguments opens the workbench. `batman --help` lists
+the commands (`batman project create`, `batman requirements import`, and so
+on); `qa-workbench` and `python -m qa_workbench` are the same program.
+
+Install it as a standalone tool, so it is available in every terminal without
+touching your Python projects. It needs Python 3.12 or newer:
+
+```bash
+uv tool install dark-knight-qa     # or: pipx install dark-knight-qa
+```
+
+The package is not published to PyPI yet. Until it is, install it from a clone of
+this repository:
+
+```bash
+git clone https://github.com/joaocarlos2002/dark-knight.git
+uv tool install ./dark-knight      # or: pipx install ./dark-knight
+```
+
+To upgrade, run `uv tool upgrade dark-knight-qa` (or `pipx upgrade
+dark-knight-qa`). The first run creates its data folder on its own; where it
+lives and how to change it is described under Contributing below.
+
 ## Current status
 
 **Foundation phase // v0.2.0**
