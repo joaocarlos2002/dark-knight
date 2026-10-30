@@ -12,6 +12,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from qa_workbench.browser.errors import AssertionFailed, BrowserError
 from qa_workbench.browser.ports import (
@@ -28,6 +29,8 @@ from qa_workbench.browser.preview import (
     PreviewState,
     utc_now,
 )
+from qa_workbench.security.guard import ActionGuard
+from qa_workbench.security.policy import ActionRequest, Category
 from qa_workbench.storage.evidence import EvidenceStore
 from qa_workbench.storage.repository import Record
 
@@ -76,6 +79,10 @@ class BrowserAgent:
     video: bool = True
     trace: bool = True
     clock: Callable[[], float] = time.monotonic
+    # The guard authorizes every navigation (scope, rate limit, cancellation) and
+    # its settings decide which hosts the browser may reach at all. Without a
+    # guard only local addresses are allowed.
+    guard: ActionGuard | None = None
 
     def __post_init__(self) -> None:
         self.observations = Observations()
@@ -101,6 +108,8 @@ class BrowserAgent:
             artifacts_dir=self.artifacts_dir,
             video=self.video,
             trace=self.trace,
+            allow_request=self._host_allowed,
+            allowed_hosts=self._resolvable_hosts(),
         )
         try:
             self._session = self.driver.launch(options, self.observations)
@@ -145,10 +154,19 @@ class BrowserAgent:
         self._publish(step=step)
 
     def navigate(self, url: str) -> None:
+        """Open ``url`` if it is authorized, and stop if it ends somewhere else."""
+        self._require_authorized(url)
         self._run(
             f"navigate {redact_url(url)}",
             lambda s: s.navigate(url, timeout_ms=self.timeout_ms),
         )
+        final = self._require_session().current_url()
+        if final and not self._host_allowed(final) and not final.startswith("about:"):
+            raise BrowserError(
+                "The navigation ended at a URL that is not authorized",
+                action="navigate",
+                url=redact_url(final),
+            )
 
     def click(self, selector: str) -> None:
         self._run(
@@ -204,6 +222,41 @@ class BrowserAgent:
         return path
 
     # -- internals -----------------------------------------------------------
+
+    def _resolvable_hosts(self) -> tuple[str, ...]:
+        extra = self.guard.settings.allowed_hosts if self.guard else ()
+        return (*LOCAL_HOSTS, *extra)
+
+    def _host_allowed(self, url: str) -> bool:
+        if is_local(url):
+            return True
+        return self.guard is not None and self.guard.settings.host_allowed(url)
+
+    def _require_authorized(self, url: str) -> None:
+        if self.guard is None:
+            if not is_local(url):
+                raise BrowserError(
+                    "Only local addresses can be opened without a project scope",
+                    action="navigate",
+                    url=redact_url(url),
+                )
+            return
+        if not self.guard.settings.host_allowed(url) and not is_local(url):
+            raise BrowserError(
+                "The host is not in the project's allowed hosts",
+                action="navigate",
+                url=redact_url(url),
+            )
+        self.guard.authorize(
+            ActionRequest(
+                "browser navigation",
+                Category.READ,
+                f"navigate to {redact_url(url)}",
+                # Loopback is always in scope; it is still audited.
+                target_url="" if is_local(url) else url,
+                requested_by="browser-agent",
+            )
+        )
 
     def _require_session(self) -> BrowserSession:
         if self._session is None:
@@ -298,6 +351,21 @@ class BrowserAgent:
         self._state = replace(self._state, **values)  # type: ignore[arg-type]
         if self.channel is not None:
             self.channel.publish(self._state, frame=frame)
+
+
+LOCAL_HOSTS = ("localhost", "127.0.0.1")
+
+
+def is_local(url: str) -> bool:
+    """A loopback address or a local file: always reachable, never external."""
+    parts = urlsplit(url)
+    if parts.scheme == "file":
+        return True
+    return parts.scheme in ("http", "https") and (parts.hostname or "").lower() in (
+        "localhost",
+        "127.0.0.1",
+        "::1",
+    )
 
 
 def register_artifacts(

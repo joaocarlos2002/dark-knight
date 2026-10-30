@@ -14,6 +14,9 @@ from qa_workbench.browser.ports import BrowserDriver, BrowserMode
 from qa_workbench.browser.preview import PreviewChannel, PreviewController
 from qa_workbench.core.config import AppConfig, ConfigurationError
 from qa_workbench.projects.errors import ProjectError
+from qa_workbench.security.audit import AuditLog
+from qa_workbench.security.guard import ActionGuard, SecurityError
+from qa_workbench.security.settings import SecuritySettingsError, load_settings
 from qa_workbench.storage.errors import StorageError
 from qa_workbench.storage.evidence import EvidenceStore
 from qa_workbench.workspace import open_repository
@@ -170,10 +173,19 @@ def run_command(
         _fail("--execution needs --project.")
     try:
         config = AppConfig.load()
-        store = (
-            EvidenceStore(open_repository(project, writable=True)) if project else None
+        repository = open_repository(project, writable=True) if project else None
+        store = EvidenceStore(repository) if repository else None
+        guard = (
+            ActionGuard(load_settings(repository.root), AuditLog(repository.root))
+            if repository
+            else None
         )
-    except (ConfigurationError, ProjectError, StorageError) as error:
+    except (
+        ConfigurationError,
+        ProjectError,
+        StorageError,
+        SecuritySettingsError,
+    ) as error:
         _fail(str(error))
     try:
         default_setup().ensure(_confirm_install(yes))
@@ -185,6 +197,7 @@ def run_command(
         artifacts_dir=artifacts_dir,
         controller=PreviewController(BrowserMode(mode)),
         channel=preview_channel(config),
+        guard=guard,
     )
     outcome = _drive(agent, url, expect_text)
     try:
@@ -223,6 +236,8 @@ def _drive(agent: BrowserAgent, url: str, expect_text: str | None) -> str:
         if expect_text is not None:
             agent.expect_text("body", expect_text)
         agent.screenshot("page")
+    except SecurityError as error:
+        problem = f"Not authorized: {error}"
     except AssertionFailed as error:
         problem = f"Check failed: {error}"
     except BrowserError as error:

@@ -86,7 +86,7 @@ def test_hiding_the_preview_does_not_touch_the_run(tmp_path: Path) -> None:
         driver=FakeDriver(), artifacts_dir=tmp_path / "run", channel=channel
     )
     with agent:
-        agent.navigate("https://app.test")
+        agent.navigate("http://localhost")
         first = channel.read()
         agent.click("#a")
         later = channel.read()
@@ -107,7 +107,7 @@ def test_requests_from_another_process_reach_the_running_agent(tmp_path: Path) -
         controller=controller,
     )
     with agent:
-        agent.navigate("https://app.test")
+        agent.navigate("http://localhost")
         channel.request(mode="visible")
         agent.click("#a")
         state = channel.read()
@@ -128,7 +128,7 @@ def test_pause_request_holds_the_next_action_until_resume(tmp_path: Path) -> Non
 
     def run() -> None:
         with agent:
-            agent.navigate("https://app.test")
+            agent.navigate("http://localhost")
             channel.request(paused=True)
             agent.click("#a")  # waits here
             done.set()
@@ -154,6 +154,6 @@ def test_unknown_mode_in_control_file_is_ignored(tmp_path: Path) -> None:
         driver=FakeDriver(), artifacts_dir=tmp_path / "run", channel=channel
     )
     with agent:
-        agent.navigate("https://app.test")
+        agent.navigate("http://localhost")
 
     assert agent.controller.mode is BrowserMode.PREVIEW

@@ -20,14 +20,14 @@ def test_actions_are_recorded_and_observations_kept(tmp_path: Path) -> None:
     agent = _agent(tmp_path, driver)
 
     with agent:
-        agent.navigate("https://app.test/login")
+        agent.navigate("http://localhost/login")
         agent.fill("#user", "ada")
         agent.click("#login")
         agent.expect_text("h1", "Welcome")
         agent.expect_visible("#login")
 
     assert [a.label for a in agent.actions][:2] == [
-        "navigate https://app.test/login",
+        "navigate http://localhost/login",
         "fill #user",
     ]
     assert all(a.ok for a in agent.actions)
@@ -69,7 +69,7 @@ def test_actions_before_start_are_refused(tmp_path: Path) -> None:
     agent = _agent(tmp_path, FakeDriver())
 
     with pytest.raises(BrowserError, match="not started"):
-        agent.navigate("https://app.test")
+        agent.navigate("http://localhost")
 
 
 def test_launch_failure_propagates_and_releases_the_run(tmp_path: Path) -> None:
@@ -87,7 +87,7 @@ def test_launch_failure_propagates_and_releases_the_run(tmp_path: Path) -> None:
 def test_screenshot_failure_is_separate_from_the_test_result(tmp_path: Path) -> None:
     agent = _agent(tmp_path, FakeDriver(fail_screenshots=True))
     with agent:
-        agent.navigate("https://app.test")
+        agent.navigate("http://localhost")
         assert agent.screenshot("home") is None
 
     assert agent.screenshot_failures
@@ -97,7 +97,7 @@ def test_screenshot_failure_is_separate_from_the_test_result(tmp_path: Path) -> 
 def test_screenshots_trace_become_evidence(tmp_path: Path) -> None:
     agent = _agent(tmp_path, FakeDriver())
     with agent:
-        agent.navigate("https://app.test")
+        agent.navigate("http://localhost")
         agent.screenshot("home page")
     artifacts = agent.close()
     repository = MarkdownRepository(tmp_path / "project", [EVIDENCE_SCHEMA])
@@ -124,7 +124,7 @@ def test_preview_publishes_frames_at_the_configured_rate(tmp_path: Path) -> None
         tmp_path, driver, channel=channel, refresh_seconds=5, clock=lambda: 0.0
     )
     with agent:
-        agent.navigate("https://app.test")
+        agent.navigate("http://localhost")
         agent.click("a")
         agent.click("b")
 
@@ -145,7 +145,7 @@ def test_headless_mode_does_not_capture_frames(tmp_path: Path) -> None:
         controller=PreviewController(BrowserMode.HEADLESS),
     )
     with agent:
-        agent.navigate("https://app.test")
+        agent.navigate("http://localhost")
 
     assert driver.sessions[0].screenshots_taken == 0
 

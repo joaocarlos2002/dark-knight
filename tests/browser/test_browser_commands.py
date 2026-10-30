@@ -41,7 +41,7 @@ def test_run_opens_the_page_and_reports_what_the_browser_saw(
     driver: FakeDriver, isolated: Path
 ) -> None:
     result, out = _run(
-        "browser", "run", "https://app.test", "--expect-text", "Welcome",
+        "browser", "run", "http://localhost", "--expect-text", "Welcome",
         "--out", str(isolated / "out"),
     )  # fmt: skip
 
@@ -53,7 +53,7 @@ def test_run_opens_the_page_and_reports_what_the_browser_saw(
 
 def test_failed_check_exits_with_an_error(driver: FakeDriver, isolated: Path) -> None:
     result, out = _run(
-        "browser", "run", "https://app.test", "--expect-text", "Goodbye",
+        "browser", "run", "http://localhost", "--expect-text", "Goodbye",
         "--out", str(isolated / "out"),
     )  # fmt: skip
 
@@ -62,7 +62,7 @@ def test_failed_check_exits_with_an_error(driver: FakeDriver, isolated: Path) ->
 
 
 def test_unknown_mode_is_rejected(driver: FakeDriver) -> None:
-    result, out = _run("browser", "run", "https://app.test", "--mode", "sideways")
+    result, out = _run("browser", "run", "http://localhost", "--mode", "sideways")
 
     assert result.exit_code == 1 and "Unknown mode" in out
 
@@ -74,7 +74,7 @@ def test_launch_failure_is_reported_not_swallowed(
 
     driver.launch_error = BrowserError("no chromium")
     result, out = _run(
-        "browser", "run", "https://app.test", "--out", str(isolated / "out")
+        "browser", "run", "http://localhost", "--out", str(isolated / "out")
     )
 
     assert result.exit_code == 1 and "no chromium" in out
@@ -86,7 +86,7 @@ def test_run_registers_evidence_in_a_project(
     assert _run("project", "create", "Demo")[0].exit_code == 0
 
     result, out = _run(
-        "browser", "run", "https://app.test", "-p", "PROJ-001",
+        "browser", "run", "http://localhost", "-p", "PROJ-001",
         "--out", str(isolated / "out"),
     )  # fmt: skip
 
@@ -95,7 +95,7 @@ def test_run_registers_evidence_in_a_project(
 
 
 def test_execution_without_project_is_refused(driver: FakeDriver) -> None:
-    result, out = _run("browser", "run", "https://app.test", "--execution", "EXEC-001")
+    result, out = _run("browser", "run", "http://localhost", "--execution", "EXEC-001")
 
     assert result.exit_code == 1 and "--project" in out
 
@@ -108,7 +108,7 @@ def test_missing_browser_without_consent_points_to_doctor(
         cli, "default_setup", lambda: BrowserSetup(lambda: missing, lambda: 1 / 0)
     )
 
-    result, out = _run("browser", "run", "https://app.test")
+    result, out = _run("browser", "run", "http://localhost")
 
     assert result.exit_code == 1 and "batman doctor --fix" in out
 
