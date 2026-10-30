@@ -9,6 +9,11 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- Incremental, recoverable executions: steps saved before and after they run,
+  recovery of interrupted runs without inventing outcomes, reruns that never
+  overwrite, corrections as separate events, and failure classification
+  (product, test, infrastructure, evidence collection) (REQ-019, REQ-020,
+  NFR-004).
 - Executions with a validated lifecycle (created, planned, awaiting approval,
   running, results, finalized), five execution types, data rules tied to state,
   approvals, and sealing on finalization, plus `executions create|move|list|show|
