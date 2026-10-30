@@ -39,3 +39,36 @@ jobs:
           test -f SUPPORT.md
           test -f .github/PULL_REQUEST_TEMPLATE.md
           test -f .github/ISSUE_TEMPLATE/config.yml
+
+  python-quality:
+    name: Python quality (${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13", "3.14"]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --extra dev
+
+      - name: Run tests
+        run: uv run pytest
+
+      - name: Check lint
+        run: uv run ruff check .
+
+      - name: Check formatting
+        run: uv run ruff format --check .

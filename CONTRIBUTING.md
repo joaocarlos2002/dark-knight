@@ -31,6 +31,8 @@ uv sync --extra dev
 uv run qa-workbench --help
 uv run qa-workbench --version
 uv run pytest
+uv run ruff check .
+uv run ruff format --check .
 ```
 
 ## Design expectations

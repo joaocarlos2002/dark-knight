@@ -19,6 +19,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0,<9.0",
+    "ruff>=0.11,<1.0",
 ]
 
 [project.scripts]
@@ -30,3 +31,15 @@ where = ["src"]
 [tool.pytest.ini_options]
 addopts = ["-q"]
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.ruff.format]
+quote-style = "double"
+line-ending = "lf"
