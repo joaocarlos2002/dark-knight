@@ -242,6 +242,7 @@ uv run qa-workbench executions create -p PROJ-001 --type manual --executor Ana -
 uv run qa-workbench executions move EXEC-001 -p PROJ-001 --to planned
 uv run qa-workbench reports execution EXEC-001 -p PROJ-001 --save
 uv run qa-workbench reports traceability -p PROJ-001
+uv run qa-workbench ai ask "Is login covered?" -p PROJ-001 --engine auto
 uv run qa-workbench plans recommend -p PROJ-001 --requirement REQ-001 --budget 120
 uv run qa-workbench review pending --project PROJ-001
 uv run qa-workbench review decide REQ-001 -p PROJ-001 --decision approved --reviewer Ana

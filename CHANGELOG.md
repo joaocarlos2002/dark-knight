@@ -9,6 +9,14 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- AI provider contract (availability, models, completion, streaming, tools,
+  structured output, cancellation, timeouts, typed errors), engine selection
+  (`own`, `opencode`, `auto`), and the built-in agent whose answers separate
+  facts, hypotheses, recommendations, and inconclusive findings, demote facts
+  without a verifiable source, and treat outside text as untrusted data
+  (REQ-028, REQ-029). `batman ai status|ask`.
+- Ollama adapter (local runtime) and OpenCode adapter on its documented server
+  API, with explicit unsupported-capability errors and cancellation (REQ-028).
 - A `batman` command: installing the package puts `batman` in the terminal, and
   running it without arguments opens the workbench. `qa-workbench` and
   `python -m qa_workbench` remain as the same program.

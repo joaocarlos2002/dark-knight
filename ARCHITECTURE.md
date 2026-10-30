@@ -64,6 +64,15 @@ src/qa_workbench/
     cli.py         `qa-workbench executions ...` commands
   evidence/
     cli.py         `qa-workbench evidence ...` commands
+  ai/
+    contract.py    Provider contract, messages, tools, CancelToken
+    errors.py      ProviderError hierarchy
+    agent.py       OwnAgent, SingleShotAgent, evidence rule, approval gate
+    selection.py   own / opencode / auto
+    ollama.py      Ollama adapter
+    opencode.py    OpenCode adapter (documented server API)
+    http.py        JSON-over-HTTP port and HTTPX adapter
+    cli.py         `batman ai ...` commands
   suites/
     schema.py      SUITE record schema: type, status, member cases
     service.py     Create suites, add/remove cases, membership, verification
@@ -223,6 +232,55 @@ time the case is updated through the workbench).
   values, every rule combination, valid and refused transitions, use-case
   scenarios). A case can combine several techniques, and the derived conditions
   appear in its body.
+
+### AI providers and the built-in agent
+
+QA code never depends on a specific model. `ai/contract.py` defines one
+`Provider` contract (REQ-028): availability check, model listing, `complete`,
+`stream`, tool calls, structured output (JSON Schema), cancellation
+(`CancelToken`), timeouts, and typed errors (`ProviderUnavailable`,
+`ProviderTimeout`, `ProviderRateLimited`, `ProviderResponseError`,
+`ProviderCancelled`, `CapabilityNotSupported`). Each provider declares its
+`Capabilities`; asking for something it cannot do raises an error instead of
+pretending.
+
+- **Engines and selection.** `own` is the built-in agent on a local runtime
+  (Ollama), `opencode` is OpenCode, `auto` tries `own` then `opencode`. A
+  specific choice never falls back to another engine; when none is available the
+  error lists why for each one. `batman ai status` checks reachability without
+  sending anything to a model; `batman ai ask QUESTION -p PROJ-001 --engine auto`
+  asks one.
+- **Built-in agent (`OwnAgent`).** Loops over `complete` and tool calls (at most
+  `max_steps`), with read-only tools over the project's records (`get_record`,
+  `list_records`). Tool output and context records are fenced as untrusted data.
+  A tool whose risk is not `read` needs the `ApprovalGate`; the default gate
+  denies everything. An unknown tool or a failing tool is reported to the model,
+  not raised.
+- **The evidence rule (REQ-029).** An answer is a list of statements marked
+  `fact`, `hypothesis`, `recommendation`, or `inconclusive`. A fact must cite ids
+  the agent really saw (given as context or returned by a tool); otherwise it is
+  demoted to a hypothesis and flagged, and unseen ids are dropped from `sources`.
+  A reply that is not the expected structure, or an agent that never stops
+  calling tools, is an explicit error. The AI never decides a result: the command
+  prints that its output is analysis and not evidence.
+- **Ollama adapter.** Uses the documented REST API (`/api/version`, `/api/tags`,
+  `/api/chat` with NDJSON streaming, `format` for structured output, `tools`).
+  A stream that ends before its final message is an error, not a partial answer.
+  `OLLAMA_HOST` or `--ollama-url` selects the server.
+- **OpenCode adapter.** Isolated in `ai/opencode.py`, using only the documented
+  `opencode serve` API (`/global/health`, `POST /session`,
+  `POST /session/:id/message`, `/session/:id/abort`, `/config/providers`) with
+  HTTP basic auth from `OPENCODE_SERVER_PASSWORD`/`OPENCODE_SERVER_USERNAME`; no
+  undocumented interface and no Node bridge. Written against the documentation of
+  October 2026; the server version is shown, and a reply without the documented
+  `{info, parts}` shape is an error. OpenCode runs its own tools, so workbench
+  tool calls, structured output, and streaming are reported as unsupported, and
+  its engine (`SingleShotAgent`) asks once and applies the same evidence rule.
+  Cancelling aborts the session on the server.
+- **Not here yet.** Streaming in the TUI, project context selection, per-action
+  approvals and autonomy modes (the approval gate is the hook for them),
+  external model providers, and a persistent engine setting in `config.toml`
+  (today: command options and `OLLAMA_HOST`/`OPENCODE_URL`).
 
 ### Reports and traceability
 
@@ -559,7 +617,6 @@ README for order.
 | Pipeline Intelligence | CI jobs, logs, artifacts, probable failure context |
 | Issue Operations | GitHub/GitLab through replaceable adapters |
 | Evidence Vault | Screenshots, logs, network data, hashes, sources |
-| AI Coordination | Replaceable providers behind one contract |
 
 External systems (issue trackers, AI providers, browsers) sit behind
 adapters so they can be replaced and faked in tests.
