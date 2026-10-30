@@ -44,6 +44,13 @@ src/qa_workbench/
   core/
     config.py      AppConfig: TOML file plus environment overrides
     logging.py     Console and file logging with secret redaction
+  storage/
+    frontmatter.py Markdown + YAML frontmatter documents (parse, dump, read)
+    ids.py         Stable ids such as TC-001, with the specified prefixes
+    validation.py  RecordSchema, metadata checks, relative link checks
+    repository.py  MarkdownRepository: create, get, update, list records
+    atomic.py      Atomic UTF-8 file writes
+    errors.py      StorageError hierarchy with diagnostic context
   projects/
     models.py      Project and Environment: validated, secret-free records
     repository.py  ProjectRepository: project.yaml + README.md on disk
@@ -61,6 +68,40 @@ src/qa_workbench/
     theme.py       Dark theme tokens and shell stylesheet
 tests/             Pytest suite mirroring the package layout
 ```
+
+### Markdown storage
+
+Markdown with YAML frontmatter is the source of truth for QA records.
+`MarkdownRepository` stores one record per file at
+`<project>/<schema directory>/<ID>.md`, driven by a `RecordSchema` per record
+kind (prefix, folder, allowed statuses, required fields, references). The
+concrete schemas for test cases, requirements, and so on arrive with their own
+features.
+
+- **Format:** UTF-8, LF line endings (CRLF files are read and normalized),
+  frontmatter fenced by `---`, Markdown body after it. Timestamps are written
+  as `2026-01-01T10:00:00-03:00`, unquoted, as in the specification. Files with
+  a byte order mark are rejected.
+- **Ids:** `<PREFIX>-<NNN>` with the prefixes `PROJ`, `REQ`, `ISSUE`, `TC`,
+  `EXEC`, `BUG`, `SEC`, `API`, `REL`, `EVD`, `TP`, `SUITE`, `PIPE`,
+  `PIPE-EXEC`, and `COMMENT`. The repository assigns the next number, never
+  reuses one, and refuses to change an id or `created_at`. `updated_at` is set
+  by the repository on every update.
+- **Validation:** required fields, id format and prefix (and that it matches the
+  file name), status within the schema, timestamps with a timezone,
+  `updated_at` not before `created_at`, reference fields holding ids with the
+  allowed prefixes, and Markdown links that are relative, stay inside the
+  project folder, and point to existing files. Every problem is reported at
+  once. External `http`, `https`, and `mailto` links and anchors are not
+  checked; Obsidian `[[wikilinks]]` are allowed but not checked. Records are
+  validated both when written and when read, so a hand-edited file cannot slip
+  through.
+- **Failures:** a record that cannot be read or fails validation raises an
+  error naming the file and the reasons. `list_records` reports damaged records
+  as errors next to the valid ones instead of hiding them. Writes are atomic.
+- **Not here yet:** the rebuildable SQLite index and search, immutable history
+  for finalized executions, evidence integrity, and secret sanitization before
+  persistence belong to their own features.
 
 ### Projects
 
