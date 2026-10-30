@@ -9,6 +9,7 @@ import typer
 from qa_workbench.ai.cli import ai_app
 from qa_workbench.api.cli import api_app
 from qa_workbench.browser.cli import browser_app, doctor_command, preview_channel
+from qa_workbench.bughunt.cli import bugs_app
 from qa_workbench.core.config import AppConfig, ConfigurationError
 from qa_workbench.core.console import ensure_utf8_output
 from qa_workbench.core.logging import configure_logging
@@ -56,6 +57,7 @@ app.add_typer(edits_app, name="edits")
 app.add_typer(api_app, name="api")
 app.add_typer(browser_app, name="browser")
 app.add_typer(gitlab_app, name="gitlab")
+app.add_typer(bugs_app, name="bugs")
 app.command("doctor", help="Check that everything the workbench needs is ready.")(
     doctor_command
 )
