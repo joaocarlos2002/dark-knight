@@ -22,11 +22,11 @@ def _run(
     asyncio.run(runner())
 
 
+_REGIONS = {"sidebar": "#navigation", "main": "#main", "context": "#context"}
+
+
 def _visible(app: WorkbenchApp) -> dict[str, bool]:
-    return {
-        region: app.query_one(f"#{region}").display
-        for region in ("sidebar", "main", "context")
-    }
+    return {name: app.query_one(query).display for name, query in _REGIONS.items()}
 
 
 def test_wide_terminal_shows_all_regions() -> None:
@@ -67,7 +67,7 @@ def test_resize_reclassifies_the_layout() -> None:
         await pilot.resize_terminal(60, 40)
         await pilot.pause()
         assert "-narrow" in app.screen.classes
-        assert not app.query_one("#sidebar").display
+        assert not app.query_one("#navigation").display
 
     _run((140, 40), scenario)
 
@@ -101,8 +101,8 @@ def test_unavailable_module_is_not_reported_as_working() -> None:
 
 def test_status_bar_names_state_without_relying_on_color() -> None:
     async def scenario(app: WorkbenchApp, pilot) -> None:
-        text = str(app.query_one("#status-bar", Static).render())
-        assert "● READY" in text
+        footer = str(app.query_one("#footer-identity", Static).render())
+        assert "SYSTEM STATUS: ● OPERATIONAL" in footer
 
     _run((140, 40), scenario)
 
@@ -153,7 +153,7 @@ def test_opened_project_is_shown_in_header_status_bar_and_context() -> None:
         header = str(app.query_one("#header-project", Static).render())
         status = str(app.query_one("#status-bar", Static).render())
         context = str(app.query_one("#context", Static).render())
-        assert header == "PROJ-007 / Shop"
+        assert header == "PROJ-007 / SHOP"
         assert status.startswith("PROJ-007 │")
         assert "staging" in context
         assert "acme/shop" in context
@@ -163,7 +163,7 @@ def test_opened_project_is_shown_in_header_status_bar_and_context() -> None:
 
 def test_without_a_project_the_shell_says_so() -> None:
     async def scenario(app: WorkbenchApp, pilot) -> None:
-        assert str(app.query_one("#header-project", Static).render()) == "no project"
+        assert str(app.query_one("#header-project", Static).render()) == "NO PROJECT"
         assert str(app.query_one("#status-bar", Static).render()).startswith(
             "No project"
         )
@@ -204,9 +204,9 @@ def test_escape_closes_the_context_drawer_on_medium_terminals() -> None:
 def test_escape_closes_the_menu_on_narrow_terminals() -> None:
     async def scenario(app: WorkbenchApp, pilot) -> None:
         await pilot.press("f1")
-        assert app.query_one("#sidebar").display
+        assert app.query_one("#navigation").display
         await pilot.press("escape")
-        assert not app.query_one("#sidebar").display
+        assert not app.query_one("#navigation").display
         assert app.query_one("#main").display
 
     _run((60, 40), scenario)
@@ -261,3 +261,41 @@ def test_a_100_column_terminal_shows_all_three_areas() -> None:
         assert _visible(app) == {"sidebar": True, "main": True, "context": True}
 
     _run((100, 40), scenario)
+
+
+def test_header_and_footer_carry_the_wayne_industries_identity() -> None:
+    async def scenario(app: WorkbenchApp, pilot) -> None:
+        def text(query: str) -> str:
+            return str(app.query_one(query, Static).render())
+
+        assert text("#header-company") == "WAYNE INDUSTRIES"
+        assert text("#header-division") == "ADVANCED TECHNOLOGY DIVISION"
+        assert text("#header-location") == "INTERNAL SYSTEM / GOTHAM CITY"
+        assert text("#brand") == "DARK KNIGHT QA\nQUALITY INTELLIGENCE SYSTEM"
+        footer = text("#footer-identity")
+        assert "WAYNE INDUSTRIES / INTERNAL SOFTWARE" in footer
+        assert "AUTHORIZED ACCESS ONLY" in footer
+
+    _run((140, 40), scenario)
+
+
+def test_secondary_identity_lines_are_hidden_on_short_terminals() -> None:
+    async def scenario(app: WorkbenchApp, pilot) -> None:
+        assert "-short" in app.screen.classes
+        assert not app.query_one("#header-row-2").display
+        assert not app.query_one("#footer-identity").display
+        assert app.query_one("#header-company").display
+        assert app.query_one("#status-bar").display
+
+    _run((140, 20), scenario)
+
+
+def test_navigation_labels_are_uppercase() -> None:
+    async def scenario(app: WorkbenchApp, pilot) -> None:
+        sidebar = app.query_one("#sidebar", OptionList)
+        labels = [str(option.prompt) for option in sidebar.options]
+        assert labels[0] == "WORKSPACE"
+        assert "OVERVIEW" in labels
+        assert all(label == label.upper() for label in labels)
+
+    _run((140, 40), scenario)

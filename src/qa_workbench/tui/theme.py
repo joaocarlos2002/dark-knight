@@ -84,14 +84,14 @@ Screen {
 
 /* Navigation: brand block above the menu. */
 #navigation {
-    width: 28;
+    width: 30;
     background: $industrial-black;
     border-right: solid $steel-gray;
 }
 
 #brand {
     height: auto;
-    padding: 1 2 0 2;
+    padding: 1 0 0 2;
     color: $dirty-white;
     text-style: bold;
 }
@@ -138,7 +138,7 @@ Screen {
 }
 
 #context {
-    width: 32;
+    width: 30;
     background: $batcave;
     border-left: solid $steel-gray;
     padding: 1 2;
