@@ -7,6 +7,7 @@ import typer
 
 from qa_workbench.core.config import AppConfig, ConfigurationError
 from qa_workbench.core.logging import configure_logging
+from qa_workbench.projects.cli import project_app
 
 try:
     __version__ = version("dark-knight-qa")
@@ -18,6 +19,7 @@ app = typer.Typer(
     no_args_is_help=True,
     help="Terminal-native, evidence-driven AI quality engineering workbench.",
 )
+app.add_typer(project_app, name="project")
 
 
 def _show_version(value: bool) -> None:
