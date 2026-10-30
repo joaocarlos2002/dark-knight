@@ -80,10 +80,19 @@ testing evidence, compatibility impact, and any security considerations.
 
 ## Releases
 
-The project uses Semantic Versioning. The version is recorded in
-[VERSION](VERSION), and release tags must use the `vMAJOR.MINOR.PATCH` format.
-Pushing a valid version tag starts the GitHub release workflow and generates
-release notes from merged pull requests.
+The project uses Semantic Versioning. Releases are created automatically; do
+not push tags by hand.
+
+To release, open a pull request that updates, in the same commit:
+
+- [VERSION](VERSION);
+- `version` in [pyproject.toml](pyproject.toml);
+- [CHANGELOG.md](CHANGELOG.md), with a `## [X.Y.Z]` entry.
+
+When the pull request is merged into `master`, the release workflow checks
+that the three agree, creates the `vX.Y.Z` tag, and publishes a GitHub release
+with notes generated from merged pull requests. If the release already exists,
+the workflow does nothing.
 
 ## Questions
 
