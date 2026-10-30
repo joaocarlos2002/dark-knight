@@ -146,22 +146,48 @@ class GitLabClient:
             )
         return token
 
+    def post_json(self, path: str, body: Mapping[str, Any]) -> Any:
+        """POST JSON. A network failure here leaves the outcome unknown: the
+        server may have acted before the connection broke."""
+        response = self._send("POST", path, None, dict(body))
+        return self._decode(path, response)
+
     def _request(self, path: str, params: Mapping[str, str] | None) -> GatewayResponse:
+        return self._send("GET", path, params, None)
+
+    def _send(
+        self,
+        method: str,
+        path: str,
+        params: Mapping[str, str] | None,
+        body: dict[str, Any] | None,
+    ) -> GatewayResponse:
         token = self._token()
         request = GatewayRequest(
             f"{self._connection.base_url}/api/v4{path}",
             {"PRIVATE-TOKEN": token, "Accept": "application/json"},
             dict(params or {}),
             self._timeout,
+            body,
         )
         try:
-            response = self._gateway.get(request)
+            response = (
+                self._gateway.post(request)
+                if method == "POST"
+                else self._gateway.get(request)
+            )
         except GatewayError as error:
+            hint = f"Check that {self._connection.base_url} is reachable"
+            if method == "POST":
+                hint = (
+                    "The request may or may not have been applied; check GitLab "
+                    "before retrying"
+                )
             raise UnreachableError(
                 SYSTEM,
                 str(error).replace(token, "[REDACTED]"),
                 endpoint=path,
-                hint=f"Check that {self._connection.base_url} is reachable",
+                hint=hint,
             ) from error
         self._raise_for_status(path, response)
         return response

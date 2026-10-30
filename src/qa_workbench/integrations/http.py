@@ -1,4 +1,5 @@
-"""A read-only HTTP port for integrations, with an HTTPX adapter."""
+"""The HTTP port for integrations (GET, and POST for approved writes), with an
+HTTPX adapter."""
 
 import logging
 from dataclasses import dataclass, field
@@ -22,11 +23,18 @@ class GatewayRequest:
     headers: dict[str, str] = field(default_factory=dict)
     params: dict[str, str] = field(default_factory=dict)
     timeout_seconds: float = 30.0
+    body: dict[str, Any] | None = None
 
 
 class HttpGateway(Protocol):
     def get(self, request: GatewayRequest) -> GatewayResponse:
         """Send a GET. Raises :class:`GatewayError` when there is no response."""
+        ...
+
+    def post(self, request: GatewayRequest) -> GatewayResponse:
+        """Send a POST with ``request.body`` as JSON. Raises
+        :class:`GatewayError` when there is no response; for a POST that means
+        the outcome is unknown."""
         ...
 
 
@@ -48,6 +56,24 @@ class HttpxGateway:
                 request.url,
                 headers=request.headers,
                 params=request.params or None,
+                timeout=request.timeout_seconds,
+            )
+        except self._httpx.TimeoutException as error:
+            raise GatewayError(
+                f"timed out after {request.timeout_seconds:g}s"
+            ) from error
+        except self._httpx.HTTPError as error:
+            raise GatewayError(f"{type(error).__name__}: {error}") from error
+        return GatewayResponse(
+            response.status_code, dict(response.headers), response.content
+        )
+
+    def post(self, request: GatewayRequest) -> GatewayResponse:
+        try:
+            response = self._client.post(
+                request.url,
+                headers=request.headers,
+                json=request.body,
                 timeout=request.timeout_seconds,
             )
         except self._httpx.TimeoutException as error:
