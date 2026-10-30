@@ -11,6 +11,7 @@ from qa_workbench.projects.cli import project_app
 from qa_workbench.projects.errors import ProjectError
 from qa_workbench.projects.repository import ProjectRepository
 from qa_workbench.requirements.cli import requirements_app
+from qa_workbench.testcases.cli import cases_app
 
 try:
     __version__ = version("dark-knight-qa")
@@ -24,6 +25,7 @@ app = typer.Typer(
 )
 app.add_typer(project_app, name="project")
 app.add_typer(requirements_app, name="requirements")
+app.add_typer(cases_app, name="cases")
 
 
 def _show_version(value: bool) -> None:
