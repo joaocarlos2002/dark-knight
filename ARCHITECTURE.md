@@ -68,6 +68,20 @@ src/qa_workbench/
     cli.py         `qa-workbench executions ...` commands
   evidence/
     cli.py         `qa-workbench evidence ...` commands
+  bughunt/
+    schema.py      BUG schema: classification and the evidence rule
+    service.py     record_finding, reclassify
+    cli.py         `batman bugs ...` commands
+  release/
+    analysis.py    Explainable risk, impacted cases, suites, regression
+    records.py     REL schema and Markdown rendering
+    cli.py         `batman release ...` commands
+  sectest/
+    authorization.py  Scoped, expiring, audited authorization
+    checks.py      Passive checks; confirmed findings vs hypotheses
+    runner.py      All-or-nothing run through the action guard
+    records.py     SEC schema and rendering
+    cli.py         `batman security-tests ...` commands
   security/
     policy.py      Autonomy modes, risk categories, requires_approval
     settings.py    Per-project scope and limits (settings.yaml)
@@ -453,6 +467,58 @@ steps:
   yet; wiring each external action to it (and comment publishing, REQ-027) is
   separate work. `ApprovalGate` in the AI agent is the matching hook.
   Process isolation is not implemented.
+
+### Bug hunting, release analysis, and security checks
+
+Three modules (REQ-031, REQ-032) that turn observations into records without
+claiming more than the evidence supports.
+
+**Bug hunting** (`batman bugs record|reclassify|list|show`). A `BUG` record's
+status is its classification: `reproduced`, `suspected` (the default),
+`false_positive`, `environment_unavailable`, or `inconclusive`. A defect can only
+be `reproduced` with steps, expected and observed results, at least one evidence
+record that passes its integrity check, and at least two reproductions; asking
+for it without those is an error that lists what is missing, never a quiet
+downgrade. The same rule runs when a record is read back, so a hand edit cannot
+promote a suspicion. A false positive needs its reason and an environment problem
+its description. Reclassifying keeps who, when, and why. Literal credentials are
+refused. Execution reports now say whether a referenced `BUG-NNN` exists.
+
+**Release analysis** (`batman release analyze|list|show`). It reads real commits
+and merged merge requests (with their changed files) through the GitLab adapter,
+after the action guard authorizes reading that host, and saves a sealed `REL`
+record. The rules are explainable, not a model's opinion: areas are the first two
+path segments; risk rises with sensitive names (auth, payment, migration, ...),
+files changed in three or more commits, source changed with no related test
+change in the release, and very wide commits. Impacted cases are test cases whose
+title, objective, or tags share a word with a changed path, and the matched words
+are listed. Suites are recommended when they hold impacted cases (smoke suites
+always; regression suites when an area is high risk). Every claim names the
+commits and files behind it. The record states its limits: a word match is not
+proof of impact and code was not analyzed.
+
+**Security checks** (`batman security-tests authorize|revoke|status|run|list|show`).
+Passive, non-destructive checks only: security headers, version and technology
+disclosure, cookie flags, CORS, HTTP-to-HTTPS redirect, and access to
+declared-protected paths without credentials. Each is a GET, never a payload.
+
+- *Authorized and scoped.* A person grants a file naming who authorizes, why, the
+  exact hosts, the allowed checks, and an expiry of at most 30 days; granting and
+  revoking are audited. A check also needs its host in the project's allowed hosts
+  (two independent gates). A run verifies all of that for every requested check
+  before sending the first request.
+- *Rate-limited and auditable.* Every request goes through the action guard
+  (limits, cancellation), and each check start and end is in the audit log.
+- *Confirmed versus hypothesis.* A finding is confirmed only when directly
+  observed in a response; inferred ones are hypotheses and say what would settle
+  them. An unreachable target is an `error` check and the run is saved as
+  `incomplete`.
+- *Sanitized and honest.* URLs and text go through the API sanitizer, cookie
+  values are never recorded, and the saved result carries the statement that this
+  is not a penetration test, not an OWASP or ISTQB certification, and that finding
+  nothing does not show a target is secure. OWASP references are pointers only.
+- *Not here yet.* Intrusive testing (fuzzing, injection, brute force), which would
+  need the `intrusive_test` approval; authenticated sessions; and BugTraceAI.
 
 ### Reports and traceability
 
