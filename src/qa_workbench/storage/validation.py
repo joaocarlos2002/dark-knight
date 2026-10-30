@@ -19,6 +19,8 @@ class RecordSchema:
 
     ``statuses`` is the closed set of allowed ``status`` values.
     ``required`` lists fields beyond ``BASE_REQUIRED``.
+    ``immutable_statuses`` are final statuses: once a record reaches one, it is
+    sealed and can only be corrected through history events.
     ``optional_timestamps`` are timestamp fields that may be empty, such as
     ``finished_at``. ``references`` maps a field holding one id or a list of ids
     to the prefixes those ids may have.
@@ -29,6 +31,7 @@ class RecordSchema:
     statuses: frozenset[str]
     required: tuple[str, ...] = ()
     optional_timestamps: tuple[str, ...] = ()
+    immutable_statuses: frozenset[str] = frozenset()
     references: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -41,6 +44,12 @@ class RecordSchema:
             )
         if not self.statuses:
             raise ValueError("A schema needs at least one status.")
+        unknown_final = self.immutable_statuses - self.statuses
+        if unknown_final:
+            raise ValueError(
+                "immutable_statuses must be allowed statuses, got "
+                f"{sorted(unknown_final)}."
+            )
         for field_name, prefixes in self.references.items():
             unknown = [p for p in prefixes if p not in ID_PREFIXES]
             if unknown:

@@ -15,11 +15,13 @@ from qa_workbench.storage.atomic import write_text_atomic
 from qa_workbench.storage.errors import (
     FrontmatterError,
     ImmutableFieldError,
+    RecordFinalizedError,
     RecordNotFoundError,
     RecordValidationError,
     StorageError,
 )
 from qa_workbench.storage.frontmatter import dump_document, read_document
+from qa_workbench.storage.history import HistoryEvent, HistoryStore
 from qa_workbench.storage.ids import is_valid_id, next_id, parse_id
 from qa_workbench.storage.validation import (
     RecordSchema,
@@ -67,6 +69,7 @@ class MarkdownRepository:
             if schema.prefix in self._schemas:
                 raise ValueError(f"Duplicate schema for prefix {schema.prefix}.")
             self._schemas[schema.prefix] = schema
+        self._history = HistoryStore(self.path_of)
 
     def create(self, prefix: str, fields: Mapping[str, Any], body: str = "") -> Record:
         """Create a record with the next free id.
@@ -98,6 +101,7 @@ class MarkdownRepository:
         if path.exists():
             raise StorageError(f"Refusing to overwrite existing record {path}.")
         self._write(path, metadata, body)
+        self._seal_if_final(schema, record_id, metadata)
         return Record(record_id, metadata, body, path)
 
     def get(self, record_id: str) -> Record:
@@ -121,6 +125,9 @@ class MarkdownRepository:
         repository on every update.
         """
         current = self.get(record_id)
+        schema, path = self._locate(record_id)
+        if current.metadata["status"] in schema.immutable_statuses:
+            raise RecordFinalizedError(record_id, current.metadata["status"])
         if "id" in changes and changes["id"] != current.id:
             raise ImmutableFieldError(record_id, "id")
         if (
@@ -131,7 +138,6 @@ class MarkdownRepository:
         if "updated_at" in changes:
             raise ValueError("updated_at is managed by the repository.")
 
-        schema, path = self._locate(record_id)
         metadata = {
             **current.metadata,
             **{k: v for k, v in changes.items() if k not in MANAGED_FIELDS},
@@ -140,7 +146,58 @@ class MarkdownRepository:
         new_body = current.body if body is None else body
         self._check(schema, path, metadata, new_body, record_id)
         self._write(path, metadata, new_body)
+        self._seal_if_final(schema, record_id, metadata)
         return Record(record_id, metadata, new_body, path)
+
+    def add_history_event(
+        self,
+        record_id: str,
+        kind: str,
+        author: str,
+        justification: str,
+        details: Mapping[str, Any] | None = None,
+    ) -> HistoryEvent:
+        """Record a correction or addition to a finalized record.
+
+        The record itself is never changed; the event is appended to its
+        history with an author, a timestamp, and a justification.
+        """
+        record = self.get(record_id)
+        schema, _ = self._locate(record_id)
+        if record.metadata["status"] not in schema.immutable_statuses:
+            raise ValueError(
+                f"{record_id} is not finalized; edit it directly instead of "
+                "adding a history event."
+            )
+        return self._history.append(record_id, kind, author, justification, details)
+
+    def history(self, record_id: str) -> list[HistoryEvent]:
+        """The history events of a record, oldest first."""
+        self._locate(record_id)
+        return self._history.events(record_id)
+
+    def verify(self, record_id: str) -> list[str]:
+        """Integrity problems of a finalized record; empty when intact.
+
+        Records that are not final have nothing to verify.
+        """
+        record = self.get(record_id)
+        schema, _ = self._locate(record_id)
+        if record.metadata["status"] not in schema.immutable_statuses:
+            return []
+        return self._history.verify(record_id)
+
+    def verify_all(self, prefix: str) -> dict[str, list[str]]:
+        """Integrity problems of every finalized record of a kind, by id."""
+        problems: dict[str, list[str]] = {}
+        for record_id in self.record_ids(prefix):
+            try:
+                found = self.verify(record_id)
+            except StorageError as error:
+                found = [str(error)]
+            if found:
+                problems[record_id] = found
+        return problems
 
     @property
     def prefixes(self) -> tuple[str, ...]:
@@ -217,6 +274,12 @@ class MarkdownRepository:
         problems += validate_links(body, document=path, root=self.root)
         if problems:
             raise RecordValidationError(path, tuple(problems))
+
+    def _seal_if_final(
+        self, schema: RecordSchema, record_id: str, metadata: Mapping[str, Any]
+    ) -> None:
+        if metadata["status"] in schema.immutable_statuses:
+            self._history.seal(record_id)
 
     def _write(self, path: Path, metadata: dict[str, Any], body: str) -> None:
         try:
