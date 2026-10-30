@@ -21,6 +21,10 @@ use the `vMAJOR.MINOR.PATCH` format.
   unauthenticated access; confirmed findings kept apart from hypotheses; sanitized
   results with no certification claim, with `batman security-tests ...` (REQ-031).
 - Execution reports now say whether a referenced defect record exists.
+- Approved comment publishing: drafts that require real evidence and authorized
+  links, approval bound to the exact text, outcomes recorded as published, failed,
+  or unknown, and an audit trail, with `batman comments draft|publish|list|show`
+  and a GitLab note writer (REQ-027).
 - Approvals, autonomy modes, and security controls: `assisted`,
   `semi_autonomous`, and `controlled_autonomous` modes, nine always-sensitive
   action categories, per-project authorized hosts, rate limits and timeouts,

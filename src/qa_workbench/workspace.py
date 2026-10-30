@@ -8,6 +8,7 @@ from qa_workbench.plans.schema import REVIEW_POLICY as PLAN_REVIEW
 from qa_workbench.plans.schema import TEST_PLAN_SCHEMA
 from qa_workbench.projects.errors import ProjectStateError
 from qa_workbench.projects.repository import ProjectRepository
+from qa_workbench.publishing.schema import COMMENT_SCHEMA
 from qa_workbench.release.records import RELEASE_SCHEMA
 from qa_workbench.requirements.schema import REQUIREMENT_SCHEMA
 from qa_workbench.requirements.schema import REVIEW_POLICY as REQUIREMENT_REVIEW
@@ -34,6 +35,7 @@ def all_schemas() -> list[RecordSchema]:
         BUG_SCHEMA,
         RELEASE_SCHEMA,
         SEC_SCHEMA,
+        COMMENT_SCHEMA,
     ]
 
 

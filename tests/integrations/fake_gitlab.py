@@ -41,6 +41,9 @@ class FakeGateway:
         route = self.routes[path]
         return route(request) if callable(route) else answer(route)
 
+    def post(self, request: GatewayRequest) -> GatewayResponse:
+        return self.get(request)
+
 
 def make_client(
     gateway: FakeGateway, environment: dict[str, str] | None = None

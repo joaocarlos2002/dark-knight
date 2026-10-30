@@ -82,6 +82,10 @@ src/qa_workbench/
     runner.py      All-or-nothing run through the action guard
     records.py     SEC schema and rendering
     cli.py         `batman security-tests ...` commands
+  publishing/
+    schema.py      COMMENT record schema (published is sealed)
+    service.py     draft_comment, publish_comment, GitLabComments
+    cli.py         `batman comments ...` commands
   security/
     policy.py      Autonomy modes, risk categories, requires_approval
     settings.py    Per-project scope and limits (settings.yaml)
@@ -519,6 +523,42 @@ declared-protected paths without credentials. Each is a GET, never a payload.
   nothing does not show a target is secure. OWASP references are pointers only.
 - *Not here yet.* Intrusive testing (fuzzing, injection, brute force), which would
   need the `intrusive_test` approval; authenticated sessions; and BugTraceAI.
+### Publishing issue comments
+
+`batman comments draft|publish|list|show` (REQ-027, spec 5.17). A comment is a
+`COMMENT` record that keeps what was sent, its author, provider, issue URL, state,
+the server's answer (external id and URL), and the time it was published. It is
+the only external write the workbench makes today, and it only posts a note: it
+never closes an issue or changes labels, assignees, or state.
+
+- **Drafting sends nothing.** `draft` canonicalizes the text (LF, one final
+  newline), hashes it, and refuses, with every problem listed at once: an empty
+  or oversized text, a literal credential, a link to a host that is not the issue's
+  or an authorized one (so links are real), no evidence, evidence that is missing
+  or fails its integrity check, or no author.
+- **Publishing goes through the action guard.** The action is an external
+  comment, always sensitive. Its fingerprint includes the text's SHA-256, so an
+  approval covers exactly that text; editing the record afterwards is detected
+  (the hash no longer matches) and approving one comment never covers another.
+  Without approval the record becomes `awaiting_approval`, a request is created,
+  and nothing is sent. The author cannot approve their own comment (the guard
+  rejects a decider equal to the requester).
+- **States, never a false success.** `published` (sealed; never re-sent),
+  `failed` (the server refused or errored; the error is kept), and
+  `outcome_unknown` (the connection broke after the request left, so the comment
+  may exist). From `outcome_unknown` a new attempt needs `--checked-issue`, which
+  states that the issue was checked, plus a fresh approval, because an approval is
+  single-use.
+- **Audit.** Request, decision, use of the approval, and the final
+  `comment_published` or `comment_failed` are entries of the hash-chained audit
+  log from the security controls.
+- **GitLab.** `GitLabComments` posts `POST /projects/:id/issues/:iid/notes`
+  through the same client and explicit errors as the readers. The token needs the
+  `api` scope (read-only tokens are rejected with a 403 that says so); it comes
+  from `GITLAB_TOKEN` and is never stored.
+- **Not here yet.** Other providers (the `CommentWriter` port is ready for
+  them), editing or deleting published comments, comments on merge requests, and
+  an automatic comment from a report.
 
 ### Reports and traceability
 
