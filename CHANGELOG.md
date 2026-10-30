@@ -9,6 +9,10 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- A random fullscreen Batman edit plays before the workbench opens, chosen from
+  `assets/batman-edits` (configurable with `[startup] edits_dir`), with the
+  terminal minimized first on Windows, no player controls, any key or click to
+  skip, and `--no-splash` to bypass it. Uses `ffplay`, `mpv`, or `vlc`.
 - GitLab adapter for issues (description, labels, comments), commits, and merge
   requests with their changed files, behind replaceable ports, with `batman gitlab
   issues|issue|commits|commit|mrs|mr`; external text is marked as untrusted data
