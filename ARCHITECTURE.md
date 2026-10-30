@@ -50,6 +50,10 @@ src/qa_workbench/
     importer.py    Import into a project, preserving source and author
     coverage.py    Which requirements have related test cases
     cli.py         `qa-workbench requirements ...` commands
+  review/
+    policy.py      Review and AI-provenance rules, as schema checks (pure)
+    service.py     Submit for review, record human decisions, list pending
+    cli.py         `qa-workbench review ...` commands
   testcases/
     schema.py      TC record schema, fields, choices, secret and technique checks
     builder.py     TestCaseDraft, create/update, readable Markdown body
@@ -196,6 +200,30 @@ time the case is updated through the workbench).
   values, every rule combination, valid and refused transitions, use-case
   scenarios). A case can combine several techniques, and the derived conditions
   appear in its body.
+
+### Human review of AI-generated records
+
+Requirements and test cases carry an `origin` (`manual`, `imported`, or `ai`).
+AI-generated records follow rules enforced as schema checks, so they hold on
+create, on update, and when a hand-edited file is read back:
+
+- **Provenance:** an `ai` record names its generator in `generated_by`. Import
+  AI-produced requirements with `--generated-by`.
+- **Review before approval:** it cannot reach `approved` (requirements) or
+  `active` (test cases) without a recorded review that approves it, and the
+  reviewer must be a different person from the generator and the author.
+  `qa-workbench review submit | decide | pending` runs the workflow
+  (`draft` → `in_review` → approved, rejected, or back to `draft` with changes
+  requested). Every decision is kept in `reviews` with reviewer, timestamp, and
+  comment. Manual records can be approved directly or through the same flow.
+- **Facts, hypotheses, and no invented evidence:** `ai_findings` classifies each
+  statement as `fact`, `hypothesis`, `recommendation`, or `inconclusive`. A fact
+  must cite the id of a real record (a requirement, evidence, and so on);
+  free-text "sources" and facts without one are rejected, so an unsupported
+  claim has to be marked as a hypothesis.
+
+Known limit: editing an AI record's content after approval does not send it back
+to review yet.
 
 ### Projects
 

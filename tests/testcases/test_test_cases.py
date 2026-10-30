@@ -345,7 +345,9 @@ def test_render_body_tolerates_data_that_validation_will_reject() -> None:
 
 def test_a_case_covers_the_requirement_it_names(repo: MarkdownRepository) -> None:
     repo.create(
-        "REQ", {"title": "Login", "status": "draft", "source": "x.md"}, "# Login\n"
+        "REQ",
+        {"title": "Login", "status": "draft", "source": "x.md", "origin": "manual"},
+        "# Login\n",
     )
     case = create_test_case(repo, _draft(requirements=["REQ-001"]))
 

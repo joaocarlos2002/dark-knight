@@ -23,7 +23,14 @@ def repo(tmp_path: Path) -> MarkdownRepository:
 
 def _requirement(repo: MarkdownRepository, title: str, **extra: object):
     return repo.create(
-        "REQ", {"title": title, "status": "draft", "source": "x.md", **extra}
+        "REQ",
+        {
+            "title": title,
+            "status": "draft",
+            "source": "x.md",
+            "origin": "manual",
+            **extra,
+        },
     )
 
 
@@ -104,7 +111,14 @@ def test_without_a_case_schema_nothing_is_claimed_about_cases(
 ) -> None:
     repo = MarkdownRepository(tmp_path, [REQUIREMENT_SCHEMA])
     repo.create(
-        "REQ", {"title": "Login", "status": "draft", "source": "x", "cases": ["TC-001"]}
+        "REQ",
+        {
+            "title": "Login",
+            "status": "draft",
+            "source": "x",
+            "origin": "manual",
+            "cases": ["TC-001"],
+        },
     )
 
     (item,) = coverage(repo)

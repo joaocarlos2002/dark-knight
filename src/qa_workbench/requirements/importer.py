@@ -93,11 +93,14 @@ def import_requirements(
     author: str | None = None,
     source_version: str | None = None,
     format_name: str | None = None,
+    generated_by: str | None = None,
 ) -> ImportReport:
     """Import every requirement found in ``source``.
 
     ``author`` is the default author for requirements that do not name one.
     Requirements with problems are reported and skipped; the rest are imported.
+    ``generated_by`` marks the source as AI-generated: the requirements are
+    recorded with that origin and need a human review before approval.
     """
     chosen, text = _read_source(source, format_name)
     digest = sha256_file(source)
@@ -137,11 +140,13 @@ def import_requirements(
             "source_sha256": digest,
             "source_format": chosen,
             "imported_at": imported_at,
+            "origin": "ai" if generated_by else "imported",
         }
         optional = {
             "priority": item.priority,
             "author": item.author or (author.strip() if author else None),
             "source_version": source_version.strip() if source_version else None,
+            "generated_by": generated_by.strip() if generated_by else None,
             "tags": list(item.tags),
             "acceptance_criteria": list(item.acceptance_criteria),
         }

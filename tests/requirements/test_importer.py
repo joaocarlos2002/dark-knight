@@ -244,3 +244,23 @@ def test_imported_requirements_are_valid_records(
 
     assert len(listing.records) == 2
     assert listing.errors == ()
+
+
+def test_ai_generated_sources_are_marked_and_need_review(
+    repo: MarkdownRepository, source: Path
+) -> None:
+    report = import_requirements(repo, source, generated_by="opencode")
+
+    metadata = report.created[0].metadata
+    assert metadata["origin"] == "ai"
+    assert metadata["generated_by"] == "opencode"
+    assert metadata["status"] == "draft"
+
+
+def test_human_sources_are_marked_as_imported(
+    repo: MarkdownRepository, source: Path
+) -> None:
+    metadata = import_requirements(repo, source).created[0].metadata
+
+    assert metadata["origin"] == "imported"
+    assert "generated_by" not in metadata

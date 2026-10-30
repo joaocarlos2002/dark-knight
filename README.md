@@ -205,6 +205,8 @@ uv run qa-workbench tui --project PROJ-001
 uv run qa-workbench requirements import requirements.md --project PROJ-001
 uv run qa-workbench requirements coverage --project PROJ-001
 uv run qa-workbench cases create "Log in" -p PROJ-001 --objective "Validate login" \n  --step "Open the page" --step "Submit => Dashboard is shown" \n  --expected-result "The user is authenticated" --requirement REQ-001
+uv run qa-workbench review pending --project PROJ-001
+uv run qa-workbench review decide REQ-001 -p PROJ-001 --decision approved --reviewer Ana
 ```
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.

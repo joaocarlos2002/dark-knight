@@ -49,12 +49,20 @@ def import_command(
     source_version: Annotated[
         str | None, typer.Option(help="Version label of the source document.")
     ] = None,
+    generated_by: Annotated[
+        str | None,
+        typer.Option(help="Provider or model, if the source is AI-generated."),
+    ] = None,
 ) -> None:
     """Import requirements from a Markdown or text file."""
     repository = _open(project, writable=True)
     try:
         report = import_requirements(
-            repository, source, author=author, source_version=source_version
+            repository,
+            source,
+            author=author,
+            source_version=source_version,
+            generated_by=generated_by,
         )
     except (RequirementImportError, StorageError) as error:
         _fail(str(error))
