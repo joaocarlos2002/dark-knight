@@ -2,7 +2,7 @@
 
 import sys
 import tomllib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from os import environ
 from pathlib import Path
 
@@ -40,6 +40,7 @@ class AppConfig:
     data_dir: Path
     log_level: str = "INFO"
     log_file: Path | None = None
+    shortcuts: dict[str, str] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if self.log_level.upper() not in {
@@ -61,6 +62,7 @@ class AppConfig:
             _platform_config_dir() / "dark-knight-qa",
         )
         values: dict[str, object] = {}
+        document: dict[str, object] = {}
         config_file = config_dir / "config.toml"
         if config_file.is_file():
             try:
@@ -75,6 +77,16 @@ class AppConfig:
                 raise ConfigurationError(
                     f"The [application] section in {config_file} must be a table."
                 )
+
+        shortcuts = document.get("shortcuts", {})
+        if not isinstance(shortcuts, dict) or not all(
+            isinstance(key, str) and isinstance(value, str)
+            for key, value in shortcuts.items()
+        ):
+            raise ConfigurationError(
+                f"The [shortcuts] section in {config_file} must map action names "
+                "to key strings."
+            )
 
         data_dir = _path_from_env(
             "DARK_KNIGHT_DATA_DIR",
@@ -96,4 +108,5 @@ class AppConfig:
             data_dir=data_dir,
             log_level=log_level,
             log_file=log_file,
+            shortcuts=dict(shortcuts),
         )

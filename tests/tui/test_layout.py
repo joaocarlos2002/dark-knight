@@ -7,8 +7,8 @@ from qa_workbench.tui.layout import WidthClass, classify_width, layout_for
     ("columns", "expected"),
     [
         (200, WidthClass.WIDE),
-        (120, WidthClass.WIDE),
-        (119, WidthClass.MEDIUM),
+        (100, WidthClass.WIDE),
+        (99, WidthClass.MEDIUM),
         (80, WidthClass.MEDIUM),
         (79, WidthClass.NARROW),
         (1, WidthClass.NARROW),
@@ -27,7 +27,7 @@ def test_wide_layout_shows_every_region() -> None:
 
 
 def test_medium_layout_hides_context_by_default() -> None:
-    layout = layout_for(100, 40)
+    layout = layout_for(90, 40)
 
     assert layout.sidebar_visible
     assert not layout.context_visible

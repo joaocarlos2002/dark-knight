@@ -69,3 +69,28 @@ def test_application_section_must_be_a_table(
 
     with pytest.raises(ConfigurationError, match="must be a table"):
         AppConfig.load()
+
+
+def test_shortcuts_are_loaded_from_toml(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    (config_dir / "config.toml").write_text(
+        '[shortcuts]\ntoggle_context = "f3"\n', encoding="utf-8"
+    )
+    monkeypatch.setenv("DARK_KNIGHT_CONFIG_DIR", str(config_dir))
+
+    assert AppConfig.load().shortcuts == {"toggle_context": "f3"}
+
+
+def test_shortcuts_must_map_names_to_strings(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    (config_dir / "config.toml").write_text("[shortcuts]\nhelp = 5\n", encoding="utf-8")
+    monkeypatch.setenv("DARK_KNIGHT_CONFIG_DIR", str(config_dir))
+
+    with pytest.raises(ConfigurationError, match=r"\[shortcuts\] section"):
+        AppConfig.load()

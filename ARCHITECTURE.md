@@ -51,6 +51,10 @@ src/qa_workbench/
     cli.py         `qa-workbench project ...` commands
   tui/
     app.py         WorkbenchApp: the three-area shell and status bar
+    keymap.py      Shortcuts: defaults, overrides, conflict detection (pure)
+    palette.py     Command palette entries (pure)
+    commands.py    Textual command provider backed by palette.py
+    components/    Reusable widgets: badge, metric, detail, table, logs, ...
     layout.py      Terminal size -> region visibility (pure, no widgets)
     navigation.py  Sidebar sections and destinations (pure data)
     status.py      Status names, symbols, and tones (pure)
@@ -85,23 +89,87 @@ A project is a folder under the data directory:
 
 ### TUI shell
 
-`qa-workbench tui` opens `WorkbenchApp`, which composes persistent
-navigation, main content, a contextual panel, and a status bar. Decisions
-live in pure modules (`layout`, `navigation`, `status`); widgets only render
-them, so business rules stay out of presentation code.
+`qa-workbench tui` opens `WorkbenchApp`, which composes a corporate header,
+persistent navigation, main content, a contextual panel, and a footer.
+Decisions live in pure modules (`layout`, `navigation`, `status`, `identity`);
+widgets only render them, so business rules stay out of presentation code.
+
+- **Identity:** the header and footer carry the Wayne Industries / Dark Knight
+  QA identity as text (`tui/identity.py`). No logos or protected symbols are
+  used. The secondary header row and the footer identity line are hidden on
+  short terminals so the chrome never crowds the work area.
+- **Navigation:** three categories, `WORKSPACE`, `OPERATIONS`, and
+  `INTELLIGENCE`, with uppercase labels. The selected item is highlighted in
+  Wayne Red and the focused area is outlined in Signal Red.
+- **Theme:** every color is a named token in `tui/theme.py`; the stylesheet
+  never repeats a hex value. Tests check the contrast of text and functional
+  colors against the surfaces. The alert color meets the 3:1 minimum for UI
+  components and is always paired with a symbol and a name.
+- **Status:** `PASSED`, `FAILED`, `WARNING`, `RUNNING`, `BLOCKED`, `SKIPPED`,
+  `PENDING`, `AI PROCESSING`, and others, each with a symbol and a name.
 
 | Terminal | Navigation | Content | Context |
 |---|---|---|---|
-| Wide (120+ columns) | sidebar | center | side panel |
-| Medium (80-119) | sidebar | center | drawer, `F2` |
+| Wide (100+ columns) | sidebar | center | side panel |
+| Medium (80-99) | sidebar | center | drawer, `F2` |
 | Narrow (under 80) | menu, `F1` | single column | drawer, `F2` |
 | Short (under 24 rows) | unchanged | tighter spacing | unchanged |
 
 The shell reacts to resize events and never uses fixed coordinates. It is
-fully keyboard-driven: `F1` menu, `F2` context, `Enter` opens an item, `?`
-shows shortcuts, `Ctrl+Q` quits. Every status is shown as a symbol and a name
-(for example `✓ PASSED`), never by color alone. Modules that are not
-implemented yet say so explicitly instead of showing placeholder data.
+fully keyboard-driven. Every status is shown as a symbol and a name (for
+example `✓ PASSED`), never by color alone. Modules that are not implemented
+yet say so explicitly instead of showing placeholder data.
+
+### Keyboard shortcuts
+
+Shortcuts are defined once, in `tui/keymap.py`, and used by the bindings, the
+status bar, the help text, and the command palette.
+
+| Key | Action |
+|---|---|
+| `F1` | Show or hide the navigation menu |
+| `F2` | Show or hide the context panel |
+| `Ctrl+P` | Command palette: go to any page or run an action |
+| `Ctrl+K` | Go to the search field of the current page, if it has one |
+| `Esc` | Close a dialog, then the menu or context drawer |
+| `?` | List the shortcuts |
+| `Ctrl+Q` | Quit |
+
+Override any of them in `config.toml`:
+
+```toml
+[shortcuts]
+toggle_context = "f3"
+command_palette = "ctrl+o"
+```
+
+An unknown action, an empty key, a key reserved by the terminal (`Ctrl+C`,
+`Ctrl+Z`, `Ctrl+S`, `Ctrl+D`), or two actions on the same key makes
+`qa-workbench tui` exit with an error that names the problem, instead of
+starting with a broken keymap. `Ctrl+B` (browser preview), `Ctrl+N` (new
+record), `Ctrl+R` (refresh), and `Ctrl+Enter` (primary action) from the visual
+specification are not bound yet because the features behind them do not exist.
+`Ctrl+K` focuses the search field of the current page; a cross-module global
+search arrives with the knowledge base.
+
+### Reusable components
+
+Components live in `tui/components/`. They take data and callbacks, hold no
+business rules, and never call integrations. Search and filtering logic is in
+pure functions so it can be tested without a terminal.
+
+| Component | Purpose |
+|---|---|
+| `StatusBadge` | A status as symbol and name, tone color as a secondary cue |
+| `MetricPanel` | A labeled number; a missing value is `n/a`, never `0` |
+| `DetailPanel` | Labeled fields of the selected item |
+| `DataTable` | Keyboard-navigable rows with an empty state; rejects ragged rows |
+| `LogViewer` | Scrollable log with timestamps, levels, and search |
+| `EmptyState`, `LoadingState`, `ErrorState` | No data, waiting, and failure; errors keep their diagnostic detail |
+| `ConfirmationDialog` | Modal confirm/cancel; Esc cancels, destructive dialogs start on Cancel |
+
+Not built yet because their subsystems do not exist: `BrowserPreview`,
+`AgentChat`, and `EvidenceViewer`.
 
 ### Configuration
 

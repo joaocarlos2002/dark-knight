@@ -76,15 +76,20 @@ def tui(
 ) -> None:
     """Open the terminal user interface."""
     from qa_workbench.tui.app import WorkbenchApp
+    from qa_workbench.tui.keymap import Keymap, KeymapError
 
-    opened = None
-    if project is not None:
-        try:
-            opened = ProjectRepository(AppConfig.load().data_dir).open(project)
-        except (ConfigurationError, ProjectError) as error:
-            typer.echo(f"Error: {error}", err=True)
-            raise typer.Exit(1) from error
-    WorkbenchApp(opened).run()
+    try:
+        config = AppConfig.load()
+        keymap = Keymap.from_overrides(config.shortcuts)
+        opened = (
+            ProjectRepository(config.data_dir).open(project)
+            if project is not None
+            else None
+        )
+    except (ConfigurationError, KeymapError, ProjectError) as error:
+        typer.echo(f"Error: {error}", err=True)
+        raise typer.Exit(1) from error
+    WorkbenchApp(opened, keymap).run()
 
 
 if __name__ == "__main__":
