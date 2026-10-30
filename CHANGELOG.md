@@ -9,6 +9,11 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- Test plans with scope, strategy, risks, criteria, owners, and schedule, a
+  selection stored with a reason for every inclusion and exclusion, an
+  explainable recommendation that states what it could not consider, and
+  verification of the selection, plus `plans create|list|show|recommend|verify`
+  (REQ-014, REQ-016).
 - Human review workflow for AI-generated requirements and test cases: required
   provenance, approval only through a recorded review by someone other than the
   generator, and findings classified as fact, hypothesis, recommendation, or
