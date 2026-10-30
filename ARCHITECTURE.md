@@ -51,6 +51,10 @@ src/qa_workbench/
     cli.py         `qa-workbench project ...` commands
   tui/
     app.py         WorkbenchApp: the three-area shell and status bar
+    keymap.py      Shortcuts: defaults, overrides, conflict detection (pure)
+    palette.py     Command palette entries (pure)
+    commands.py    Textual command provider backed by palette.py
+    components/    Reusable widgets: badge, metric, detail, table, logs, ...
     layout.py      Terminal size -> region visibility (pure, no widgets)
     navigation.py  Sidebar sections and destinations (pure data)
     status.py      Status names, symbols, and tones (pure)
@@ -98,10 +102,58 @@ them, so business rules stay out of presentation code.
 | Short (under 24 rows) | unchanged | tighter spacing | unchanged |
 
 The shell reacts to resize events and never uses fixed coordinates. It is
-fully keyboard-driven: `F1` menu, `F2` context, `Enter` opens an item, `?`
-shows shortcuts, `Ctrl+Q` quits. Every status is shown as a symbol and a name
-(for example `✓ PASSED`), never by color alone. Modules that are not
-implemented yet say so explicitly instead of showing placeholder data.
+fully keyboard-driven. Every status is shown as a symbol and a name (for
+example `✓ PASSED`), never by color alone. Modules that are not implemented
+yet say so explicitly instead of showing placeholder data.
+
+### Keyboard shortcuts
+
+Shortcuts are defined once, in `tui/keymap.py`, and used by the bindings, the
+status bar, the help text, and the command palette.
+
+| Key | Action |
+|---|---|
+| `F1` | Show or hide the navigation menu |
+| `F2` | Show or hide the context panel |
+| `Ctrl+K` | Command palette: go to any page or run an action |
+| `Ctrl+L` | Focus the search field of the current page, if it has one |
+| `Esc` | Close a dialog, then the menu or context drawer |
+| `?` | List the shortcuts |
+| `Ctrl+Q` | Quit |
+
+Override any of them in `config.toml`:
+
+```toml
+[shortcuts]
+toggle_context = "f3"
+command_palette = "ctrl+p"
+```
+
+An unknown action, an empty key, a key reserved by the terminal (`Ctrl+C`,
+`Ctrl+Z`, `Ctrl+S`, `Ctrl+D`), or two actions on the same key makes
+`qa-workbench tui` exit with an error that names the problem, instead of
+starting with a broken keymap. `Ctrl+B` (browser preview) and `Ctrl+P`
+(project picker) from the visual specification are not bound yet because the
+features behind them do not exist.
+
+### Reusable components
+
+Components live in `tui/components/`. They take data and callbacks, hold no
+business rules, and never call integrations. Search and filtering logic is in
+pure functions so it can be tested without a terminal.
+
+| Component | Purpose |
+|---|---|
+| `StatusBadge` | A status as symbol and name, tone color as a secondary cue |
+| `MetricPanel` | A labeled number; a missing value is `n/a`, never `0` |
+| `DetailPanel` | Labeled fields of the selected item |
+| `DataTable` | Keyboard-navigable rows with an empty state; rejects ragged rows |
+| `LogViewer` | Scrollable log with timestamps, levels, and search |
+| `EmptyState`, `LoadingState`, `ErrorState` | No data, waiting, and failure; errors keep their diagnostic detail |
+| `ConfirmationDialog` | Modal confirm/cancel; Esc cancels, destructive dialogs start on Cancel |
+
+Not built yet because their subsystems do not exist: `BrowserPreview`,
+`AgentChat`, and `EvidenceViewer`.
 
 ### Configuration
 
