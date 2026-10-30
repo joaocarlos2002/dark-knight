@@ -13,6 +13,7 @@ authors = [
     { name = "Dark Knight QA contributors" },
 ]
 dependencies = [
+    "httpx>=0.27,<1.0",
     "pydantic>=2.7,<3.0",
     "pyyaml>=6.0,<7.0",
     "textual>=8.2,<9.0",
