@@ -41,6 +41,13 @@ Add project metadata validation
 Pull requests should explain the problem, the solution, scope boundaries,
 testing evidence, compatibility impact, and any security considerations.
 
+## Releases
+
+The project uses Semantic Versioning. The version is recorded in
+[VERSION](VERSION), and release tags must use the `vMAJOR.MINOR.PATCH` format.
+Pushing a valid version tag starts the GitHub release workflow and generates
+release notes from merged pull requests.
+
 ## Questions
 
 Use [GitHub Discussions](https://github.com/joaocarlos2002/dark-knight/discussions)

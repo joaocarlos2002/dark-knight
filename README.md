@@ -1,247 +1,183 @@
-# 🦇 Dark Knight QA
+<p align="center">
+  <img src="assets/wayne-signal.gif" alt="Dark Knight QA - Wayne Industries quality engineering signal" width="100%">
+</p>
 
-### AI-Powered Quality Engineering. Terminal-Native. Evidence-Driven.
+<h1 align="center">DARK KNIGHT QA</h1>
 
-**Dark Knight QA** is a terminal-native AI Quality Assurance Workbench designed to transform how software is tested, analyzed, and validated.
+<p align="center">
+  <strong>WAYNE INDUSTRIES // QUALITY ENGINEERING DIVISION</strong><br>
+  <em>Observe everything. Prove everything. Ship with confidence.</em>
+</p>
 
-Combining AI agents, browser automation, API testing, test management, and evidence-based execution, Dark Knight QA provides a unified environment for modern software quality engineering — directly from your terminal.
+<p align="center">
+  <a href="https://github.com/joaocarlos2002/dark-knight/actions/workflows/repository.yml">
+    <img src="https://github.com/joaocarlos2002/dark-knight/actions/workflows/repository.yml/badge.svg" alt="Repository checks">
+  </a>
+  <a href="https://github.com/joaocarlos2002/dark-knight/releases">
+    <img src="https://img.shields.io/badge/version-v0.1.0-b08d57?style=flat-square&labelColor=111827" alt="Version 0.1.0">
+  </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/badge/license-MIT-b08d57?style=flat-square&labelColor=111827" alt="MIT License">
+  </a>
+  <a href="https://www.python.org/">
+    <img src="https://img.shields.io/badge/python-3.12%2B-b08d57?style=flat-square&labelColor=111827" alt="Python 3.12 or newer">
+  </a>
+</p>
 
-Built for QA engineers, developers, and engineering teams who demand more than automated tests: **they demand confidence in every release.**
+> **Internal designation:** `DK-QA / FOUNDATION-0.1.0`
+> **Mission:** turn fragmented QA activity into traceable, evidence-backed engineering intelligence.
 
----
+## The mission
 
-## ⚡ Vision
+Modern quality work is scattered across requirements, test cases, browser
+sessions, API calls, CI pipelines, issues, screenshots, and conversations
+with AI. Dark Knight QA is being built as the command center for that work:
+a terminal-native quality engineering workbench for teams that need more than
+an automated test result.
 
-Software quality should not be fragmented across disconnected tools, scattered documentation, and manual workflows.
+It is designed to help a QA engineer:
 
-Dark Knight QA aims to bring the entire quality engineering lifecycle into one intelligent workspace.
+- understand a requirement before testing it;
+- plan tests by risk, scope, and evidence;
+- execute manual, assisted, browser, API, and automated flows;
+- preserve the evidence behind every conclusion;
+- investigate failures without inventing root causes;
+- connect requirements, cases, executions, defects, and releases.
 
-From analyzing requirements and generating test cases to executing automated tests, investigating failures, analyzing CI/CD pipelines, and producing traceable reports — everything is designed to work together.
+**The engine observes. The evidence decides. AI assists.**
 
-**One workspace. One source of truth. Complete test traceability.**
+## Command center
 
-## ✨ Core Capabilities
-
-> The following capabilities represent the product roadmap and intended architecture. Availability depends on the current development phase.
-
-| Module | Description |
+| Subsystem | Purpose |
 |---|---|
-| **AI Agent** | Intelligent QA assistance with configurable AI providers and execution modes. |
-| **Requirements Intelligence** | Analyze requirements, acceptance criteria, ambiguities, and testability. |
-| **Test Case Management** | Create, organize, review, and maintain structured test cases. |
-| **Test Planning** | Build risk-based test plans and define scope, strategy, and exit criteria. |
-| **Test Suite Management** | Organize Smoke, Regression, E2E, API, Security, and custom suites. |
-| **Test Execution Engine** | Centralized execution lifecycle with persistent history and traceability. |
-| **Browser Automation** | Interact with web applications using Playwright and inspect browser behavior. |
-| **Browser Preview** | Visualize browser screenshots directly inside the terminal. |
-| **API Testing** | Validate endpoints, contracts, responses, authentication, and business rules. |
-| **Bug Hunting** | Investigate unexpected behavior, collect evidence, and document defects. |
-| **Release Analysis** | Analyze code changes and identify regression risks. |
-| **Pipeline Intelligence** | Inspect CI/CD pipelines, jobs, logs, failures, and probable root causes. |
-| **Issue Management** | Integrate with GitLab and GitHub to track and report QA findings. |
-| **Security Testing** | Support authorized security testing and vulnerability documentation. |
-| **Evidence Management** | Preserve screenshots, logs, network data, and execution artifacts. |
-| **Knowledge Base** | Maintain project knowledge in Markdown, compatible with Obsidian. |
+| **Requirements Intelligence** | Analyze requirements, acceptance criteria, ambiguity, and testability. |
+| **Test Operations** | Create cases, techniques, suites, plans, risks, and exit criteria. |
+| **Execution Engine** | Track recoverable executions with explicit state and failure types. |
+| **Browser Agent** | Drive authorized Playwright sessions and collect browser evidence. |
+| **API Verification** | Validate contracts, schemas, authentication, rules, timing, and flows. |
+| **Pipeline Intelligence** | Inspect CI jobs, logs, artifacts, and probable failure context. |
+| **Issue Operations** | Connect findings to GitHub/GitLab issues through replaceable adapters. |
+| **Evidence Vault** | Preserve screenshots, logs, network data, hashes, and source references. |
+| **AI Coordination** | Use replaceable providers without treating generated text as evidence. |
 
-## 🧠 AI-Driven Quality Engineering
+> Availability depends on the current roadmap. This repository is in the
+> foundation phase; the table describes the target system, not completed
+> functionality.
 
-Dark Knight QA is designed around interchangeable AI providers.
-
-The goal is to combine a native QA agent with external coding agents, including OpenCode, without coupling the application to a single model or provider.
-
-Planned capabilities include:
-
-- Requirement analysis and test scenario generation.
-- Risk-based test selection.
-- Context-aware test execution assistance.
-- Failure investigation and root-cause suggestions.
-- Regression test recommendations.
-- CI/CD log analysis.
-- Structured QA reports.
-- Project-specific knowledge retrieval.
-
-AI-generated conclusions are treated as recommendations, not facts.
-
-**The execution engine and collected evidence remain the authority on test results.**
-
-## 🖥️ Terminal-Native Experience
-
-No mandatory web dashboard. No unnecessary interface overhead.
-
-Dark Knight QA is designed around a keyboard-driven TUI built with Textual.
-
-The interface aims to provide:
-
-- Centralized project navigation.
-- Interactive test management.
-- Integrated AI agent workspace.
-- Real-time execution monitoring.
-- Browser screenshot preview.
-- Contextual logs and evidence.
-- Approval workflows for sensitive operations.
-
-The Browser Preview is designed to display browser screenshots directly in the terminal, allowing QA engineers to observe automated execution without opening an external browser window.
-
-## 🔗 Complete Test Traceability
-
-Every testing activity should be connected to its origin and outcome.
+## Architecture doctrine
 
 ```text
-Requirement
-    │
-    ▼
-Acceptance Criteria
-    │
-    ▼
-Test Case
-    │
-    ▼
-Test Suite
-    │
-    ▼
-Test Plan
-    │
-    ▼
-Test Execution
-    │
-    ├── Evidence
-    ├── Logs
-    └── API / Browser Results
-           │
-           ▼
-       Defect
-           │
-           ▼
-     Issue / Pipeline
-           │
-           ▼
-       QA Report
+┌─────────────────────────────────────────────────────────────────────┐
+│                    DARK KNIGHT QA WORKBENCH                         │
+├───────────────┬──────────────────┬──────────────────┬───────────────┤
+│  REQUIREMENTS │  TEST OPERATIONS │   EXECUTION      │  INTELLIGENCE  │
+│  cases / risk │  plans / suites  │   browser / API  │  AI / reports  │
+├───────────────┴──────────────────┴──────────────────┴───────────────┤
+│              TRACEABILITY + EVIDENCE + AUDIT HISTORY                │
+├─────────────────────────────────────────────────────────────────────┤
+│         MARKDOWN + YAML FRONTMATTER  │  OPTIONAL SQLITE INDEX        │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
-This architecture ensures that testing decisions, execution history, and reported defects remain traceable.
+### Non-negotiable principles
 
-## 📁 Markdown-First Architecture
+- **Markdown-first:** records remain human-readable, portable, and
+  version-controlled. SQLite is only a rebuildable index.
+- **Evidence before conclusion:** no result is declared without observable
+  data from the execution engine.
+- **AI with boundaries:** facts, hypotheses, recommendations, and
+  inconclusive results stay distinct.
+- **Controlled execution:** destructive, intrusive, production, credential,
+  and external write actions require explicit authorization.
+- **Immutable history:** finalized executions are not silently overwritten.
+- **Portable by design:** Windows, Linux, and macOS are first-class targets
+  wherever dependencies permit.
 
-Markdown with YAML frontmatter is the official persistence format.
+## Technology stack
 
-Project information, requirements, test cases, test plans, suites, executions, defects, and reports are designed to remain readable, portable, and version-controllable.
-
-Key principles:
-
-- Human-readable documentation.
-- Obsidian-compatible knowledge base.
-- Persistent execution history.
-- Immutable execution identifiers.
-- Relative links between project artifacts.
-- Rebuildable indexes.
-- No mandatory server database.
-
-SQLite may be used as a local index, but Markdown remains the source of truth.
-
-## 🛡️ Security & Execution Control
-
-Automation must be powerful without becoming unpredictable.
-
-Dark Knight QA is designed around controlled execution and explicit authorization.
-
-- Authorized target environments.
-- Human approval for sensitive external actions.
-- Protection against destructive operations.
-- Secret and credential masking.
-- Execution cancellation.
-- Audit history.
-- Evidence-backed reporting.
-- Separation between AI recommendations and actual execution results.
-
-External issue comments, pipeline triggers, production writes, and other high-risk operations must follow approval policies.
-
-## 🧰 Planned Technology Stack
-
-| Technology | Purpose |
+| Layer | Technology |
 |---|---|
-| Python 3.12+ | Core application |
-| uv | Dependency and project management |
-| Textual | Terminal user interface |
-| Rich | Terminal rendering |
-| Typer | CLI |
-| Pydantic | Data validation |
-| asyncio | Asynchronous execution |
-| HTTPX | HTTP and API integrations |
-| Playwright | Browser automation |
-| Pytest | Automated testing |
-| Ollama | Local AI inference |
-| GitLab / GitHub APIs | Repository and issue integrations |
-| Markdown + YAML | Primary persistence |
-| SQLite | Optional rebuildable indexing |
+| Language | Python 3.12+ |
+| Interface | Textual TUI, Rich, Typer |
+| Domain models | Pydantic |
+| Async and HTTP | `asyncio`, HTTPX |
+| Browser automation | Playwright |
+| Persistence | Markdown + YAML frontmatter |
+| Local index | SQLite (optional and rebuildable) |
+| AI | Built-in provider contract, OpenCode, optional Ollama |
+| Quality gates | Pytest, CI, linting, formatting, security checks |
 
-## 🏗️ Development Status
+## Traceability protocol
 
-<sub>EARLY DEVELOPMENT — FOUNDATION PHASE</sub>
+```text
+REQUIREMENT
+    └── ACCEPTANCE CRITERIA
+        └── TEST CASE
+            └── SUITE
+                └── TEST PLAN
+                    └── EXECUTION
+                        ├── EVIDENCE
+                        ├── LOGS
+                        └── OBSERVED RESULT
+                            └── DEFECT / PIPELINE
+                                └── QA REPORT
+```
 
-Dark Knight QA is currently in its foundation and requirements-definition phase.
+Every link exists to answer one question: **why do we believe this result?**
 
-The product architecture, requirements, acceptance criteria, visual direction, and implementation roadmap are being established before the main application modules are developed.
+## Current status
 
-### Project Documentation
+**Foundation phase // v0.1.0**
 
-| Document | Purpose |
-|---|---|
-| [Product Specification](docs/product-spec.md) | Product vision, architecture, and capabilities |
-| [TUI Screen Specification](docs/design/tui-screen-spec.md) | Interface design, wireframes, and color palette |
-| [Requirements](docs/requirements.md) | Functional and non-functional requirements |
-| [Issue Catalog](docs/issue-catalog.md) | Planned implementation tasks and issues |
-
-### Community and project policies
-
-- [Contributing guide](CONTRIBUTING.md)
-- [Code of Conduct](CODE_OF_CONDUCT.md)
-- [Security policy](SECURITY.md)
-- [Support guide](SUPPORT.md)
-
-The repository is currently in the foundation phase. Contributions should
-start from the existing issues and preserve the documented Markdown-first,
-cross-platform, and evidence-driven architecture.
+The product specification, requirements, visual direction, issue catalog, and
+repository collaboration standards are established. Core application modules
+are intentionally being implemented in small, reviewable phases.
 
 ### Roadmap
 
-- [ ] Foundation: CLI, TUI, project management.
-- [ ] Markdown storage and knowledge base.
-- [ ] Requirements and test case management.
-- [ ] Test planning and suite management.
-- [ ] Centralized test execution engine.
-- [ ] Playwright Browser Agent and terminal preview.
-- [ ] API testing and evidence collection.
-- [ ] CI/CD pipeline analysis.
-- [ ] GitLab and GitHub issue integrations.
-- [ ] Bug hunting and release analysis.
-- [ ] Security testing.
-- [ ] Advanced AI agent orchestration.
+- [ ] CLI, TUI shell, and project lifecycle
+- [ ] Markdown storage and knowledge base
+- [ ] Requirements and test case management
+- [ ] Test planning and reusable suites
+- [ ] Recoverable execution engine
+- [ ] Playwright browser agent and terminal preview
+- [ ] API testing and evidence collection
+- [ ] CI/CD pipeline analysis
+- [ ] GitHub and GitLab integrations
+- [ ] Bug hunting and release analysis
+- [ ] Authorized security testing
+- [ ] Advanced AI provider orchestration
 
-## 🌍 Platform Support
+## Documentation and operations
 
-The project targets:
+The local product documentation is intentionally kept in `docs/` for the
+current project workspace. Repository collaboration policies are public:
 
-- Windows
-- Linux
-- macOS
+- [Contributing](CONTRIBUTING.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Security Policy](SECURITY.md)
+- [Support](SUPPORT.md)
+- [Changelog](CHANGELOG.md)
 
-Actual compatibility may depend on the installed browser, Python environment, terminal capabilities, and external integrations.
+## Contributing
 
-## 🤝 Contributing
+This is an early-stage open-source engineering project. Start with an
+existing issue, keep changes focused, preserve the architecture doctrine,
+and include reproducible validation evidence in every pull request.
 
-Dark Knight QA is intended to be an open-source project.
+```bash
+git clone https://github.com/joaocarlos2002/dark-knight.git
+cd dark-knight
+```
 
-Contributions, ideas, bug reports, and architectural discussions are welcome as the project evolves.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
 
-Before contributing, review the product specifications and planned requirements to understand the project's architecture and direction.
+## License
 
-## 📜 License
-
-License and contribution guidelines will be defined as part of the open-source project setup.
-
----
+Released under the [MIT License](LICENSE).
 
 <p align="center">
-  <strong>Dark Knight QA</strong><br>
+  <br>
+  <strong>WAYNE INDUSTRIES // DARK KNIGHT QA</strong><br>
   <em>See beyond the test. Understand the quality.</em>
 </p>

@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 420" role="img" aria-labelledby="title desc">
+  <title id="title">Dark Knight QA signal</title>
+  <desc id="desc">Animated gold quality signal over a dark industrial skyline.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#070b14"/>
+      <stop offset="0.55" stop-color="#111827"/>
+      <stop offset="1" stop-color="#241b16"/>
+    </linearGradient>
+    <radialGradient id="signal" cx="50%" cy="48%" r="48%">
+      <stop offset="0" stop-color="#f6d58a" stop-opacity=".42"/>
+      <stop offset=".48" stop-color="#b08d57" stop-opacity=".14"/>
+      <stop offset="1" stop-color="#b08d57" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="1600" height="420" fill="url(#sky)"/>
+  <path d="M0 315 L110 275 180 302 270 230 345 286 430 245 515 298 610 215 700 280 790 245 875 295 955 225 1040 280 1130 250 1210 300 1300 220 1400 282 1490 240 1600 285 V420 H0Z" fill="#060911" opacity=".92"/>
+  <path d="M0 350 H1600" stroke="#b08d57" stroke-opacity=".3"/>
+  <g fill="#b08d57" opacity=".5">
+    <path d="M130 300h8v45h-8zM155 285h8v60h-8zM420 300h8v45h-8zM445 270h8v75h-8zM1080 290h8v55h-8zM1105 260h8v85h-8zM1370 300h8v45h-8zM1395 275h8v70h-8z"/>
+  </g>
+  <ellipse cx="800" cy="170" rx="395" ry="245" fill="url(#signal)" filter="url(#glow)">
+    <animate attributeName="opacity" values=".65;1;.65" dur="4s" repeatCount="indefinite"/>
+  </ellipse>
+  <path d="M800 52 L870 135 960 150 900 215 920 305 800 260 680 305 700 215 640 150 730 135 Z"
+        fill="none" stroke="#d7b778" stroke-width="5" opacity=".9" filter="url(#glow)">
+    <animate attributeName="stroke-opacity" values=".45;1;.45" dur="4s" repeatCount="indefinite"/>
+  </path>
+  <path d="M0 380 H1600" stroke="#d7b778" stroke-width="2" opacity=".55"/>
+  <text x="800" y="365" fill="#d7b778" font-family="monospace" font-size="18" letter-spacing="8" text-anchor="middle">QUALITY ENGINEERING // EVIDENCE DIVISION</text>
+</svg>
