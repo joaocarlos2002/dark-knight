@@ -50,6 +50,11 @@ src/qa_workbench/
     importer.py    Import into a project, preserving source and author
     coverage.py    Which requirements have related test cases
     cli.py         `qa-workbench requirements ...` commands
+  testcases/
+    schema.py      TC record schema, fields, choices, secret and technique checks
+    builder.py     TestCaseDraft, create/update, readable Markdown body
+    techniques.py  Six design techniques with derived test conditions
+    cli.py         `qa-workbench cases ...` commands
   workspace.py     The record schemas of a project and how to open them
   storage/
     frontmatter.py Markdown + YAML frontmatter documents (parse, dump, read)
@@ -164,6 +169,33 @@ message.
   it, written on either side (`cases` on the requirement or `requirements` on
   the case). Cases named but missing are reported, not counted.
 - **Projects:** archived projects can be read but not changed.
+
+### Test cases and design techniques
+
+`qa-workbench cases create | list | show` manages `TC` records. A case holds
+the fields of the specification: objective, preconditions, test data, steps
+with an optional expected result per step, a final expected result, priority,
+criticality, type, profile, compatible environments, tags, related requirements
+and issues, suites, origin and author, and timestamps. Cases start as `draft`.
+The structured fields in the frontmatter are the source of truth; the Markdown
+body is generated from them (editing the body by hand is overwritten the next
+time the case is updated through the workbench).
+
+- **Rules:** a case needs at least one step and an expected result, except
+  exploratory cases. Priority, criticality, type, and origin are closed sets.
+  References must have the right prefix. The same checks run when a file is
+  created and when it is read back, so hand-edited files are validated too.
+- **No secrets:** literal credentials in test data, steps, or any text are
+  refused (`password=hunter2`, tokens, keys); placeholders such as
+  `$TEST_PASSWORD` and prose such as "enter the password" are fine.
+- **Techniques:** equivalence partitioning, boundary value analysis, decision
+  tables, state transitions, use cases, and exploratory charters. Each is a
+  validated model that rejects inconsistent input (for example a decision table
+  that does not cover every combination, or a state model with an unknown
+  state) and derives test conditions (partition representatives, boundary
+  values, every rule combination, valid and refused transitions, use-case
+  scenarios). A case can combine several techniques, and the derived conditions
+  appear in its body.
 
 ### Projects
 
