@@ -5,7 +5,7 @@ foundation phase, so small, focused contributions are especially valuable.
 
 ## Before you start
 
-1. Read the [README](README.md) and the [product specification](docs/product-spec.md).
+1. Read the [README](README.md) and the [architecture overview](ARCHITECTURE.md).
 2. Check existing issues before opening a new one.
 3. For architectural, security, persistence, or compatibility changes,
    describe the proposal in an issue before implementing it.
@@ -21,6 +21,30 @@ foundation phase, so small, focused contributions are especially valuable.
    change.
 5. Run the relevant checks locally and report the exact commands and results.
 6. Request review only after the pull request checklist is complete.
+
+### Branches and commits
+
+- Name branches `<type>/<short-description>`, for example
+  `feat/project-foundation` or `docs/architecture-and-workflow`.
+- Use Conventional Commit prefixes: `feat`, `fix`, `docs`, `test`, `style`,
+  `build`, `ci`, `chore`.
+- Keep each commit small and focused on one change, with a short imperative
+  subject such as `test: cover invalid configuration failure paths`.
+- Pull request descriptions link the issue with `Closes #N` and list the
+  validation commands that were run.
+
+### Review checklist
+
+A pull request is ready for review when:
+
+- `uv run pytest`, `uv run ruff check .`, and `uv run ruff format --check .`
+  pass locally;
+- normal, invalid-input, and failure paths of new behavior are tested;
+- errors keep their diagnostic context and do not fall back silently;
+- [ARCHITECTURE.md](ARCHITECTURE.md), the README, and the changelog are
+  updated when structure or behavior changes;
+- no credentials, cookies, personal data, private logs, or real evidence are
+  committed.
 
 ## Local setup
 
