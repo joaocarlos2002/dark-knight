@@ -130,6 +130,10 @@ class GitLabClient:
             page = int(next_page) if next_page.isdigit() else page + 1
         return items[:limit]
 
+    @property
+    def base_url(self) -> str:
+        return self._connection.base_url
+
     def project_path(self, suffix: str) -> str:
         return f"/projects/{self._project}{suffix}"
 

@@ -23,6 +23,7 @@ from qa_workbench.plans.cli import plans_app
 from qa_workbench.projects.cli import project_app
 from qa_workbench.projects.errors import ProjectError
 from qa_workbench.projects.repository import ProjectRepository
+from qa_workbench.release.cli import release_app
 from qa_workbench.reports.cli import reports_app
 from qa_workbench.requirements.cli import requirements_app
 from qa_workbench.review.cli import review_app
@@ -58,6 +59,7 @@ app.add_typer(api_app, name="api")
 app.add_typer(browser_app, name="browser")
 app.add_typer(gitlab_app, name="gitlab")
 app.add_typer(bugs_app, name="bugs")
+app.add_typer(release_app, name="release")
 app.command("doctor", help="Check that everything the workbench needs is ready.")(
     doctor_command
 )
