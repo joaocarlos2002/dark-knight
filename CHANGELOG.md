@@ -11,14 +11,19 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 - Reusable TUI components (status badge, metric and detail panels, data table,
   searchable log viewer, empty/loading/error states, confirmation dialog) and
-  a command palette on `Ctrl+K` (REQ-004, REQ-005, NFR-006, NFR-007).
+  a command palette on `Ctrl+P` (REQ-004, REQ-005, NFR-006, NFR-007).
+- Wayne Industries visual identity: palette tokens with contrast checks,
+  corporate header and footer, a brand block above the navigation, and a
+  navigation grouped into workspace, operations, and intelligence.
+- `WARNING` and `AI PROCESSING` statuses.
 - Centralized keyboard shortcuts, configurable through a `[shortcuts]` table in
   `config.toml`, with conflict and reserved-key detection.
 - Project lifecycle: `qa-workbench project create|list|show|archive`, stored
   as `project.yaml` and `README.md`, and `qa-workbench tui --project`
   (REQ-002, REQ-003).
 - Responsive Textual application shell, opened with `qa-workbench tui`
-  (REQ-004, REQ-005, NFR-006, NFR-007).
+  (REQ-004, REQ-005, NFR-006, NFR-007), with the three-area layout from 100
+  columns.
 
 ## [0.2.0] - 2026-10-30
 
