@@ -6,6 +6,7 @@ from typing import Annotated
 import typer
 
 from qa_workbench.api.cli import api_app
+from qa_workbench.browser.cli import browser_app, doctor_command, preview_channel
 from qa_workbench.core.config import AppConfig, ConfigurationError
 from qa_workbench.core.console import ensure_utf8_output
 from qa_workbench.core.logging import configure_logging
@@ -43,6 +44,10 @@ app.add_typer(executions_app, name="executions")
 app.add_typer(evidence_app, name="evidence")
 app.add_typer(reports_app, name="reports")
 app.add_typer(api_app, name="api")
+app.add_typer(browser_app, name="browser")
+app.command("doctor", help="Check that everything the workbench needs is ready.")(
+    doctor_command
+)
 
 
 def _show_version(value: bool) -> None:
@@ -108,7 +113,7 @@ def _open_workbench(project: str | None) -> None:
     except (ConfigurationError, KeymapError, ProjectError) as error:
         typer.echo(f"Error: {error}", err=True)
         raise typer.Exit(1) from error
-    WorkbenchApp(opened, keymap).run()
+    WorkbenchApp(opened, keymap, preview_channel(config)).run()
 
 
 @app.command()
