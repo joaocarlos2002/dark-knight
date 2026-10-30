@@ -545,9 +545,9 @@ instruction.
    `~/Library/Application Support` on macOS, XDG directories elsewhere).
 
 The `[startup]` table accepts `splash` (a boolean), `edits_dir` (the folder
-with the videos; defaults to `~/Videos/batman-edits`), and `player` (an
-executable name or path; otherwise the first of `mpv`, `ffplay`, `vlc` found on
-`PATH`).
+with the videos; defaults to `assets/batman-edits` in the project), and `player`
+(an executable name or path; otherwise the first of `mpv`, `ffplay`, `vlc` found
+on `PATH`).
 
 Invalid input raises `ConfigurationError`. The message names the offending
 file, and the original parser error is kept as the exception cause. The CLI

@@ -4,6 +4,8 @@ import pytest
 
 from qa_workbench.core.config import AppConfig, ConfigurationError
 
+ROOT = Path(__file__).resolve().parents[1]
+
 
 def test_environment_overrides_configuration(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
@@ -102,8 +104,21 @@ def test_startup_defaults(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> No
     config = AppConfig.load()
 
     assert config.splash_enabled is True
-    assert config.edits_dir == Path.home() / "Videos" / "batman-edits"
+    assert config.edits_dir == ROOT / "assets" / "batman-edits"
     assert config.splash_player is None
+
+
+def test_relative_edits_dir_resolves_from_the_project_root(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    (config_dir / "config.toml").write_text(
+        '[startup]\nedits_dir = "assets/batman-edits"\n', encoding="utf-8"
+    )
+    monkeypatch.setenv("DARK_KNIGHT_CONFIG_DIR", str(config_dir))
+
+    assert AppConfig.load().edits_dir == ROOT / "assets" / "batman-edits"
 
 
 def test_startup_is_loaded_from_toml(

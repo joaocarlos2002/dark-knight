@@ -32,6 +32,26 @@ def _path_from_env(name: str, default: Path) -> Path:
     return Path(value).expanduser() if value else default
 
 
+def _project_root() -> Path:
+    """Return the repository root for a source checkout."""
+    return Path(__file__).resolve().parents[3]
+
+
+def _default_edits_dir() -> Path:
+    """Return the project's `assets/batman-edits` folder."""
+    root = _project_root()
+    if (root / "assets").is_dir():
+        return root / "assets" / "batman-edits"
+    return Path.cwd() / "assets" / "batman-edits"
+
+
+def _resolve_edits_dir(value: object) -> Path:
+    path = Path(str(value)).expanduser()
+    if not path.is_absolute():
+        path = _project_root() / path
+    return path
+
+
 def _as_bool(value: object, name: str) -> bool:
     if isinstance(value, bool):
         return value
@@ -54,9 +74,7 @@ class AppConfig:
     log_file: Path | None = None
     shortcuts: dict[str, str] = field(default_factory=dict)
     splash_enabled: bool = True
-    edits_dir: Path = field(
-        default_factory=lambda: Path.home() / "Videos" / "batman-edits"
-    )
+    edits_dir: Path = field(default_factory=_default_edits_dir)
     splash_player: str | None = None
 
     def __post_init__(self) -> None:
@@ -118,9 +136,9 @@ class AppConfig:
             "DARK_KNIGHT_EDITS_DIR", startup.get("edits_dir")
         )
         edits_dir = (
-            Path(str(configured_edits_dir)).expanduser()
+            _resolve_edits_dir(configured_edits_dir)
             if configured_edits_dir
-            else Path.home() / "Videos" / "batman-edits"
+            else _default_edits_dir()
         )
         configured_player = environ.get(
             "DARK_KNIGHT_SPLASH_PLAYER", startup.get("player")

@@ -217,19 +217,21 @@ log_file = "~/.local/share/dark-knight-qa/qa-workbench.log"
 
 Opening the workbench can start with a fullscreen cinematic: a random video
 from a folder of Batman edits plays before the terminal user interface appears.
-Put the edits in `~/Videos/batman-edits` (or point `edits_dir` somewhere else):
+Put the edits in `assets/batman-edits` inside the project (or point `edits_dir`
+somewhere else):
 
 ```toml
 [startup]
 splash = true
-edits_dir = "~/Videos/batman-edits"
+edits_dir = "assets/batman-edits"
 player = "ffplay"
 ```
 
 The splash needs `ffplay`, `mpv`, or `vlc` on `PATH`; `player` forces a
-specific executable. It only runs when the workbench is opened in an
-interactive terminal, and any key or click skips it. Pass `--no-splash` to
-`batman` or `batman tui` to open the workbench directly.
+specific executable. A relative `edits_dir` resolves from the project root. It
+only runs when the workbench is opened in an interactive terminal, and any key
+or click skips it. Pass `--no-splash` to `batman` or `batman tui` to open the
+workbench directly.
 
 Keyboard shortcuts can be remapped in the same file; see
 [ARCHITECTURE.md](ARCHITECTURE.md) for the list of actions:
