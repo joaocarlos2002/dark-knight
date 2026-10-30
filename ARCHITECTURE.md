@@ -50,6 +50,8 @@ src/qa_workbench/
     validation.py  RecordSchema, metadata checks, relative link checks
     repository.py  MarkdownRepository: create, get, update, list records
     index.py       RecordIndex: rebuildable SQLite full-text search cache
+    history.py     Sealed, hash-chained history for finalized records
+    evidence.py    EvidenceStore: SHA-256 registration and verification
     atomic.py      Atomic UTF-8 file writes
     errors.py      StorageError hierarchy with diagnostic context
   projects/
@@ -109,9 +111,26 @@ features.
   not indexed and are reported in the `IndexReport` instead of disappearing. A
   damaged index, a different index version, or searching before the first build
   raises `SearchIndexError` explaining that rebuilding is the fix.
-- **Not here yet:** immutable history for finalized executions, evidence
-  integrity, and secret sanitization before persistence belong to their own
-  features.
+- **Immutable history:** a `RecordSchema` can declare `immutable_statuses`
+  (for example an execution's `finalized`). When a record reaches one, the
+  repository seals it: the SHA-256 of the file goes into `<ID>.history.md` as
+  the first event. A sealed record cannot be edited in place
+  (`RecordFinalizedError`); a correction or addition is a separate history
+  event with an author, a timestamp, and a justification, added with
+  `add_history_event`. Each event carries the hash of the previous one, so
+  editing or removing an event, or editing the sealed record by hand, is found
+  by `verify` / `verify_all` instead of going unnoticed.
+- **Evidence:** `EvidenceStore` copies a file into
+  `<project>/evidence/files/<EVD-id>/` (the original is never moved or
+  modified) and writes an immutable `EVD` record with the SHA-256, size, media
+  type, origin, description, and optionally the step, execution, source URL,
+  and capture time. An annotated or processed version is registered as its own
+  file and record with `derived_from` pointing at the original. `verify`
+  rechecks the record seal, that the file exists and stays inside the project,
+  and its size and hash. A failed registration leaves no file behind, and a
+  corrupted copy is never registered.
+- **Not here yet:** secret sanitization before persistence (REQ-025) and the
+  execution workflow that produces finalized records.
 
 ### Projects
 
