@@ -157,3 +157,28 @@ def test_httpx_gateway_turns_network_errors_into_gateway_errors() -> None:
 
     with pytest.raises(GatewayError, match="ConnectError"):
         gateway.get(GatewayRequest("https://gitlab.test/x"))
+
+
+def test_post_sends_the_body_with_the_token_in_a_header() -> None:
+    client, gateway = _client(lambda r: answer({"id": 5}, 201))
+
+    assert client.post_json(PATH, {"body": "hello"}) == {"id": 5}
+    request = gateway.requests[0]
+    assert (
+        request.body == {"body": "hello"} and request.headers["PRIVATE-TOKEN"] == TOKEN
+    )
+
+
+def test_post_failures_say_the_outcome_may_be_unknown() -> None:
+    client, gateway = _client([])
+    gateway.failure = GatewayError("connection reset")
+
+    with pytest.raises(UnreachableError, match="may or may not have been applied"):
+        client.post_json(PATH, {"body": "x"})
+
+
+def test_post_rejections_are_explicit() -> None:
+    client, _ = _client(lambda r: answer({"message": "403 Forbidden"}, 403))
+
+    with pytest.raises(AuthenticationError, match="not allowed"):
+        client.post_json(PATH, {"body": "x"})
