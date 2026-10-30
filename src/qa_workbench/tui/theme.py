@@ -141,6 +141,37 @@ Screen {
     border-left: thick $error;
 }
 
+ConfirmationDialog {
+    align: center middle;
+}
+
+ConfirmationDialog > Vertical {
+    width: 60;
+    max-width: 90%;
+    height: auto;
+    padding: 1 2;
+    background: $elevated;
+    border: solid $accent;
+}
+
+ConfirmationDialog #dialog-title {
+    text-style: bold;
+}
+
+ConfirmationDialog #dialog-message {
+    margin: 1 0;
+    color: $text-muted;
+}
+
+ConfirmationDialog Horizontal {
+    height: auto;
+    align-horizontal: right;
+}
+
+ConfirmationDialog Button {
+    margin-left: 1;
+}
+
 /* Medium and narrow terminals: context opens as an overlay drawer. */
 Screen.-medium #context,
 Screen.-narrow #context {
