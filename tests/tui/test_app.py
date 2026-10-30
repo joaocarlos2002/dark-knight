@@ -175,9 +175,9 @@ def _title(app: WorkbenchApp) -> str:
     return str(app.query_one("#page-title", Static).render())
 
 
-def test_palette_opens_with_ctrl_k_and_navigates() -> None:
+def test_palette_opens_with_ctrl_p_and_navigates() -> None:
     async def scenario(app: WorkbenchApp, pilot) -> None:
-        await pilot.press("ctrl+k")
+        await pilot.press("ctrl+p")
         await pilot.pause()
         await pilot.press(*"pipelines")
         await pilot.pause(0.5)
@@ -222,7 +222,7 @@ def test_escape_leaves_a_wide_layout_untouched() -> None:
 
 def test_focus_search_without_a_search_field_says_so() -> None:
     async def scenario(app: WorkbenchApp, pilot) -> None:
-        await pilot.press("ctrl+l")
+        await pilot.press("ctrl+k")
         await pilot.pause()
         assert any("no search field" in n.message for n in app._notifications)
 

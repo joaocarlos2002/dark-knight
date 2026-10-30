@@ -23,8 +23,8 @@ class Shortcut:
 _DEFAULTS: tuple[Shortcut, ...] = (
     Shortcut("toggle_sidebar", "f1", "Show or hide the navigation menu", "Menu"),
     Shortcut("toggle_context", "f2", "Show or hide the context panel", "Context"),
-    Shortcut("command_palette", "ctrl+k", "Search and run commands", "Palette"),
-    Shortcut("focus_search", "ctrl+l", "Focus the search field", "Search"),
+    Shortcut("command_palette", "ctrl+p", "Open the command palette", "Palette"),
+    Shortcut("focus_search", "ctrl+k", "Go to the search field", "Search"),
     Shortcut("go_back", "escape", "Close a dialog or go back one level", "Back"),
     Shortcut("help", "question_mark", "Show the keyboard shortcuts", "Help"),
     Shortcut("quit", "ctrl+q", "Quit the workbench", "Quit"),

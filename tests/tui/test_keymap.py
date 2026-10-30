@@ -13,8 +13,8 @@ def test_default_keymap_has_no_conflicts() -> None:
 def test_default_shortcuts_follow_the_visual_spec() -> None:
     keymap = Keymap.default()
 
-    assert keymap.key_for("command_palette") == "ctrl+k"
-    assert keymap.key_for("focus_search") == "ctrl+l"
+    assert keymap.key_for("command_palette") == "ctrl+p"
+    assert keymap.key_for("focus_search") == "ctrl+k"
     assert keymap.key_for("go_back") == "escape"
     assert keymap.key_for("help") == "question_mark"
 
@@ -74,9 +74,9 @@ def test_bindings_cover_every_shortcut() -> None:
 
 
 def test_help_bar_uses_the_effective_keys() -> None:
-    keymap = Keymap.from_overrides({"command_palette": "ctrl+p"})
+    keymap = Keymap.from_overrides({"command_palette": "ctrl+o"})
 
-    assert "Ctrl+P Palette" in keymap.help_bar()
+    assert "Ctrl+O Palette" in keymap.help_bar()
     assert "? Help" in keymap.help_bar()
 
 
@@ -84,7 +84,7 @@ def test_help_text_lists_every_shortcut() -> None:
     text = Keymap.default().help_text()
 
     assert len(text.splitlines()) == len(Keymap.default().shortcuts)
-    assert "Ctrl+K" in text
+    assert "Ctrl+P" in text
     assert "Esc" in text
 
 
