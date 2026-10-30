@@ -14,6 +14,7 @@ class Status(Enum):
     FAILED = "failed"
     RUNNING = "running"
     PENDING = "pending"
+    WARNING = "warning"
     BLOCKED = "blocked"
     INCONCLUSIVE = "inconclusive"
     CANCELLED = "cancelled"
@@ -36,11 +37,12 @@ _STYLES: dict[Status, StatusStyle] = {
     Status.FAILED: StatusStyle("✗", "FAILED", "error"),
     Status.RUNNING: StatusStyle("●", "RUNNING", "info"),
     Status.PENDING: StatusStyle("◷", "PENDING", "warning"),
+    Status.WARNING: StatusStyle("▲", "WARNING", "warning"),
     Status.BLOCKED: StatusStyle("⊘", "BLOCKED", "warning"),
     Status.INCONCLUSIVE: StatusStyle("?", "INCONCLUSIVE", "muted"),
     Status.CANCELLED: StatusStyle("■", "CANCELLED", "muted"),
     Status.SKIPPED: StatusStyle("–", "SKIPPED", "muted"),
-    Status.AI: StatusStyle("✦", "AI", "ai"),
+    Status.AI: StatusStyle("✦", "AI PROCESSING", "ai"),
     Status.READY: StatusStyle("●", "READY", "success"),
 }
 

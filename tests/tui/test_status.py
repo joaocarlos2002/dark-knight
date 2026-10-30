@@ -32,3 +32,10 @@ def test_unknown_status_is_rejected_with_the_valid_names() -> None:
         parse_status("flaky")
 
     assert "passed" in str(error.value)
+
+
+def test_warning_and_ai_processing_are_part_of_the_vocabulary() -> None:
+    assert format_status(Status.WARNING) == "▲ WARNING"
+    assert format_status(Status.AI) == "✦ AI PROCESSING"
+    assert style_for(Status.WARNING).tone == "warning"
+    assert style_for(Status.AI).tone == "ai"
