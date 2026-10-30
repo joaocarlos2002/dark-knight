@@ -11,10 +11,10 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 
 from qa_workbench.core.config import AppConfig
+from qa_workbench.edits.service import find_edits
 
 logger = logging.getLogger(__name__)
 
-VIDEO_SUFFIXES = {".avi", ".gif", ".m4v", ".mkv", ".mov", ".mp4", ".webm"}
 TERMINAL_TITLES = (
     "alacritty",
     "cmd",
@@ -34,19 +34,6 @@ TERMINAL_TITLES = (
 )
 SW_MINIMIZE = 6
 SW_RESTORE = 9
-
-
-def find_edits(directory: Path) -> list[Path]:
-    """Return the playable edits in *directory*, sorted by name."""
-    try:
-        entries = list(directory.iterdir())
-    except OSError:
-        return []
-    return sorted(
-        entry
-        for entry in entries
-        if entry.is_file() and entry.suffix.lower() in VIDEO_SUFFIXES
-    )
 
 
 def choose_edit(edits: Sequence[Path], rng: random.Random | None = None) -> Path | None:
@@ -123,7 +110,7 @@ def play_startup_splash(
     if not config.splash_enabled:
         return None
     if interactive is None:
-        interactive = _is_interactive()
+        interactive = is_interactive()
     if not interactive:
         return None
     video = choose_edit(find_edits(config.edits_dir))
@@ -152,7 +139,7 @@ def play_startup_splash(
     return video
 
 
-def _is_interactive() -> bool:
+def is_interactive() -> bool:
     try:
         return bool(sys.stdout and sys.stdout.isatty())
     except (AttributeError, OSError):

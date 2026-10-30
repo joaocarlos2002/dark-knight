@@ -21,6 +21,12 @@ use the `vMAJOR.MINOR.PATCH` format.
   `assets/batman-edits` (configurable with `[startup] edits_dir`), with the
   terminal minimized first on Windows, no player controls, any key or click to
   skip, and `--no-splash` to bypass it. Uses `ffplay`, `mpv`, or `vlc`.
+- The startup edits can live in a separate GitHub repository: `batman edits
+  fetch` downloads a tagged zip archive, verifies an optional SHA-256, and copies
+  the videos into `edits_dir`; the first interactive launch fetches them
+  automatically when the folder is empty. `batman edits list` shows the
+  available edits, private repositories read `DARK_KNIGHT_EDITS_TOKEN` (or
+  `GITHUB_TOKEN`), and any failure is reported without blocking the workbench.
 - GitLab adapter for issues (description, labels, comments), commits, and merge
   requests with their changed files, behind replaceable ports, with `batman gitlab
   issues|issue|commits|commit|mrs|mr`; external text is marked as untrusted data
