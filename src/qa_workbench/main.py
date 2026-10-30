@@ -27,8 +27,10 @@ except PackageNotFoundError:
 
 app = typer.Typer(
     add_completion=False,
-    no_args_is_help=True,
-    help="Terminal-native, evidence-driven AI quality engineering workbench.",
+    help=(
+        "Terminal-native, evidence-driven AI quality engineering workbench. "
+        "Run it without a command to open the workbench."
+    ),
 )
 app.add_typer(project_app, name="project")
 app.add_typer(requirements_app, name="requirements")
@@ -47,8 +49,9 @@ def _show_version(value: bool) -> None:
         raise typer.Exit()
 
 
-@app.callback()
+@app.callback(invoke_without_command=True)
 def main(
+    context: typer.Context,
     version_option: Annotated[
         bool | None,
         typer.Option(
@@ -67,7 +70,7 @@ def main(
         ),
     ] = None,
 ) -> None:
-    """Run the Dark Knight QA workbench."""
+    """Open the workbench, or run one of its commands."""
     ensure_utf8_output()
     if version_option:
         return
@@ -83,16 +86,12 @@ def main(
             log_file=config.log_file,
         )
     configure_logging(config)
+    if context.invoked_subcommand is None:
+        _open_workbench(None)
 
 
-@app.command()
-def tui(
-    project: Annotated[
-        str | None,
-        typer.Option("--project", help="Open the workbench on this project id."),
-    ] = None,
-) -> None:
-    """Open the terminal user interface."""
+def _open_workbench(project: str | None) -> None:
+    """Start the terminal user interface, on a project when one is given."""
     from qa_workbench.tui.app import WorkbenchApp
     from qa_workbench.tui.keymap import Keymap, KeymapError
 
@@ -108,6 +107,17 @@ def tui(
         typer.echo(f"Error: {error}", err=True)
         raise typer.Exit(1) from error
     WorkbenchApp(opened, keymap).run()
+
+
+@app.command()
+def tui(
+    project: Annotated[
+        str | None,
+        typer.Option("--project", help="Open the workbench on this project id."),
+    ] = None,
+) -> None:
+    """Open the terminal user interface."""
+    _open_workbench(project)
 
 
 if __name__ == "__main__":

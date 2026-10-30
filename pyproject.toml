@@ -26,6 +26,7 @@ dev = [
 ]
 
 [project.scripts]
+batman = "qa_workbench.main:app"
 qa-workbench = "qa_workbench.main:app"
 
 [tool.setuptools.packages.find]
