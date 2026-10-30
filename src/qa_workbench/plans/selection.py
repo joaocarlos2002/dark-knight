@@ -182,3 +182,49 @@ def recommend(
         items.append(SelectionItem(case.id, "exclude", (reason,)))
     items.sort(key=lambda item: item.id)
     return Recommendation(tuple(items), minutes_used=used)
+
+
+@dataclass(frozen=True)
+class PlanVerification:
+    """Result of checking a plan's selection against the project's records.
+
+    ``missing`` ids do not exist. ``not_ready`` are included cases that are not
+    active. ``unverifiable`` ids are of a kind this repository does not store,
+    so nothing is claimed about them.
+    """
+
+    missing: tuple[str, ...]
+    not_ready: tuple[str, ...]
+    unverifiable: tuple[str, ...]
+
+    @property
+    def ok(self) -> bool:
+        return not self.missing and not self.not_ready
+
+
+def verify_plan(repository: MarkdownRepository, plan_id: str) -> PlanVerification:
+    """Check that everything a plan selects exists and is ready to run."""
+    plan = repository.get(plan_id)
+    selected = [
+        (item["id"], item["decision"]) for item in plan.metadata.get("selection") or []
+    ] + [(suite, "include") for suite in plan.metadata.get("suites") or []]
+    missing: list[str] = []
+    not_ready: list[str] = []
+    unverifiable: list[str] = []
+    for record_id, decision in selected:
+        prefix = record_id.rsplit("-", 1)[0]
+        if prefix not in repository.prefixes:
+            unverifiable.append(record_id)
+        elif record_id not in set(repository.record_ids(prefix)):
+            missing.append(record_id)
+        elif (
+            prefix == "TC"
+            and decision == "include"
+            and repository.get(record_id).metadata["status"] != ACTIVE
+        ):
+            not_ready.append(record_id)
+    return PlanVerification(
+        tuple(sorted(set(missing))),
+        tuple(sorted(set(not_ready))),
+        tuple(sorted(set(unverifiable))),
+    )

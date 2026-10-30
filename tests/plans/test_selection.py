@@ -5,7 +5,7 @@ import pytest
 
 from qa_workbench.plans.builder import PlanDraft, create_plan, set_selection
 from qa_workbench.plans.schema import TEST_PLAN_SCHEMA
-from qa_workbench.plans.selection import NOT_CONSIDERED, recommend
+from qa_workbench.plans.selection import NOT_CONSIDERED, recommend, verify_plan
 from qa_workbench.requirements.schema import REQUIREMENT_SCHEMA
 from qa_workbench.storage.repository import MarkdownRepository
 from qa_workbench.testcases.builder import Step, TestCaseDraft, create_test_case
@@ -252,3 +252,79 @@ def test_a_recommendation_can_be_stored_on_a_plan_and_read_back(
     ]
     assert "### Include TC-001" in stored.body
     assert "### Exclude TC-002" in stored.body
+
+
+def _plan_with(repo: MarkdownRepository, selection: list[dict[str, Any]], **extra: Any):
+    plan = create_plan(
+        repo,
+        PlanDraft(
+            title="Plan",
+            scope="s",
+            strategy="s",
+            objectives=["o"],
+            entry_criteria=["e"],
+            exit_criteria=["x"],
+            **extra,
+        ),
+    )
+    return set_selection(repo, plan.id, selection) if selection else plan
+
+
+def _entry(record_id: str, decision: str = "include") -> dict[str, Any]:
+    return {
+        "id": record_id,
+        "decision": decision,
+        "reasons": [{"factor": "criticality", "detail": "x"}],
+    }
+
+
+def test_a_sound_selection_verifies(repo: MarkdownRepository) -> None:
+    _case(repo)
+    plan = _plan_with(repo, [_entry("TC-001")])
+
+    result = verify_plan(repo, plan.id)
+
+    assert result.ok
+    assert (result.missing, result.not_ready, result.unverifiable) == ((), (), ())
+
+
+def test_selected_cases_that_do_not_exist_are_reported(
+    repo: MarkdownRepository,
+) -> None:
+    plan = _plan_with(repo, [_entry("TC-009")])
+
+    result = verify_plan(repo, plan.id)
+
+    assert not result.ok
+    assert result.missing == ("TC-009",)
+
+
+def test_included_cases_that_are_not_active_are_reported(
+    repo: MarkdownRepository,
+) -> None:
+    _case(repo, status="draft")
+    plan = _plan_with(repo, [_entry("TC-001")])
+
+    assert verify_plan(repo, plan.id).not_ready == ("TC-001",)
+
+
+def test_excluding_a_draft_case_is_fine(repo: MarkdownRepository) -> None:
+    _case(repo, status="draft")
+    plan = _plan_with(repo, [_entry("TC-001", "exclude")])
+
+    assert verify_plan(repo, plan.id).ok
+
+
+def test_kinds_the_repository_does_not_store_are_not_claimed_about(
+    repo: MarkdownRepository,
+) -> None:
+    plan = _plan_with(repo, [_entry("SUITE-001")], suites=["SUITE-002"])
+
+    result = verify_plan(repo, plan.id)
+
+    assert result.ok
+    assert result.unverifiable == ("SUITE-001", "SUITE-002")
+
+
+def test_a_plan_without_a_selection_verifies(repo: MarkdownRepository) -> None:
+    assert verify_plan(repo, _plan_with(repo, []).id).ok
