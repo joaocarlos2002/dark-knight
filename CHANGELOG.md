@@ -9,6 +9,9 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- Reusable test suites with many-to-many case membership (union of the suite
+  and case sides), safe add/remove, verification, and
+  `suites create|list|show|add|remove|membership|verify` (REQ-015).
 - Test plans with scope, strategy, risks, criteria, owners, and schedule, a
   selection stored with a reason for every inclusion and exclusion, an
   explainable recommendation that states what it could not consider, and

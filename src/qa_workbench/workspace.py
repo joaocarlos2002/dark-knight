@@ -11,13 +11,20 @@ from qa_workbench.review.policy import ReviewPolicy
 from qa_workbench.storage.evidence import EVIDENCE_SCHEMA
 from qa_workbench.storage.repository import MarkdownRepository
 from qa_workbench.storage.validation import RecordSchema
+from qa_workbench.suites.schema import SUITE_SCHEMA
 from qa_workbench.testcases.schema import REVIEW_POLICY as TEST_CASE_REVIEW
 from qa_workbench.testcases.schema import TEST_CASE_SCHEMA
 
 
 def all_schemas() -> list[RecordSchema]:
     """Every record schema the workbench knows. New record kinds are added here."""
-    return [EVIDENCE_SCHEMA, REQUIREMENT_SCHEMA, TEST_CASE_SCHEMA, TEST_PLAN_SCHEMA]
+    return [
+        EVIDENCE_SCHEMA,
+        REQUIREMENT_SCHEMA,
+        TEST_CASE_SCHEMA,
+        SUITE_SCHEMA,
+        TEST_PLAN_SCHEMA,
+    ]
 
 
 def review_policies() -> dict[str, ReviewPolicy]:
