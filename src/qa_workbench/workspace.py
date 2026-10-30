@@ -1,6 +1,7 @@
 """The record kinds of a project and how to open its repository."""
 
 from qa_workbench.core.config import AppConfig
+from qa_workbench.executions.schema import EXECUTION_SCHEMA
 from qa_workbench.plans.schema import REVIEW_POLICY as PLAN_REVIEW
 from qa_workbench.plans.schema import TEST_PLAN_SCHEMA
 from qa_workbench.projects.errors import ProjectStateError
@@ -24,6 +25,7 @@ def all_schemas() -> list[RecordSchema]:
         TEST_CASE_SCHEMA,
         SUITE_SCHEMA,
         TEST_PLAN_SCHEMA,
+        EXECUTION_SCHEMA,
     ]
 
 

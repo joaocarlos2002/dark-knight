@@ -18,7 +18,7 @@ from urllib.parse import urlsplit
 from qa_workbench.storage.errors import EvidenceError, StorageError
 from qa_workbench.storage.history import sha256_file
 from qa_workbench.storage.ids import next_id
-from qa_workbench.storage.repository import MarkdownRepository, Record
+from qa_workbench.storage.repository import MarkdownRepository, Record, RecordListing
 from qa_workbench.storage.validation import RecordSchema
 
 REGISTERED = "registered"
@@ -124,6 +124,10 @@ class EvidenceStore:
                 f"Evidence was stored under {evidence_id} but recorded as {record.id}."
             )
         return record
+
+    def list_records(self) -> RecordListing:
+        """Every evidence record; damaged ones are reported, not hidden."""
+        return self._repository.list_records("EVD")
 
     def get(self, evidence_id: str) -> Record:
         return self._repository.get(evidence_id)

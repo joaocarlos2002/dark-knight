@@ -7,6 +7,8 @@ import typer
 
 from qa_workbench.core.config import AppConfig, ConfigurationError
 from qa_workbench.core.logging import configure_logging
+from qa_workbench.evidence.cli import evidence_app
+from qa_workbench.executions.cli import executions_app
 from qa_workbench.plans.cli import plans_app
 from qa_workbench.projects.cli import project_app
 from qa_workbench.projects.errors import ProjectError
@@ -32,6 +34,8 @@ app.add_typer(cases_app, name="cases")
 app.add_typer(suites_app, name="suites")
 app.add_typer(review_app, name="review")
 app.add_typer(plans_app, name="plans")
+app.add_typer(executions_app, name="executions")
+app.add_typer(evidence_app, name="evidence")
 
 
 def _show_version(value: bool) -> None:
