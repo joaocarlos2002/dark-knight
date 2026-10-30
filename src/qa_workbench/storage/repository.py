@@ -207,6 +207,11 @@ class MarkdownRepository:
         return problems
 
     @property
+    def schemas(self) -> tuple[RecordSchema, ...]:
+        """The schemas this repository was opened with."""
+        return tuple(self._schemas.values())
+
+    @property
     def prefixes(self) -> tuple[str, ...]:
         """The record kinds this repository knows, in sorted order."""
         return tuple(sorted(self._schemas))

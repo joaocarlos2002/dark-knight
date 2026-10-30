@@ -165,6 +165,7 @@ def test_the_body_follows_the_specification_headings(
     assert record.body == (
         "# EXEC-001\n\n"
         "## Objective\n\nValidate TC-001.\n\n"
+        "## Executed steps\n\n"
         "## Expected result\n\nThe user is authenticated\n\n"
         "## Observed result\n\n"
         "## Evidence\n\n"
@@ -288,7 +289,12 @@ def test_a_failure_needs_the_observed_result(repo: MarkdownRepository, case) -> 
         move(repo, record.id, "failed")
 
     failed = move(
-        repo, record.id, "failed", observed_result="Error 500", bugs=["BUG-001"]
+        repo,
+        record.id,
+        "failed",
+        observed_result="Error 500",
+        failure_type="product",
+        bugs=["BUG-001"],
     )
     assert failed.metadata["result"] == "failed"
     assert failed.metadata["bugs"] == ["BUG-001"]
@@ -430,7 +436,7 @@ def test_a_result_before_the_execution_finishes_is_rejected(
 def test_finishing_before_starting_is_rejected(repo: MarkdownRepository, case) -> None:
     record = _create(repo)
     _run_to(repo, record.id, "planned", "running")
-    failed = move(repo, record.id, "failed", observed_result="x")
+    failed = move(repo, record.id, "failed", observed_result="x", failure_type="test")
     text = failed.path.read_text(encoding="utf-8")
     start = next(line for line in text.splitlines() if line.startswith("started_at:"))
     failed.path.write_text(
