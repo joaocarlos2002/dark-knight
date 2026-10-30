@@ -2,7 +2,6 @@ from typer.testing import CliRunner
 
 from qa_workbench.main import app
 
-
 runner = CliRunner()
 
 

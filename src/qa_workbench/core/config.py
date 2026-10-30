@@ -1,10 +1,10 @@
 """Cross-platform application configuration."""
 
+import sys
+import tomllib
 from dataclasses import dataclass
 from os import environ
 from pathlib import Path
-import sys
-import tomllib
 
 
 class ConfigurationError(ValueError):
@@ -85,11 +85,11 @@ class AppConfig:
         log_level = str(
             environ.get("DARK_KNIGHT_LOG_LEVEL", values.get("log_level", "INFO"))
         ).upper()
-        configured_log_file = environ.get("DARK_KNIGHT_LOG_FILE", values.get("log_file"))
+        configured_log_file = environ.get(
+            "DARK_KNIGHT_LOG_FILE", values.get("log_file")
+        )
         log_file = (
-            Path(str(configured_log_file)).expanduser()
-            if configured_log_file
-            else None
+            Path(str(configured_log_file)).expanduser() if configured_log_file else None
         )
         return cls(
             config_dir=config_dir,

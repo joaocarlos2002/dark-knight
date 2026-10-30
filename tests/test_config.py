@@ -5,7 +5,9 @@ import pytest
 from qa_workbench.core.config import AppConfig, ConfigurationError
 
 
-def test_environment_overrides_configuration(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_environment_overrides_configuration(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     monkeypatch.setenv("DARK_KNIGHT_CONFIG_DIR", str(tmp_path / "config"))
     monkeypatch.setenv("DARK_KNIGHT_DATA_DIR", str(tmp_path / "data"))
     monkeypatch.setenv("DARK_KNIGHT_LOG_LEVEL", "debug")
@@ -24,7 +26,9 @@ def test_invalid_log_level_is_rejected(monkeypatch: pytest.MonkeyPatch) -> None:
         AppConfig.load()
 
 
-def test_toml_configuration_is_loaded(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_toml_configuration_is_loaded(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     config_dir = tmp_path / "config"
     config_dir.mkdir()
     (config_dir / "config.toml").write_text(
