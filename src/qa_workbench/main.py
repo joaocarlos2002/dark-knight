@@ -11,7 +11,7 @@ from qa_workbench.core.logging import configure_logging
 try:
     __version__ = version("dark-knight-qa")
 except PackageNotFoundError:
-    __version__ = "0.1.0"
+    __version__ = "0.2.0"
 
 app = typer.Typer(
     add_completion=False,
