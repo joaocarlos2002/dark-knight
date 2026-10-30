@@ -44,6 +44,11 @@ src/qa_workbench/
   core/
     config.py      AppConfig: TOML file plus environment overrides
     logging.py     Console and file logging with secret redaction
+  projects/
+    models.py      Project and Environment: validated, secret-free records
+    repository.py  ProjectRepository: project.yaml + README.md on disk
+    errors.py      ProjectError hierarchy with diagnostic context
+    cli.py         `qa-workbench project ...` commands
   tui/
     app.py         WorkbenchApp: the three-area shell and status bar
     layout.py      Terminal size -> region visibility (pure, no widgets)
@@ -52,6 +57,31 @@ src/qa_workbench/
     theme.py       Dark theme tokens and shell stylesheet
 tests/             Pytest suite mirroring the package layout
 ```
+
+### Projects
+
+A project is a folder under the data directory:
+
+```text
+<data_dir>/projects/PROJ-001/
+  project.yaml   name, description, status, repository, directory,
+                 environments, frameworks, languages, commands, timestamps
+  README.md      human-readable summary
+```
+
+- **Commands:** `qa-workbench project create | list | show | archive`, and
+  `qa-workbench tui --project PROJ-001` to open the shell on a project.
+- **Ids:** sequential and never reused, even after archiving.
+- **Archiving:** sets `status: archived` and keeps every file; nothing is
+  deleted, so history is preserved.
+- **Secrets:** `project.yaml` rejects unknown fields (such as `token`) and
+  URLs with embedded credentials. Keep secrets out of project files.
+- **Timestamps:** ISO 8601 with a timezone offset.
+- **Writes:** atomic (temporary file, then replace), so a crash never leaves a
+  half-written record.
+- **Errors:** an unreadable or invalid record raises `InvalidProjectError`
+  naming the file and the reason. `list` reports corrupt projects as warnings
+  and exits with an error instead of silently skipping them.
 
 ### TUI shell
 
