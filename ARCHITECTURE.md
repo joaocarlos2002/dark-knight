@@ -884,8 +884,20 @@ the values typed into fields are never written to the action log.
   no terminal to ask, or an answer of no, the command stops with the exact
   command to run later. A download that fails, or an installer that succeeds
   without leaving a usable browser, is an explicit error.
+- **Authorized navigation.** With `-p PROJ`, `batman browser run` builds the
+  project's action guard; without a project only loopback addresses and local
+  files open, so nothing external is reached by accident. Each `navigate` is
+  audited and rate-limited by the guard, and a host outside the project's allowed
+  hosts is refused before any request (no approval path for the browser). Three
+  layers enforce it: the agent's check, a request filter that aborts and records
+  blocked subresources (`blocked: host not authorized`), and Chromium's
+  `--host-resolver-rules`, which makes every other host unresolvable at the
+  network layer, so a redirect to an unauthorized host fails too (Playwright's
+  request filter does not see redirects). If a page still ends on an unauthorized
+  URL the run stops.
 - **Not here yet.** Scripted flows from test cases, authenticated profiles, and
-  approval of destructive browser actions arrive with the approvals work.
+  approval of destructive in-page actions (clicks and form submissions are not
+  gated yet).
   Sensitive data inside traces and videos is not scrubbed.
 
 ### Entry points and distribution
