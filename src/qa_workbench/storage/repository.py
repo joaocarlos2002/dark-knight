@@ -142,6 +142,29 @@ class MarkdownRepository:
         self._write(path, metadata, new_body)
         return Record(record_id, metadata, new_body, path)
 
+    @property
+    def prefixes(self) -> tuple[str, ...]:
+        """The record kinds this repository knows, in sorted order."""
+        return tuple(sorted(self._schemas))
+
+    def record_ids(self, prefix: str) -> list[str]:
+        """Ids of the record files present for ``prefix``, without reading them.
+
+        Files whose names are not ids of this kind are ignored.
+        """
+        folder = self.root / self._schema(prefix).directory
+        if not folder.is_dir():
+            return []
+        return sorted(
+            path.stem
+            for path in folder.glob("*.md")
+            if is_valid_id(path.stem) and parse_id(path.stem).prefix == prefix
+        )
+
+    def path_of(self, record_id: str) -> Path:
+        """Where the record file lives (it may not exist)."""
+        return self._locate(record_id)[1]
+
     def list_records(self, prefix: str, *, status: str | None = None) -> RecordListing:
         """List records of one kind ordered by id, optionally by status."""
         schema = self._schema(prefix)
