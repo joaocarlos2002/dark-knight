@@ -6,12 +6,15 @@ from typing import Annotated
 
 import typer
 
+from qa_workbench.api.cli import api_app
+from qa_workbench.browser.cli import browser_app, doctor_command, preview_channel
 from qa_workbench.core.config import AppConfig, ConfigurationError
 from qa_workbench.core.console import ensure_utf8_output
 from qa_workbench.core.logging import configure_logging
 from qa_workbench.core.splash import play_startup_splash
 from qa_workbench.evidence.cli import evidence_app
 from qa_workbench.executions.cli import executions_app
+from qa_workbench.integrations.gitlab.cli import gitlab_app
 from qa_workbench.plans.cli import plans_app
 from qa_workbench.projects.cli import project_app
 from qa_workbench.projects.errors import ProjectError
@@ -45,6 +48,12 @@ app.add_typer(executions_app, name="executions")
 app.add_typer(evidence_app, name="evidence")
 app.add_typer(reports_app, name="reports")
 app.add_typer(security_app, name="security")
+app.add_typer(api_app, name="api")
+app.add_typer(browser_app, name="browser")
+app.add_typer(gitlab_app, name="gitlab")
+app.command("doctor", help="Check that everything the workbench needs is ready.")(
+    doctor_command
+)
 
 
 def _show_version(value: bool) -> None:
@@ -119,7 +128,7 @@ def _open_workbench(
         raise typer.Exit(1) from error
     if splash:
         play_startup_splash(config)
-    WorkbenchApp(opened, keymap).run()
+    WorkbenchApp(opened, keymap, preview_channel(config)).run()
 
 
 @app.command()

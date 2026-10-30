@@ -137,6 +137,14 @@ Screen {
     margin-top: 1;
 }
 
+#browser-preview {
+    color: $dirty-white;
+    margin-top: 1;
+    border: solid $steel-gray;
+    padding: 0 1;
+    height: auto;
+}
+
 #context {
     width: 30;
     background: $batcave;
