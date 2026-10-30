@@ -9,6 +9,10 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- Markdown frontmatter repository: UTF-8 records with YAML frontmatter,
+  stable ids with the specified prefixes, immutable `id` and `created_at`,
+  timestamps with a timezone, and validation of metadata and relative links
+  (REQ-006, REQ-007, NFR-003).
 - Reusable TUI components (status badge, metric and detail panels, data table,
   searchable log viewer, empty/loading/error states, confirmation dialog) and
   a command palette on `Ctrl+P` (REQ-004, REQ-005, NFR-006, NFR-007).
