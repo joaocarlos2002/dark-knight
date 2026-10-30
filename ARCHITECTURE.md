@@ -50,6 +50,10 @@ src/qa_workbench/
     importer.py    Import into a project, preserving source and author
     coverage.py    Which requirements have related test cases
     cli.py         `qa-workbench requirements ...` commands
+  suites/
+    schema.py      SUITE record schema: type, status, member cases
+    service.py     Create suites, add/remove cases, membership, verification
+    cli.py         `qa-workbench suites ...` commands
   plans/
     schema.py      TP record schema: scope, risks, criteria, schedule, selection
     builder.py     PlanDraft, create/update, readable Markdown body
@@ -205,6 +209,28 @@ time the case is updated through the workbench).
   values, every rule combination, valid and refused transitions, use-case
   scenarios). A case can combine several techniques, and the derived conditions
   appear in its body.
+
+### Test suites
+
+`qa-workbench suites create | list | show | add | remove | membership | verify`
+manages `SUITE` records, stored in `<project>/test-suites/`. A suite has a type
+(smoke, sanity, regression, end-to-end, integration, API, functional,
+security, compatibility, acceptance, or custom), a status, and a list of test
+cases.
+
+- **Many-to-many:** a test case can be in any number of suites and a suite
+  holds any number of cases. The workbench writes membership in the suite's
+  `cases`; a case may also name its suites in `suites` (handy when editing in
+  Obsidian). Effective membership is the union of both sides, so they cannot
+  contradict each other.
+- **Safe changes:** adding a case that is already a member, adding a case that
+  does not exist, or removing one that is not a member is refused with a message.
+  Removing a case from a suite never touches the case.
+- **Verification:** `suites verify` reports cases that do not exist (an error)
+  and cases that are not active yet (information, since a suite under
+  construction may hold drafts). `plans verify` now also checks the suites a plan
+  references.
+- The suite body lists its cases as Obsidian links (`[[TC-001]]`).
 
 ### Test plans and selection
 
