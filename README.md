@@ -168,6 +168,8 @@ and include reproducible validation evidence in every pull request.
 ```bash
 git clone https://github.com/joaocarlos2002/dark-knight.git
 cd dark-knight
+uv sync --extra dev
+uv run qa-workbench --help
 ```
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.

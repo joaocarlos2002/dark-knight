@@ -22,6 +22,17 @@ foundation phase, so small, focused contributions are especially valuable.
 5. Run the relevant checks locally and report the exact commands and results.
 6. Request review only after the pull request checklist is complete.
 
+## Local setup
+
+The project uses Python 3.12+ and `uv`.
+
+```bash
+uv sync --extra dev
+uv run qa-workbench --help
+uv run qa-workbench --version
+uv run pytest
+```
+
 ## Design expectations
 
 - Preserve the Markdown-first source of truth.
