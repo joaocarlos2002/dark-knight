@@ -1,7 +1,7 @@
 """Validation of record frontmatter and relative links (REQ-007, NFR-003)."""
 
 import re
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path, PurePosixPath
@@ -19,9 +19,15 @@ class RecordSchema:
 
     ``statuses`` is the closed set of allowed ``status`` values.
     ``required`` lists fields beyond ``BASE_REQUIRED``.
+    ``immutable_statuses`` are final statuses: once a record reaches one, it is
+    sealed and can only be corrected through history events.
     ``optional_timestamps`` are timestamp fields that may be empty, such as
     ``finished_at``. ``references`` maps a field holding one id or a list of ids
-    to the prefixes those ids may have.
+    to the prefixes those ids may have. ``choices`` maps a field to the closed
+    set of values it may hold (when present). ``text_lists`` are fields that, when
+    present, must be lists of non-empty text. ``extra_checks`` are functions that
+    take the metadata and return problems, for rules a schema cannot express
+    declaratively.
     """
 
     prefix: str
@@ -29,7 +35,11 @@ class RecordSchema:
     statuses: frozenset[str]
     required: tuple[str, ...] = ()
     optional_timestamps: tuple[str, ...] = ()
+    immutable_statuses: frozenset[str] = frozenset()
     references: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
+    choices: Mapping[str, frozenset[str]] = field(default_factory=dict)
+    text_lists: tuple[str, ...] = ()
+    extra_checks: tuple[Callable[[Mapping[str, Any]], list[str]], ...] = ()
 
     def __post_init__(self) -> None:
         if self.prefix not in ID_PREFIXES:
@@ -41,6 +51,12 @@ class RecordSchema:
             )
         if not self.statuses:
             raise ValueError("A schema needs at least one status.")
+        unknown_final = self.immutable_statuses - self.statuses
+        if unknown_final:
+            raise ValueError(
+                "immutable_statuses must be allowed statuses, got "
+                f"{sorted(unknown_final)}."
+            )
         for field_name, prefixes in self.references.items():
             unknown = [p for p in prefixes if p not in ID_PREFIXES]
             if unknown:
@@ -148,6 +164,26 @@ def validate_metadata(
 
     for name, prefixes in schema.references.items():
         _check_references(name, metadata.get(name), prefixes, problems)
+
+    for name, allowed in schema.choices.items():
+        value = metadata.get(name)
+        if value is not None and value not in allowed:
+            problems.append(
+                f"{name} {value!r} is not allowed; use one of: "
+                f"{', '.join(sorted(allowed))}."
+            )
+
+    for name in schema.text_lists:
+        value = metadata.get(name)
+        if value is None:
+            continue
+        if not isinstance(value, list) or not all(
+            isinstance(item, str) and item.strip() for item in value
+        ):
+            problems.append(f"{name} must be a list of non-empty text.")
+
+    for check in schema.extra_checks:
+        problems.extend(check(metadata))
 
     return problems
 

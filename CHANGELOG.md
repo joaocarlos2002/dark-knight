@@ -9,6 +9,44 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- Execution reports (the ten sections of the specification, explicit
+  limitations, nothing inferred), a requirement-to-evidence traceability trace
+  and matrix, saved reports that detect when they are stale, and
+  `reports execution|traceability|trace` (REQ-032).
+- The CLI now writes UTF-8 even when its output is piped on Windows, so status
+  symbols no longer crash it.
+- Incremental, recoverable executions: steps saved before and after they run,
+  recovery of interrupted runs without inventing outcomes, reruns that never
+  overwrite, corrections as separate events, and failure classification
+  (product, test, infrastructure, evidence collection) (REQ-019, REQ-020,
+  NFR-004).
+- Executions with a validated lifecycle (created, planned, awaiting approval,
+  running, results, finalized), five execution types, data rules tied to state,
+  approvals, and sealing on finalization, plus `executions create|move|list|show|
+  states` and `evidence add|list|verify` (REQ-017, REQ-018).
+- Reusable test suites with many-to-many case membership (union of the suite
+  and case sides), safe add/remove, verification, and
+  `suites create|list|show|add|remove|membership|verify` (REQ-015).
+- Test plans with scope, strategy, risks, criteria, owners, and schedule, a
+  selection stored with a reason for every inclusion and exclusion, an
+  explainable recommendation that states what it could not consider, and
+  verification of the selection, plus `plans create|list|show|recommend|verify`
+  (REQ-014, REQ-016).
+- Human review workflow for AI-generated requirements and test cases: required
+  provenance, approval only through a recorded review by someone other than the
+  generator, and findings classified as fact, hypothesis, recommendation, or
+  inconclusive with real sources, plus `review pending|submit|decide`
+  (REQ-013, REQ-029).
+- Test cases with the fields of the specification, validation, a secret check,
+  and six design techniques (equivalence partitioning, boundary values, decision
+  tables, state transitions, use cases, exploratory) with derived conditions,
+  plus `cases create|list|show` (REQ-011, REQ-012).
+- Requirement import from Markdown and text with source, hash, and author
+  preserved, plus `requirements list` and `requirements coverage`
+  (REQ-009, REQ-010).
+- Immutable history for finalized records (sealed with SHA-256, corrections as
+  hash-chained events) and evidence registration with integrity verification
+  (NFR-004, NFR-008).
 - Rebuildable SQLite full-text index and search over Markdown records, with
   incremental sync and explicit errors for damaged indexes (REQ-008, REQ-032).
 - Markdown frontmatter repository: UTF-8 records with YAML frontmatter,

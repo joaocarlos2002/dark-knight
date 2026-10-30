@@ -44,12 +44,53 @@ src/qa_workbench/
   core/
     config.py      AppConfig: TOML file plus environment overrides
     logging.py     Console and file logging with secret redaction
+  requirements/
+    schema.py      REQ record schema: statuses, priorities, criteria, tags
+    parser.py      Requirements from Markdown or plain text (pure)
+    importer.py    Import into a project, preserving source and author
+    coverage.py    Which requirements have related test cases
+    cli.py         `qa-workbench requirements ...` commands
+  reports/
+    traceability.py  Link graph, upstream/downstream trace, requirement matrix
+    execution.py     Execution report from recorded facts
+    writer.py        Save reports with a source hash; detect stale ones
+    cli.py           `qa-workbench reports ...` commands
+  executions/
+    states.py      The lifecycle state machine and its validated transitions
+    schema.py      EXEC record schema and rules tying data to state
+    service.py     Create executions and move them through the lifecycle
+    recording.py   Save steps as they run, before and after each one
+    recovery.py    Find interrupted runs, recover, rerun, record corrections
+    cli.py         `qa-workbench executions ...` commands
+  evidence/
+    cli.py         `qa-workbench evidence ...` commands
+  suites/
+    schema.py      SUITE record schema: type, status, member cases
+    service.py     Create suites, add/remove cases, membership, verification
+    cli.py         `qa-workbench suites ...` commands
+  plans/
+    schema.py      TP record schema: scope, risks, criteria, schedule, selection
+    builder.py     PlanDraft, create/update, readable Markdown body
+    selection.py   Explainable recommendation and verification of a selection
+    cli.py         `qa-workbench plans ...` commands
+  review/
+    policy.py      Review and AI-provenance rules, as schema checks (pure)
+    service.py     Submit for review, record human decisions, list pending
+    cli.py         `qa-workbench review ...` commands
+  testcases/
+    schema.py      TC record schema, fields, choices, secret and technique checks
+    builder.py     TestCaseDraft, create/update, readable Markdown body
+    techniques.py  Six design techniques with derived test conditions
+    cli.py         `qa-workbench cases ...` commands
+  workspace.py     The record schemas of a project and how to open them
   storage/
     frontmatter.py Markdown + YAML frontmatter documents (parse, dump, read)
     ids.py         Stable ids such as TC-001, with the specified prefixes
     validation.py  RecordSchema, metadata checks, relative link checks
     repository.py  MarkdownRepository: create, get, update, list records
     index.py       RecordIndex: rebuildable SQLite full-text search cache
+    history.py     Sealed, hash-chained history for finalized records
+    evidence.py    EvidenceStore: SHA-256 registration and verification
     atomic.py      Atomic UTF-8 file writes
     errors.py      StorageError hierarchy with diagnostic context
   projects/
@@ -109,9 +150,251 @@ features.
   not indexed and are reported in the `IndexReport` instead of disappearing. A
   damaged index, a different index version, or searching before the first build
   raises `SearchIndexError` explaining that rebuilding is the fix.
-- **Not here yet:** immutable history for finalized executions, evidence
-  integrity, and secret sanitization before persistence belong to their own
-  features.
+- **Immutable history:** a `RecordSchema` can declare `immutable_statuses`
+  (for example an execution's `finalized`). When a record reaches one, the
+  repository seals it: the SHA-256 of the file goes into `<ID>.history.md` as
+  the first event. A sealed record cannot be edited in place
+  (`RecordFinalizedError`); a correction or addition is a separate history
+  event with an author, a timestamp, and a justification, added with
+  `add_history_event`. Each event carries the hash of the previous one, so
+  editing or removing an event, or editing the sealed record by hand, is found
+  by `verify` / `verify_all` instead of going unnoticed.
+- **Evidence:** `EvidenceStore` copies a file into
+  `<project>/evidence/files/<EVD-id>/` (the original is never moved or
+  modified) and writes an immutable `EVD` record with the SHA-256, size, media
+  type, origin, description, and optionally the step, execution, source URL,
+  and capture time. An annotated or processed version is registered as its own
+  file and record with `derived_from` pointing at the original. `verify`
+  rechecks the record seal, that the file exists and stays inside the project,
+  and its size and hash. A failed registration leaves no file behind, and a
+  corrupted copy is never registered.
+- **Not here yet:** secret sanitization before persistence (REQ-025) and the
+  execution workflow that produces finalized records.
+
+### Requirements
+
+`qa-workbench requirements import FILE -p PROJ-001` reads a `.md` or `.txt`
+file and creates one `REQ` record per requirement; `list` and `coverage` show
+them. PDF, DOCX, and XLSX are not supported yet and are refused with a clear
+message.
+
+- **Markdown:** each `##` section is a requirement (a document with only a `#`
+  heading is one requirement). Leading `Key: value` lines set `Priority`,
+  `Status`, `Tags`, and `Author` (Portuguese names work too); the list under
+  `Acceptance criteria:` or a `### Critérios de aceitação` heading becomes the
+  criteria; the rest is the description.
+- **Plain text:** each block separated by blank lines is a requirement; its
+  first line is the title.
+- **Nothing is guessed:** an unknown priority or status is reported and that
+  requirement is skipped; the others still import. A missing priority stays
+  missing. Imported requirements are `draft` unless the source says otherwise.
+- **Provenance:** every record keeps the file name, the line, the SHA-256 of the
+  file, the format, an optional `--source-version`, the author, and the import
+  time. The source file is never changed. Importing the same, unchanged file
+  again skips what is already there instead of duplicating it.
+- **Coverage:** a requirement is covered when at least one test case relates to
+  it, written on either side (`cases` on the requirement or `requirements` on
+  the case). Cases named but missing are reported, not counted.
+- **Projects:** archived projects can be read but not changed.
+
+### Test cases and design techniques
+
+`qa-workbench cases create | list | show` manages `TC` records. A case holds
+the fields of the specification: objective, preconditions, test data, steps
+with an optional expected result per step, a final expected result, priority,
+criticality, type, profile, compatible environments, tags, related requirements
+and issues, suites, origin and author, and timestamps. Cases start as `draft`.
+The structured fields in the frontmatter are the source of truth; the Markdown
+body is generated from them (editing the body by hand is overwritten the next
+time the case is updated through the workbench).
+
+- **Rules:** a case needs at least one step and an expected result, except
+  exploratory cases. Priority, criticality, type, and origin are closed sets.
+  References must have the right prefix. The same checks run when a file is
+  created and when it is read back, so hand-edited files are validated too.
+- **No secrets:** literal credentials in test data, steps, or any text are
+  refused (`password=hunter2`, tokens, keys); placeholders such as
+  `$TEST_PASSWORD` and prose such as "enter the password" are fine.
+- **Techniques:** equivalence partitioning, boundary value analysis, decision
+  tables, state transitions, use cases, and exploratory charters. Each is a
+  validated model that rejects inconsistent input (for example a decision table
+  that does not cover every combination, or a state model with an unknown
+  state) and derives test conditions (partition representatives, boundary
+  values, every rule combination, valid and refused transitions, use-case
+  scenarios). A case can combine several techniques, and the derived conditions
+  appear in its body.
+
+### Reports and traceability
+
+`qa-workbench reports execution | traceability | trace` turns records into
+reports. Reports are generated, never typed in: they state facts taken from the
+records and nothing else.
+
+- **Execution report:** the ten sections of the specification (identification,
+  objective, environment, preconditions, procedure, expected result, observed
+  result, status, evidence, conclusion), plus limitations and traceability. The
+  status shows a symbol and a name. The conclusion only repeats what the record
+  says (a pass cites its evidence count; a failure cites what was observed and
+  what kind of failure it was; blocked, inconclusive, and cancelled cite their
+  reason; a run in progress claims no conclusion).
+- **Limitations are explicit:** the execution is not finalized; no evidence was
+  collected; steps were not recorded one by one; steps were interrupted or the
+  run was recovered; the failure was an infrastructure or test problem, not a
+  product one; evidence files fail their integrity check; the finalized record
+  was modified; corrections were recorded after finalization; referenced
+  defects are not stored. Nothing is inferred to fill a gap.
+- **Traceability:** records form the chain requirement, test case, suite, plan,
+  execution, evidence or defect. A link can be written on either side, and
+  `reports trace ID` follows the chain upstream and downstream without wandering
+  sideways into unrelated records (two requirements that share a case do not
+  show up in each other's trace). `reports traceability` prints a matrix of
+  each requirement, its cases, and the latest execution of each (passed, has
+  failures, not executed, in progress or inconclusive, or no test case), plus the
+  gaps: requirements without cases and cases without a requirement.
+- **Saved reports** go to `<project>/reports/` with the SHA-256 of the execution
+  and its history. A correction recorded later makes the saved report stale, and
+  `reports execution` says so. Defects and pipelines are not part of the chain
+  yet because their records do not exist.
+
+### Executions and their lifecycle
+
+`qa-workbench executions create | move | list | show | states` runs test cases
+through a lifecycle validated by the domain, not by convention:
+
+```text
+created -> planned -> awaiting_approval -> running
+        -> passed | failed | blocked | inconclusive | cancelled -> finalized
+```
+
+`planned` may go straight to `running` unless the execution requires approval,
+in which case it must pass through `awaiting_approval`. Cancelling is possible
+until there is a result. A result can only move to `finalized`, so `blocked`,
+`inconclusive`, and `cancelled` are never turned into `passed`.
+
+- **Types:** manual, assisted manual, agent-driven, automated, and exploratory.
+  Agent-driven and automated runs must name their `automation_tool` (for
+  example `playwright`), and a manual or assisted run cannot, so automation
+  driven by an agent is never recorded as a human execution. Only exploratory
+  sessions can omit the test case.
+- **Rules tied to state** (also checked when a file is read): a pass needs
+  evidence and the observed result; a failure needs the observed result;
+  blocked, inconclusive, and cancelled need a reason; every result needs a finish
+  time, and a started execution needs a start time; the finish cannot precede
+  the start; a finalized execution needs its result. Evidence is never invented:
+  every cited evidence id must be a record that exists.
+- **Approval:** an execution that requires approval records who approved it and
+  when before it runs, and an agent cannot approve its own run.
+- **Record:** type, executor, environment, version, branch, commit, test case,
+  plan, suite, project, the expected result copied from the case when the
+  execution was created, observed result, evidence, bugs, notes, reason, start,
+  finish, and duration.
+- **Finalized means sealed:** finalizing seals the record (see Immutable
+  history), so it can never be edited and any change is detected.
+- `evidence add | list | verify` registers evidence for an execution and checks
+  its integrity.
+
+#### Incremental, recoverable, never overwritten
+
+- **Saved before it happens:** the execution record exists from `created`,
+  before any action. `executions step-start` saves a step as *in progress*
+  before it is carried out and `step-finish` completes it with what was
+  observed, so the file always shows what happened so far. Every write is
+  atomic, so a crash leaves the last complete state and never a half-written
+  record; leftover temporary files are ignored.
+- **Recovery:** `executions interrupted` lists running executions with no recent
+  activity (30 minutes by default) and the step that was in progress.
+  `executions recover --action resume` closes that step as `interrupted` (its
+  outcome was not observed, so none is invented) and keeps the execution
+  running so the step can be repeated; `--action abandon` ends it as
+  `inconclusive`, keeping the steps that finished. Both record what happened.
+- **Never overwritten:** `executions rerun` starts a new execution that points
+  back to the original through `rerun_of`; the original stays sealed and intact.
+  Corrections and additions to a finalized execution are separate history events
+  (`executions correct`, `executions history`) with an author, a time, and a
+  justification.
+- **Failure classification:** a failed execution (and a failed step) must say
+  whether the failure was in the `product`, the `test`, the `infrastructure`, or
+  the `evidence_collection`. Defects can only be linked to product failures, so
+  environment flakiness and test bugs are not logged as product bugs. Losing the
+  evidence is not a pass: without evidence the run is blocked or inconclusive.
+- A pass cannot contain a step that did not pass, steps are numbered in order,
+  and only the last step may be unfinished.
+
+### Test suites
+
+`qa-workbench suites create | list | show | add | remove | membership | verify`
+manages `SUITE` records, stored in `<project>/test-suites/`. A suite has a type
+(smoke, sanity, regression, end-to-end, integration, API, functional,
+security, compatibility, acceptance, or custom), a status, and a list of test
+cases.
+
+- **Many-to-many:** a test case can be in any number of suites and a suite
+  holds any number of cases. The workbench writes membership in the suite's
+  `cases`; a case may also name its suites in `suites` (handy when editing in
+  Obsidian). Effective membership is the union of both sides, so they cannot
+  contradict each other.
+- **Safe changes:** adding a case that is already a member, adding a case that
+  does not exist, or removing one that is not a member is refused with a message.
+  Removing a case from a suite never touches the case.
+- **Verification:** `suites verify` reports cases that do not exist (an error)
+  and cases that are not active yet (information, since a suite under
+  construction may hold drafts). `plans verify` now also checks the suites a plan
+  references.
+- The suite body lists its cases as Obsidian links (`[[TC-001]]`).
+
+### Test plans and selection
+
+`qa-workbench plans create | list | show | recommend | verify` manages `TP`
+records. A plan holds the fields of the specification: scope (with in and out
+of scope items), objectives, strategy, test levels and types, environments,
+profiles, data, dependencies, risks (each with a level and a mitigation), entry
+and exit criteria, suites, owners, and an optional schedule. A plan needs
+objectives and entry and exit criteria, and plans follow the same review rules
+as AI-generated requirements and cases.
+
+- **Selection with rationale:** a plan stores `selection`, a list of
+  inclusions and exclusions. Each one must have at least one reason, and each
+  reason names a factor (changed requirements, affected features, defect
+  history, dependencies, criticality, coverage, time, regression risk, previous
+  results, or readiness) and a detail. The selection is plain data in the plan,
+  so the user can read and edit it.
+- **Recommendation:** `plans recommend` proposes a selection from the changed
+  requirements (`--requirement`, repeatable) and an optional time budget
+  (`--budget`, in minutes). Only `active` cases are eligible. A case is
+  included when it covers a changed requirement, is critical or high priority,
+  is the only active case covering a changed requirement, or is a smoke or
+  sanity baseline; every other case is excluded with the reason. With a budget,
+  the most relevant cases are kept until it is used up, and cases without an
+  estimate are included but not counted. The output lists what it could not
+  consider (defect history, previous results, and dependencies do not exist as
+  data yet) instead of pretending to.
+- **Verification:** `plans verify` checks that every selected case exists and
+  that included cases are active. Kinds this repository does not store are
+  reported as not checked rather than assumed fine.
+
+### Human review of AI-generated records
+
+Requirements and test cases carry an `origin` (`manual`, `imported`, or `ai`).
+AI-generated records follow rules enforced as schema checks, so they hold on
+create, on update, and when a hand-edited file is read back:
+
+- **Provenance:** an `ai` record names its generator in `generated_by`. Import
+  AI-produced requirements with `--generated-by`.
+- **Review before approval:** it cannot reach `approved` (requirements) or
+  `active` (test cases) without a recorded review that approves it, and the
+  reviewer must be a different person from the generator and the author.
+  `qa-workbench review submit | decide | pending` runs the workflow
+  (`draft` → `in_review` → approved, rejected, or back to `draft` with changes
+  requested). Every decision is kept in `reviews` with reviewer, timestamp, and
+  comment. Manual records can be approved directly or through the same flow.
+- **Facts, hypotheses, and no invented evidence:** `ai_findings` classifies each
+  statement as `fact`, `hypothesis`, `recommendation`, or `inconclusive`. A fact
+  must cite the id of a real record (a requirement, evidence, and so on);
+  free-text "sources" and facts without one are rejected, so an unsupported
+  claim has to be marked as a hypothesis.
+
+Known limit: editing an AI record's content after approval does not send it back
+to review yet.
 
 ### Projects
 

@@ -44,3 +44,32 @@ class ImmutableFieldError(StorageError):
         super().__init__(f"{field} of {record_id} is immutable and cannot change.")
         self.record_id = record_id
         self.field = field
+
+
+class HistoryError(StorageError):
+    """Raised when a record's history cannot be read or extended."""
+
+    def __init__(self, record_id: str, reason: str) -> None:
+        super().__init__(f"History of {record_id}: {reason}")
+        self.record_id = record_id
+        self.reason = reason
+
+
+class RecordFinalizedError(StorageError):
+    """Raised when someone tries to edit a finalized record in place.
+
+    Finalized records are never overwritten; corrections and additions are
+    separate history events with an author and a justification.
+    """
+
+    def __init__(self, record_id: str, status: str) -> None:
+        super().__init__(
+            f"{record_id} is {status} and cannot be edited. Record a correction "
+            "as a separate history event with an author and a justification."
+        )
+        self.record_id = record_id
+        self.status = status
+
+
+class EvidenceError(StorageError):
+    """Raised when evidence cannot be registered or does not check out."""

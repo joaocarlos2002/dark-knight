@@ -377,3 +377,22 @@ def test_path_of_points_at_the_record_file(repo: MarkdownRepository) -> None:
     assert repo.path_of("TC-007") == repo.root / "test-cases" / "TC-007.md"
     with pytest.raises(RecordNotFoundError):
         repo.path_of("BUG-001")
+
+
+def test_the_body_can_be_built_from_the_final_metadata(
+    repo: MarkdownRepository,
+) -> None:
+    record = repo.create(
+        "TC",
+        {"title": "Login", "status": "active"},
+        lambda metadata: f"# {metadata['id']} - {metadata['title']}\n",
+    )
+
+    assert record.body == "# TC-001 - Login\n"
+    assert repo.get(record.id).body == "# TC-001 - Login\n"
+
+
+def test_schemas_returns_what_the_repository_was_opened_with(
+    repo: MarkdownRepository,
+) -> None:
+    assert [schema.prefix for schema in repo.schemas] == ["TC", "REQ"]
