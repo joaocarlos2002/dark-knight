@@ -65,3 +65,14 @@ def test_timeout_and_connection_errors_are_explicit() -> None:
     with pytest.raises(ApiTransportError, match="ConnectError") as error:
         _transport(refused).send(PreparedRequest("GET", "https://a.test/x"))
     assert error.value.url == "https://a.test/x"
+
+
+def test_request_urls_are_not_written_to_the_log(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    transport = _transport(lambda r: httpx.Response(200))
+
+    with caplog.at_level("INFO"):
+        transport.send(PreparedRequest("GET", "https://a.test/x?api_key=abc"))
+
+    assert "api_key" not in caplog.text

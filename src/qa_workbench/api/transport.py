@@ -1,5 +1,6 @@
 """The HTTP port and its HTTPX adapter."""
 
+import logging
 import time
 from dataclasses import dataclass, field
 from typing import Any, Protocol
@@ -40,6 +41,8 @@ class HttpxTransport:
     def __init__(self, client: Any = None) -> None:
         import httpx
 
+        # httpx logs every request URL at INFO; those URLs may carry credentials.
+        logging.getLogger("httpx").setLevel(logging.WARNING)
         self._httpx = httpx
         self._client = client or httpx.Client(follow_redirects=False)
 
