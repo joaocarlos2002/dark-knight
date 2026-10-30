@@ -9,6 +9,12 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- Approvals, autonomy modes, and security controls: `assisted`,
+  `semi_autonomous`, and `controlled_autonomous` modes, nine always-sensitive
+  action categories, per-project authorized hosts, rate limits and timeouts,
+  single-use expiring approvals bound to the exact action, cancellation, and a
+  hash-chained audit log, with `batman security show|set|approvals|approve|deny|audit`
+  (REQ-030, NFR-005, NFR-010).
 - AI provider contract (availability, models, completion, streaming, tools,
   structured output, cancellation, timeouts, typed errors), engine selection
   (`own`, `opencode`, `auto`), and the built-in agent whose answers separate

@@ -68,6 +68,12 @@ src/qa_workbench/
     cli.py         `qa-workbench executions ...` commands
   evidence/
     cli.py         `qa-workbench evidence ...` commands
+  security/
+    policy.py      Autonomy modes, risk categories, requires_approval
+    settings.py    Per-project scope and limits (settings.yaml)
+    audit.py       Append-only, hash-chained audit log
+    guard.py       ActionGuard, approvals, rate limit, cancellation
+    cli.py         `batman security ...` commands
   ai/
     contract.py    Provider contract, messages, tools, CancelToken
     errors.py      ProviderError hierarchy
@@ -407,6 +413,46 @@ steps:
 - **Not here yet.** Registering endpoints for reuse, OpenAPI import, and the
   approval gate for requests to production or intrusive tests (REQ-030) arrive
   with the approvals work.
+
+### Approvals, autonomy modes, and security controls
+
+`security/` implements REQ-030 (and NFR-005, NFR-010). Risky actions go through
+`ActionGuard.authorize` before they happen; the answer is "allowed by policy",
+"allowed by a person's approval", or an exception that says why not.
+
+- **Modes.** `assisted` (default and safest), `semi_autonomous`, and
+  `controlled_autonomous`. Nine categories are *sensitive* and need approval in
+  every mode, with no setting to turn that off: data change, production write,
+  external comment, intrusive test, code change, configuration change,
+  destructive command, credential request, and anything out of scope. Modes only
+  change routine work on the workbench's own records: `assisted` asks first,
+  the other two do not.
+- **Scope.** `<project>/security/settings.yaml` holds the mode, authorized
+  environments, allowed hosts, requests per minute, timeout, retries, and data
+  policy. A host is allowed when it matches exactly or by a `.suffix`; wildcards,
+  paths, and ports are rejected. With no hosts configured, every external host is
+  out of scope. An unknown key, a bad mode, or an invalid limit makes loading
+  fail instead of falling back to defaults. A missing file means the safe
+  defaults.
+- **Approvals.** A sensitive action creates a request (`APR-xxxxxxxx`) and
+  raises `ApprovalRequired`. A person runs `batman security approve ID --by NAME`
+  (or `deny ... --reason`). An approval is bound to the exact action (a hash of
+  action, category, detail, and target), is single-use, and expires after an hour;
+  the requester cannot decide their own request, a denial needs a reason, and a
+  request cannot be decided twice. A denial blocks the same action until it
+  expires.
+- **Audit log.** `<project>/security/audit.jsonl` is append-only and
+  hash-chained: editing, reordering, or removing a line is found by
+  `batman security audit --verify`, and a damaged log is never extended.
+  Approval state is derived from this log, so there is one source of truth.
+  Text is passed through `redact_secrets` before it is written.
+- **Limits and cancellation.** A per-host rolling-minute rate limit raises
+  `RateLimitExceeded` with a retry time instead of waiting silently.
+  `cancel()` is recorded and refuses every later action.
+- **Not here yet.** The browser, API, GitLab, and AI code do not call the guard
+  yet; wiring each external action to it (and comment publishing, REQ-027) is
+  separate work. `ApprovalGate` in the AI agent is the matching hook.
+  Process isolation is not implemented.
 
 ### Reports and traceability
 
