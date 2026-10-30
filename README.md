@@ -153,6 +153,12 @@ git clone https://github.com/joaocarlos2002/dark-knight.git
 uv tool install ./dark-knight      # or: pipx install ./dark-knight
 ```
 
+The browser used for web tests (Chromium) is a separate download. The first
+time you need it, `batman` explains and installs it after you confirm; you can
+do it ahead of time with `batman doctor --fix`, and `batman doctor` tells you
+whether it is ready. `batman browser run URL` opens a page, saves a screenshot,
+and shows the browser inside the workbench (`Ctrl+B`).
+
 To upgrade, run `uv tool upgrade dark-knight-qa` (or `pipx upgrade
 dark-knight-qa`). The first run creates its data folder on its own; where it
 lives and how to change it is described under Contributing below.
@@ -243,6 +249,7 @@ uv run qa-workbench executions move EXEC-001 -p PROJ-001 --to planned
 uv run qa-workbench reports execution EXEC-001 -p PROJ-001 --save
 uv run qa-workbench reports traceability -p PROJ-001
 uv run qa-workbench gitlab pipelines -p PROJ-001 --status failed
+uv run qa-workbench api run users-api.yaml -p PROJ-001
 uv run qa-workbench plans recommend -p PROJ-001 --requirement REQ-001 --budget 120
 uv run qa-workbench review pending --project PROJ-001
 uv run qa-workbench review decide REQ-001 -p PROJ-001 --decision approved --reviewer Ana
