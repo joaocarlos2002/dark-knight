@@ -215,6 +215,22 @@ log_level = "INFO"
 log_file = "~/.local/share/dark-knight-qa/qa-workbench.log"
 ```
 
+Opening the workbench can start with a fullscreen cinematic: a random video
+from a folder of Batman edits plays before the terminal user interface appears.
+Put the edits in `~/Videos/batman-edits` (or point `edits_dir` somewhere else):
+
+```toml
+[startup]
+splash = true
+edits_dir = "~/Videos/batman-edits"
+player = "ffplay"
+```
+
+The splash needs `ffplay`, `mpv`, or `vlc` on `PATH`; `player` forces a
+specific executable. It only runs when the workbench is opened in an
+interactive terminal, and any key or click skips it. Pass `--no-splash` to
+`batman` or `batman tui` to open the workbench directly.
+
 Keyboard shortcuts can be remapped in the same file; see
 [ARCHITECTURE.md](ARCHITECTURE.md) for the list of actions:
 
@@ -224,8 +240,9 @@ toggle_context = "f3"
 ```
 
 Supported overrides are `DARK_KNIGHT_CONFIG_DIR`, `DARK_KNIGHT_DATA_DIR`,
-`DARK_KNIGHT_LOG_LEVEL`, and `DARK_KNIGHT_LOG_FILE`. Secrets are redacted from
-application logs; do not place credentials in configuration files.
+`DARK_KNIGHT_LOG_LEVEL`, `DARK_KNIGHT_LOG_FILE`, `DARK_KNIGHT_SPLASH`,
+`DARK_KNIGHT_EDITS_DIR`, and `DARK_KNIGHT_SPLASH_PLAYER`. Secrets are redacted
+from application logs; do not place credentials in configuration files.
 
 Projects are managed from the CLI and stored under the data directory:
 

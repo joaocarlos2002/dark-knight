@@ -32,6 +32,18 @@ def _path_from_env(name: str, default: Path) -> Path:
     return Path(value).expanduser() if value else default
 
 
+def _as_bool(value: object, name: str) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered in {"1", "true", "yes", "on"}:
+            return True
+        if lowered in {"0", "false", "no", "off"}:
+            return False
+    raise ConfigurationError(f"{name} must be true or false.")
+
+
 @dataclass(frozen=True)
 class AppConfig:
     """Resolved global configuration for one application run."""
@@ -41,6 +53,11 @@ class AppConfig:
     log_level: str = "INFO"
     log_file: Path | None = None
     shortcuts: dict[str, str] = field(default_factory=dict)
+    splash_enabled: bool = True
+    edits_dir: Path = field(
+        default_factory=lambda: Path.home() / "Videos" / "batman-edits"
+    )
+    splash_player: str | None = None
 
     def __post_init__(self) -> None:
         if self.log_level.upper() not in {
@@ -88,6 +105,28 @@ class AppConfig:
                 "to key strings."
             )
 
+        startup = document.get("startup", {})
+        if not isinstance(startup, dict):
+            raise ConfigurationError(
+                f"The [startup] section in {config_file} must be a table."
+            )
+        splash_enabled = _as_bool(
+            environ.get("DARK_KNIGHT_SPLASH", startup.get("splash", True)),
+            "splash",
+        )
+        configured_edits_dir = environ.get(
+            "DARK_KNIGHT_EDITS_DIR", startup.get("edits_dir")
+        )
+        edits_dir = (
+            Path(str(configured_edits_dir)).expanduser()
+            if configured_edits_dir
+            else Path.home() / "Videos" / "batman-edits"
+        )
+        configured_player = environ.get(
+            "DARK_KNIGHT_SPLASH_PLAYER", startup.get("player")
+        )
+        splash_player = str(configured_player) if configured_player else None
+
         data_dir = _path_from_env(
             "DARK_KNIGHT_DATA_DIR",
             Path(
@@ -109,4 +148,7 @@ class AppConfig:
             log_level=log_level,
             log_file=log_file,
             shortcuts=dict(shortcuts),
+            splash_enabled=splash_enabled,
+            edits_dir=edits_dir,
+            splash_player=splash_player,
         )

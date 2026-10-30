@@ -44,6 +44,7 @@ src/qa_workbench/
   core/
     config.py      AppConfig: TOML file plus environment overrides
     logging.py     Console and file logging with secret redaction
+    splash.py      Random fullscreen startup edit before the workbench
   requirements/
     schema.py      REQ record schema: statuses, priorities, criteria, tags
     parser.py      Requirements from Markdown or plain text (pure)
@@ -514,6 +515,14 @@ is the primary one; every other capability is a subcommand, and `--help` and
 `--version` never open the TUI. A broken configuration or an invalid shortcut
 keymap stops the launch with an error that names the problem.
 
+Opening the TUI plays a random fullscreen edit from the startup folder before
+the workbench appears (`core/splash.py`). The splash runs only when stdout is
+an interactive terminal, `splash` is enabled, the folder has a playable file,
+and `ffplay`, `mpv`, or `vlc` is available; otherwise it is skipped silently
+apart from a debug log. On Windows the console window is minimized for the
+duration and restored afterwards, and a playback failure never prevents the
+workbench from starting. `--no-splash` skips it for one launch.
+
 Everything the app needs at run time is in `[project].dependencies` (Typer,
 Textual, Pydantic, PyYAML), so one install is enough; development tools live in
 the `dev` extra. Themes and styles are embedded in the code, so there are no data
@@ -528,10 +537,17 @@ instruction.
 `AppConfig.load()` resolves values in this order, highest priority first:
 
 1. environment variables (`DARK_KNIGHT_CONFIG_DIR`, `DARK_KNIGHT_DATA_DIR`,
-   `DARK_KNIGHT_LOG_LEVEL`, `DARK_KNIGHT_LOG_FILE`);
-2. the `[application]` table of `config.toml` in the configuration directory;
+   `DARK_KNIGHT_LOG_LEVEL`, `DARK_KNIGHT_LOG_FILE`, `DARK_KNIGHT_SPLASH`,
+   `DARK_KNIGHT_EDITS_DIR`, `DARK_KNIGHT_SPLASH_PLAYER`);
+2. the `[application]`, `[shortcuts]`, and `[startup]` tables of `config.toml`
+   in the configuration directory;
 3. platform defaults (`APPDATA`/`LOCALAPPDATA` on Windows,
    `~/Library/Application Support` on macOS, XDG directories elsewhere).
+
+The `[startup]` table accepts `splash` (a boolean), `edits_dir` (the folder
+with the videos; defaults to `~/Videos/batman-edits`), and `player` (an
+executable name or path; otherwise the first of `mpv`, `ffplay`, `vlc` found on
+`PATH`).
 
 Invalid input raises `ConfigurationError`. The message names the offending
 file, and the original parser error is kept as the exception cause. The CLI

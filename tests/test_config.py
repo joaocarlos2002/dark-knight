@@ -94,3 +94,81 @@ def test_shortcuts_must_map_names_to_strings(
 
     with pytest.raises(ConfigurationError, match=r"\[shortcuts\] section"):
         AppConfig.load()
+
+
+def test_startup_defaults(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("DARK_KNIGHT_CONFIG_DIR", str(tmp_path / "config"))
+
+    config = AppConfig.load()
+
+    assert config.splash_enabled is True
+    assert config.edits_dir == Path.home() / "Videos" / "batman-edits"
+    assert config.splash_player is None
+
+
+def test_startup_is_loaded_from_toml(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    (config_dir / "config.toml").write_text(
+        "[startup]\n"
+        "splash = false\n"
+        'edits_dir = "~/clips/batman"\n'
+        'player = "C:/tools/mpv.exe"\n',
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("DARK_KNIGHT_CONFIG_DIR", str(config_dir))
+
+    config = AppConfig.load()
+
+    assert config.splash_enabled is False
+    assert config.edits_dir == Path.home() / "clips" / "batman"
+    assert config.splash_player == "C:/tools/mpv.exe"
+
+
+def test_startup_environment_overrides_toml(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    (config_dir / "config.toml").write_text(
+        '[startup]\nsplash = false\nedits_dir = "~/from-toml"\n',
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("DARK_KNIGHT_CONFIG_DIR", str(config_dir))
+    monkeypatch.setenv("DARK_KNIGHT_SPLASH", "yes")
+    monkeypatch.setenv("DARK_KNIGHT_EDITS_DIR", "~/from-env")
+    monkeypatch.setenv("DARK_KNIGHT_SPLASH_PLAYER", "vlc")
+
+    config = AppConfig.load()
+
+    assert config.splash_enabled is True
+    assert config.edits_dir == Path.home() / "from-env"
+    assert config.splash_player == "vlc"
+
+
+def test_invalid_splash_flag_is_rejected(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    (config_dir / "config.toml").write_text(
+        '[startup]\nsplash = "sometimes"\n', encoding="utf-8"
+    )
+    monkeypatch.setenv("DARK_KNIGHT_CONFIG_DIR", str(config_dir))
+
+    with pytest.raises(ConfigurationError, match="splash must be true or false"):
+        AppConfig.load()
+
+
+def test_startup_section_must_be_a_table(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    (config_dir / "config.toml").write_text("startup = 1\n", encoding="utf-8")
+    monkeypatch.setenv("DARK_KNIGHT_CONFIG_DIR", str(config_dir))
+
+    with pytest.raises(ConfigurationError, match=r"\[startup\] section"):
+        AppConfig.load()

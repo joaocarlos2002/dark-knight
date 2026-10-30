@@ -9,6 +9,10 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- A random fullscreen Batman edit plays before the workbench opens, chosen from
+  `~/Videos/batman-edits` (configurable with `[startup] edits_dir`), with the
+  terminal minimized first on Windows, no player controls, any key or click to
+  skip, and `--no-splash` to bypass it. Uses `ffplay`, `mpv`, or `vlc`.
 - A `batman` command: installing the package puts `batman` in the terminal, and
   running it without arguments opens the workbench. `qa-workbench` and
   `python -m qa_workbench` remain as the same program.
