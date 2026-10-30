@@ -1,7 +1,7 @@
 """Validation of record frontmatter and relative links (REQ-007, NFR-003)."""
 
 import re
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path, PurePosixPath
@@ -25,7 +25,9 @@ class RecordSchema:
     ``finished_at``. ``references`` maps a field holding one id or a list of ids
     to the prefixes those ids may have. ``choices`` maps a field to the closed
     set of values it may hold (when present). ``text_lists`` are fields that, when
-    present, must be lists of non-empty text.
+    present, must be lists of non-empty text. ``extra_checks`` are functions that
+    take the metadata and return problems, for rules a schema cannot express
+    declaratively.
     """
 
     prefix: str
@@ -37,6 +39,7 @@ class RecordSchema:
     references: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
     choices: Mapping[str, frozenset[str]] = field(default_factory=dict)
     text_lists: tuple[str, ...] = ()
+    extra_checks: tuple[Callable[[Mapping[str, Any]], list[str]], ...] = ()
 
     def __post_init__(self) -> None:
         if self.prefix not in ID_PREFIXES:
@@ -178,6 +181,9 @@ def validate_metadata(
             isinstance(item, str) and item.strip() for item in value
         ):
             problems.append(f"{name} must be a list of non-empty text.")
+
+    for check in schema.extra_checks:
+        problems.extend(check(metadata))
 
     return problems
 

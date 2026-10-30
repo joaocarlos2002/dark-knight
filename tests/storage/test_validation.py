@@ -275,3 +275,19 @@ def test_text_lists_reject_everything_else(value: Any) -> None:
     assert _choice_problems(criteria=value) == [
         "criteria must be a list of non-empty text."
     ]
+
+
+def test_extra_checks_add_their_problems() -> None:
+    def no_foo(metadata: Any) -> list[str]:
+        return ["foo is not allowed."] if "foo" in metadata else []
+
+    schema = RecordSchema(
+        prefix="REQ",
+        directory="requirements",
+        statuses=frozenset({"draft"}),
+        extra_checks=(no_foo,),
+    )
+    values = _metadata(id="REQ-001", status="draft")
+
+    assert validate_metadata(schema, values) == []
+    assert validate_metadata(schema, {**values, "foo": 1}) == ["foo is not allowed."]
