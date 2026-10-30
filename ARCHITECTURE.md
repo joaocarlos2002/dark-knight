@@ -44,8 +44,34 @@ src/qa_workbench/
   core/
     config.py      AppConfig: TOML file plus environment overrides
     logging.py     Console and file logging with secret redaction
+  tui/
+    app.py         WorkbenchApp: the three-area shell and status bar
+    layout.py      Terminal size -> region visibility (pure, no widgets)
+    navigation.py  Sidebar sections and destinations (pure data)
+    status.py      Status names, symbols, and tones (pure)
+    theme.py       Dark theme tokens and shell stylesheet
 tests/             Pytest suite mirroring the package layout
 ```
+
+### TUI shell
+
+`qa-workbench tui` opens `WorkbenchApp`, which composes persistent
+navigation, main content, a contextual panel, and a status bar. Decisions
+live in pure modules (`layout`, `navigation`, `status`); widgets only render
+them, so business rules stay out of presentation code.
+
+| Terminal | Navigation | Content | Context |
+|---|---|---|---|
+| Wide (120+ columns) | sidebar | center | side panel |
+| Medium (80-119) | sidebar | center | drawer, `F2` |
+| Narrow (under 80) | menu, `F1` | single column | drawer, `F2` |
+| Short (under 24 rows) | unchanged | tighter spacing | unchanged |
+
+The shell reacts to resize events and never uses fixed coordinates. It is
+fully keyboard-driven: `F1` menu, `F2` context, `Enter` opens an item, `?`
+shows shortcuts, `Ctrl+Q` quits. Every status is shown as a symbol and a name
+(for example `✓ PASSED`), never by color alone. Modules that are not
+implemented yet say so explicitly instead of showing placeholder data.
 
 ### Configuration
 
