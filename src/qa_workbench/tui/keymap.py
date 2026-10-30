@@ -25,6 +25,21 @@ _DEFAULTS: tuple[Shortcut, ...] = (
     Shortcut("toggle_context", "f2", "Show or hide the context panel", "Context"),
     Shortcut("command_palette", "ctrl+p", "Open the command palette", "Palette"),
     Shortcut("focus_search", "ctrl+k", "Go to the search field", "Search"),
+    Shortcut(
+        "toggle_browser_preview",
+        "ctrl+b",
+        "Show or hide the browser preview",
+        "Browser",
+    ),
+    Shortcut(
+        "cycle_browser_mode",
+        "f5",
+        "Change the browser mode (headless, preview, visible)",
+        "Mode",
+    ),
+    Shortcut(
+        "toggle_browser_pause", "f6", "Pause or resume the running browser", "Pause"
+    ),
     Shortcut("go_back", "escape", "Close a dialog or go back one level", "Back"),
     Shortcut("help", "question_mark", "Show the keyboard shortcuts", "Help"),
     Shortcut("quit", "ctrl+q", "Quit the workbench", "Quit"),

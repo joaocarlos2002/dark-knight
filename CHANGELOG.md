@@ -9,6 +9,16 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- Browser Agent on Playwright behind a replaceable port: navigation, clicks,
+  forms, text and visibility checks, screenshots, trace, video, console, network
+  and HTTP-failure capture, with browser faults, failed checks, and screenshot
+  failures kept apart, and evidence registered with hashes (REQ-021).
+- Browser Preview in the TUI: `headless`, `preview`, and `visible` modes, a panel
+  that follows the browser without blocking it, `Ctrl+B` to hide and show it with
+  the latest image kept, `F5`/`F6` and `batman browser control` for mode and
+  pause, with restart-bound changes deferred honestly (REQ-022, REQ-023).
+- Guided Chromium setup: `batman doctor [--fix]`, `batman browser install`, and a
+  first-run prompt that explains the download; `batman browser run|status|control`.
 - A `batman` command: installing the package puts `batman` in the terminal, and
   running it without arguments opens the workbench. `qa-workbench` and
   `python -m qa_workbench` remain as the same program.
