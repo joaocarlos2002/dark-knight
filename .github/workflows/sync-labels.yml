@@ -20,8 +20,27 @@ jobs:
         with:
           script: |
             const fs = require("fs");
-            const yaml = require("js-yaml");
-            const labels = yaml.load(fs.readFileSync(".github/labels.yml", "utf8"));
+            const source = fs.readFileSync(".github/labels.yml", "utf8");
+            const labels = [];
+            let current;
+
+            for (const line of source.split(/\r?\n/)) {
+              const entry = line.match(/^- name: "(.+)"$/);
+              if (entry) {
+                if (current) labels.push(current);
+                current = { name: entry[1] };
+                continue;
+              }
+
+              const property = line.match(/^\s+(color|description): "(.+)"$/);
+              if (property && current) current[property[1]] = property[2];
+            }
+            if (current) labels.push(current);
+
+            if (labels.length === 0) {
+              throw new Error("No labels found in .github/labels.yml");
+            }
+
             const { owner, repo } = context.repo;
 
             for (const label of labels) {
