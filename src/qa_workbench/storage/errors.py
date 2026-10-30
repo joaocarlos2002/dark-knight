@@ -69,3 +69,7 @@ class RecordFinalizedError(StorageError):
         )
         self.record_id = record_id
         self.status = status
+
+
+class EvidenceError(StorageError):
+    """Raised when evidence cannot be registered or does not check out."""
