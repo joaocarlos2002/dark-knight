@@ -202,6 +202,8 @@ uv run qa-workbench project create "Shop" --repository acme/shop \
   --environment staging=https://staging.example.com
 uv run qa-workbench project list
 uv run qa-workbench tui --project PROJ-001
+uv run qa-workbench requirements import requirements.md --project PROJ-001
+uv run qa-workbench requirements coverage --project PROJ-001
 ```
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.

@@ -23,7 +23,9 @@ class RecordSchema:
     sealed and can only be corrected through history events.
     ``optional_timestamps`` are timestamp fields that may be empty, such as
     ``finished_at``. ``references`` maps a field holding one id or a list of ids
-    to the prefixes those ids may have.
+    to the prefixes those ids may have. ``choices`` maps a field to the closed
+    set of values it may hold (when present). ``text_lists`` are fields that, when
+    present, must be lists of non-empty text.
     """
 
     prefix: str
@@ -33,6 +35,8 @@ class RecordSchema:
     optional_timestamps: tuple[str, ...] = ()
     immutable_statuses: frozenset[str] = frozenset()
     references: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
+    choices: Mapping[str, frozenset[str]] = field(default_factory=dict)
+    text_lists: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if self.prefix not in ID_PREFIXES:
@@ -157,6 +161,23 @@ def validate_metadata(
 
     for name, prefixes in schema.references.items():
         _check_references(name, metadata.get(name), prefixes, problems)
+
+    for name, allowed in schema.choices.items():
+        value = metadata.get(name)
+        if value is not None and value not in allowed:
+            problems.append(
+                f"{name} {value!r} is not allowed; use one of: "
+                f"{', '.join(sorted(allowed))}."
+            )
+
+    for name in schema.text_lists:
+        value = metadata.get(name)
+        if value is None:
+            continue
+        if not isinstance(value, list) or not all(
+            isinstance(item, str) and item.strip() for item in value
+        ):
+            problems.append(f"{name} must be a list of non-empty text.")
 
     return problems
 

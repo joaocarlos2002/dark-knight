@@ -9,6 +9,9 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- Requirement import from Markdown and text with source, hash, and author
+  preserved, plus `requirements list` and `requirements coverage`
+  (REQ-009, REQ-010).
 - Immutable history for finalized records (sealed with SHA-256, corrections as
   hash-chained events) and evidence registration with integrity verification
   (NFR-004, NFR-008).

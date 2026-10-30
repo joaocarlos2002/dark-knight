@@ -44,6 +44,13 @@ src/qa_workbench/
   core/
     config.py      AppConfig: TOML file plus environment overrides
     logging.py     Console and file logging with secret redaction
+  requirements/
+    schema.py      REQ record schema: statuses, priorities, criteria, tags
+    parser.py      Requirements from Markdown or plain text (pure)
+    importer.py    Import into a project, preserving source and author
+    coverage.py    Which requirements have related test cases
+    cli.py         `qa-workbench requirements ...` commands
+  workspace.py     The record schemas of a project and how to open them
   storage/
     frontmatter.py Markdown + YAML frontmatter documents (parse, dump, read)
     ids.py         Stable ids such as TC-001, with the specified prefixes
@@ -131,6 +138,32 @@ features.
   corrupted copy is never registered.
 - **Not here yet:** secret sanitization before persistence (REQ-025) and the
   execution workflow that produces finalized records.
+
+### Requirements
+
+`qa-workbench requirements import FILE -p PROJ-001` reads a `.md` or `.txt`
+file and creates one `REQ` record per requirement; `list` and `coverage` show
+them. PDF, DOCX, and XLSX are not supported yet and are refused with a clear
+message.
+
+- **Markdown:** each `##` section is a requirement (a document with only a `#`
+  heading is one requirement). Leading `Key: value` lines set `Priority`,
+  `Status`, `Tags`, and `Author` (Portuguese names work too); the list under
+  `Acceptance criteria:` or a `### Critérios de aceitação` heading becomes the
+  criteria; the rest is the description.
+- **Plain text:** each block separated by blank lines is a requirement; its
+  first line is the title.
+- **Nothing is guessed:** an unknown priority or status is reported and that
+  requirement is skipped; the others still import. A missing priority stays
+  missing. Imported requirements are `draft` unless the source says otherwise.
+- **Provenance:** every record keeps the file name, the line, the SHA-256 of the
+  file, the format, an optional `--source-version`, the author, and the import
+  time. The source file is never changed. Importing the same, unchanged file
+  again skips what is already there instead of duplicating it.
+- **Coverage:** a requirement is covered when at least one test case relates to
+  it, written on either side (`cases` on the requirement or `requirements` on
+  the case). Cases named but missing are reported, not counted.
+- **Projects:** archived projects can be read but not changed.
 
 ### Projects
 

@@ -240,3 +240,38 @@ def test_every_broken_link_is_reported(project: Path) -> None:
     problems = _link_problems(project, "[a](x.md) [b](y.md)")
 
     assert len(problems) == 2
+
+
+CHOICE_SCHEMA = RecordSchema(
+    prefix="REQ",
+    directory="requirements",
+    statuses=frozenset({"draft"}),
+    choices={"priority": frozenset({"high", "low"})},
+    text_lists=("tags", "criteria"),
+)
+
+
+def _choice_problems(**overrides: Any) -> list[str]:
+    values = _metadata(id="REQ-001", status="draft", **overrides)
+    values.pop("title")
+    return validate_metadata(CHOICE_SCHEMA, values)
+
+
+def test_choices_are_optional_but_closed() -> None:
+    assert _choice_problems() == []
+    assert _choice_problems(priority="high") == []
+    assert _choice_problems(priority="urgent") == [
+        "priority 'urgent' is not allowed; use one of: high, low."
+    ]
+
+
+@pytest.mark.parametrize("value", [["a", "b"], [], None])
+def test_text_lists_accept_lists_of_text(value: Any) -> None:
+    assert _choice_problems(tags=value) == []
+
+
+@pytest.mark.parametrize("value", ["a, b", [1], ["ok", " "], {"a": 1}])
+def test_text_lists_reject_everything_else(value: Any) -> None:
+    assert _choice_problems(criteria=value) == [
+        "criteria must be a list of non-empty text."
+    ]
