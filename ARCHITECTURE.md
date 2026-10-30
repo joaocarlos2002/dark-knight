@@ -64,6 +64,13 @@ src/qa_workbench/
     cli.py         `qa-workbench executions ...` commands
   evidence/
     cli.py         `qa-workbench evidence ...` commands
+  integrations/
+    ports.py       IssueSource, RepositorySource, PipelineSource
+    models.py      Issue, Commit, MergeRequest, Pipeline, Job, states
+    errors.py      IntegrationError hierarchy with diagnostic context
+    untrusted.py   fence(): external text marked as data
+    http.py        HttpGateway port and the HTTPX adapter
+    gitlab/        client, issues, repository, pipelines, `gitlab` commands
   api/
     models.py      Definition (steps, auth, expectations) and results
     definition.py  YAML loading with every problem reported together
@@ -239,6 +246,47 @@ time the case is updated through the workbench).
   scenarios). A case can combine several techniques, and the derived conditions
   appear in its body.
 
+### GitLab integration
+
+`batman gitlab ...` reads from GitLab through replaceable adapters (REQ-026). The
+code that uses them depends on the ports in `integrations/ports.py`
+(`IssueSource`, `RepositorySource`, `PipelineSource`) and the models in
+`integrations/models.py`, so GitHub can be added later without touching it.
+Everything here is read-only; writing back is a separate, approved action.
+
+| Command | Reads |
+|---|---|
+| `gitlab issues`, `gitlab issue IID` | open issues by label; one issue with description, labels, and comments |
+| `gitlab commits`, `gitlab commit SHA` | commits by ref/date; one commit with the files it changed |
+| `gitlab mrs`, `gitlab mr IID` | merge requests; one with the files it changes |
+| `gitlab pipelines`, `gitlab pipeline ID` | pipelines by ref/status; one with its jobs, stages, and durations |
+| `gitlab log JOB`, `gitlab artifacts JOB`, `gitlab artifact JOB PATH --out F` | the end of a job log, the artifacts a job declares, one artifact file |
+
+- **Connection.** The server and project come from the project's repository URL
+  (`https://gitlab.example.com/group/app`) or `--url`. The token is read from
+  `GITLAB_TOKEN` (or `--token-env NAME`) and sent in a header; it is never stored,
+  put in a URL, or printed, and is masked if an error message would contain it.
+  Redirects are not followed, so the token is never replayed to another host.
+- **Failures are explicit (NFR-010).** No token or project, rejected token (401),
+  missing permission (403), not found (404), rate limit (429, with the retry
+  delay), server error, unreachable server, a non-JSON answer, and a malformed
+  item each raise a different `IntegrationError` with the endpoint, the HTTP
+  status, and what to do. An empty project is an empty list, never confused with
+  a failure. There are no silent retries.
+- **Pipeline states.** GitLab statuses map to the specification's states
+  (created, pending, running, success, failed, canceled, skipped, manual,
+  blocked); an unrecognized status becomes `unknown` and keeps the raw value.
+  `Pipeline.passed` is true only for `success`; a created or accepted pipeline is
+  neither finished nor passed, and an HTTP 2xx never means the tests passed.
+- **External text is data.** Issue text, comments, commit titles, merge request
+  titles, and job logs are printed inside `fence(...)`, which labels them as
+  untrusted and neutralizes fence markers inside the text, so an AI provider that
+  later reads them cannot mistake them for instructions. Job logs also pass
+  through `redact_secrets` and have terminal codes removed; only the end is shown.
+- **Artifacts.** Paths must be relative and stay inside the archive; downloads
+  have a size limit.
+- **Not here yet.** Pipeline triggering, `.gitlab-ci.yml` analysis, failure
+  classification, and posting comments (REQ-027 needs approval and an audit trail).
 ### API tests and sanitization
 
 `batman api run FILE.yaml -p PROJ-001` runs an API test definition and saves a
@@ -677,8 +725,6 @@ README for order.
 | Execution Engine | Recoverable executions with explicit state and failure types |
 | Browser Agent | Authorized Playwright sessions and browser evidence |
 | API Verification | Contracts, schemas, authentication, timing |
-| Pipeline Intelligence | CI jobs, logs, artifacts, probable failure context |
-| Issue Operations | GitHub/GitLab through replaceable adapters |
 | Evidence Vault | Screenshots, logs, network data, hashes, sources |
 | AI Coordination | Replaceable providers behind one contract |
 

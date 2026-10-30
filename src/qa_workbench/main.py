@@ -12,6 +12,7 @@ from qa_workbench.core.console import ensure_utf8_output
 from qa_workbench.core.logging import configure_logging
 from qa_workbench.evidence.cli import evidence_app
 from qa_workbench.executions.cli import executions_app
+from qa_workbench.integrations.gitlab.cli import gitlab_app
 from qa_workbench.plans.cli import plans_app
 from qa_workbench.projects.cli import project_app
 from qa_workbench.projects.errors import ProjectError
@@ -45,6 +46,7 @@ app.add_typer(evidence_app, name="evidence")
 app.add_typer(reports_app, name="reports")
 app.add_typer(api_app, name="api")
 app.add_typer(browser_app, name="browser")
+app.add_typer(gitlab_app, name="gitlab")
 app.command("doctor", help="Check that everything the workbench needs is ready.")(
     doctor_command
 )
