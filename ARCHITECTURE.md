@@ -49,6 +49,7 @@ src/qa_workbench/
     ids.py         Stable ids such as TC-001, with the specified prefixes
     validation.py  RecordSchema, metadata checks, relative link checks
     repository.py  MarkdownRepository: create, get, update, list records
+    index.py       RecordIndex: rebuildable SQLite full-text search cache
     atomic.py      Atomic UTF-8 file writes
     errors.py      StorageError hierarchy with diagnostic context
   projects/
@@ -99,9 +100,18 @@ features.
 - **Failures:** a record that cannot be read or fails validation raises an
   error naming the file and the reasons. `list_records` reports damaged records
   as errors next to the valid ones instead of hiding them. Writes are atomic.
-- **Not here yet:** the rebuildable SQLite index and search, immutable history
-  for finalized executions, evidence integrity, and secret sanitization before
-  persistence belong to their own features.
+- **Search index:** `RecordIndex` keeps a SQLite full-text index (FTS5) at
+  `<project>/indexes/records.sqlite`. It is a disposable cache and never the
+  source of truth: delete it and `rebuild()` recreates it from the Markdown
+  files; `sync()` updates only records whose file changed. Search ignores case
+  and accents, treats each word as a prefix, requires every word, and can be
+  filtered by record kind and status. Records that are damaged or invalid are
+  not indexed and are reported in the `IndexReport` instead of disappearing. A
+  damaged index, a different index version, or searching before the first build
+  raises `SearchIndexError` explaining that rebuilding is the fix.
+- **Not here yet:** immutable history for finalized executions, evidence
+  integrity, and secret sanitization before persistence belong to their own
+  features.
 
 ### Projects
 

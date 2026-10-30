@@ -354,3 +354,26 @@ def test_files_are_utf8_with_lf_endings(repo: MarkdownRepository) -> None:
     raw = record.path.read_bytes()
     assert b"\r" not in raw
     assert "Atenção — ação" in raw.decode("utf-8")
+
+
+def test_prefixes_lists_the_registered_kinds(repo: MarkdownRepository) -> None:
+    assert repo.prefixes == ("REQ", "TC")
+
+
+def test_record_ids_lists_files_without_reading_them(
+    repo: MarkdownRepository,
+) -> None:
+    _create(repo)
+    _create(repo)
+    (repo.root / "test-cases" / "notes.md").write_text("x", encoding="utf-8")
+    (repo.root / "test-cases" / "REQ-001.md").write_text("x", encoding="utf-8")
+    (repo.root / "test-cases" / "TC-002.md").write_text("garbage", encoding="utf-8")
+
+    assert repo.record_ids("TC") == ["TC-001", "TC-002"]
+    assert repo.record_ids("REQ") == []
+
+
+def test_path_of_points_at_the_record_file(repo: MarkdownRepository) -> None:
+    assert repo.path_of("TC-007") == repo.root / "test-cases" / "TC-007.md"
+    with pytest.raises(RecordNotFoundError):
+        repo.path_of("BUG-001")
