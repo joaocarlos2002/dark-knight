@@ -17,6 +17,7 @@ from qa_workbench.projects.repository import ProjectRepository
 from qa_workbench.reports.cli import reports_app
 from qa_workbench.requirements.cli import requirements_app
 from qa_workbench.review.cli import review_app
+from qa_workbench.security.cli import security_app
 from qa_workbench.suites.cli import suites_app
 from qa_workbench.testcases.cli import cases_app
 
@@ -41,6 +42,7 @@ app.add_typer(plans_app, name="plans")
 app.add_typer(executions_app, name="executions")
 app.add_typer(evidence_app, name="evidence")
 app.add_typer(reports_app, name="reports")
+app.add_typer(security_app, name="security")
 
 
 def _show_version(value: bool) -> None:
