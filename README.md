@@ -183,6 +183,14 @@ log_level = "INFO"
 log_file = "~/.local/share/dark-knight-qa/qa-workbench.log"
 ```
 
+Keyboard shortcuts can be remapped in the same file; see
+[ARCHITECTURE.md](ARCHITECTURE.md) for the list of actions:
+
+```toml
+[shortcuts]
+toggle_context = "f3"
+```
+
 Supported overrides are `DARK_KNIGHT_CONFIG_DIR`, `DARK_KNIGHT_DATA_DIR`,
 `DARK_KNIGHT_LOG_LEVEL`, and `DARK_KNIGHT_LOG_FILE`. Secrets are redacted from
 application logs; do not place credentials in configuration files.
