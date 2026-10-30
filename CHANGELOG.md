@@ -9,6 +9,8 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- Rebuildable SQLite full-text index and search over Markdown records, with
+  incremental sync and explicit errors for damaged indexes (REQ-008, REQ-032).
 - Markdown frontmatter repository: UTF-8 records with YAML frontmatter,
   stable ids with the specified prefixes, immutable `id` and `created_at`,
   timestamps with a timezone, and validation of metadata and relative links
