@@ -1,8 +1,10 @@
 import re
 
+import pytest
 from typer.testing import CliRunner
 
 from qa_workbench.main import app
+from qa_workbench.tui.app import WorkbenchApp
 
 runner = CliRunner()
 
@@ -25,3 +27,13 @@ def test_version_exposes_application_version() -> None:
 
     assert result.exit_code == 0
     assert result.stdout.strip() == "Dark Knight QA 0.2.0"
+
+
+def test_tui_command_starts_the_workbench(monkeypatch: pytest.MonkeyPatch) -> None:
+    started: list[bool] = []
+    monkeypatch.setattr(WorkbenchApp, "run", lambda self: started.append(True))
+
+    result = runner.invoke(app, ["tui"])
+
+    assert result.exit_code == 0
+    assert started == [True]
