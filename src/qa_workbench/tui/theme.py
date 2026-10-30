@@ -1,23 +1,32 @@
-"""Dark theme tokens and shell stylesheet.
+"""Wayne Industries theme tokens and shell stylesheet.
 
-Colors communicate state, not decoration. Tokens are semantic so screens
-never hard-code hex values.
+Colors communicate state, not decoration. Every color lives in ``TOKENS``;
+the stylesheet refers to tokens only, so no hex value is repeated elsewhere.
+Red is the institutional accent and is used sparingly: selection, focus, and
+primary actions. Functional colors (success, warning, info, AI, alert) always
+travel with a symbol and a name.
 """
 
 TOKENS: dict[str, str] = {
-    "background": "#101216",
-    "surface": "#171B22",
-    "elevated": "#202631",
-    "border": "#303846",
-    "text": "#E6EAF0",
-    "text-muted": "#A0A9B8",
-    "text-disabled": "#687386",
-    "accent": "#6EA8FE",
-    "info": "#56B6C2",
-    "success": "#69C58B",
-    "warning": "#E5B567",
-    "error": "#E57373",
-    "ai": "#B392F0",
+    # Surfaces
+    "gotham-black": "#0A0A0B",
+    "industrial-black": "#111113",
+    "batcave": "#171719",
+    "dark-concrete": "#1C1C1F",
+    "steel-gray": "#343438",
+    # Identity
+    "wayne-red": "#8F2929",
+    "signal-red": "#B34A45",
+    # Text
+    "dirty-white": "#E5E0DC",
+    "ash-gray": "#858184",
+    "muted-gray": "#55545A",
+    # Functional states
+    "success": "#8EAD91",
+    "alert": "#B34A45",
+    "warning": "#E5A84B",
+    "info": "#7D9EB8",
+    "ai": "#A18AB8",
 }
 
 _DECLARATIONS = "\n".join(f"${name}: {value};" for name, value in TOKENS.items())
@@ -27,52 +36,89 @@ SHELL_CSS = (
     + """
 
 Screen {
-    background: $background;
-    color: $text;
+    background: $gotham-black;
+    color: $dirty-white;
     layout: vertical;
 }
 
+/* Header: corporate identity, discreet. */
 #header {
-    height: 1;
+    height: auto;
     padding: 0 1;
-    background: $surface;
-    color: $text;
-    text-style: bold;
+    background: $industrial-black;
+    border-bottom: solid $steel-gray;
 }
 
-#header-title {
-    width: auto;
+#header-row-1,
+#header-row-2 {
+    height: 1;
+}
+
+#header-company {
+    width: 1fr;
+    text-style: bold;
+    color: $dirty-white;
+}
+
+#header-division,
+#header-location {
+    color: $ash-gray;
+}
+
+#header-division {
+    width: 1fr;
 }
 
 #header-project {
-    width: 1fr;
-    text-align: right;
-    color: $text-muted;
+    width: auto;
+    color: $dirty-white;
+}
+
+#header-location {
+    width: auto;
 }
 
 #body {
     height: 1fr;
 }
 
+/* Navigation: brand block above the menu. */
+#navigation {
+    width: 28;
+    background: $industrial-black;
+    border-right: solid $steel-gray;
+}
+
+#brand {
+    height: auto;
+    padding: 1 2 0 2;
+    color: $dirty-white;
+    text-style: bold;
+}
+
 #sidebar {
-    width: 26;
-    background: $surface;
-    border-right: solid $border;
+    height: 1fr;
+    background: $industrial-black;
     padding: 0 1;
+    border: none;
 }
 
 #sidebar:focus {
-    border-right: solid $accent;
+    border: none;
+}
+
+#navigation:focus-within {
+    border-right: solid $signal-red;
 }
 
 #sidebar > .option-list--option-highlighted {
-    background: $elevated;
-    color: $accent;
+    background: $wayne-red;
+    color: $dirty-white;
     text-style: bold;
 }
 
 #sidebar > .option-list--option-disabled {
-    color: $text-muted;
+    color: $ash-gray;
     text-style: bold;
 }
 
@@ -83,62 +129,69 @@ Screen {
 
 #page-title {
     text-style: bold;
-    color: $text;
+    color: $dirty-white;
 }
 
 #page-body {
-    color: $text-muted;
+    color: $ash-gray;
     margin-top: 1;
 }
 
 #context {
     width: 32;
-    background: $surface;
-    border-left: solid $border;
+    background: $batcave;
+    border-left: solid $steel-gray;
     padding: 1 2;
-    color: $text-muted;
+    color: $ash-gray;
 }
 
+/* Footer: identity line and status/shortcut line. */
+#footer {
+    height: auto;
+    background: $industrial-black;
+    border-top: solid $steel-gray;
+    padding: 0 1;
+}
+
+#footer-identity,
 #status-bar {
     height: 1;
-    padding: 0 1;
-    background: $elevated;
-    color: $text-muted;
+    color: $ash-gray;
 }
 
 /* Status tones. Always paired with a symbol and a name in the text. */
 .tone-success { color: $success; }
-.tone-error { color: $error; }
+.tone-error { color: $alert; }
 .tone-warning { color: $warning; }
 .tone-info { color: $info; }
 .tone-ai { color: $ai; }
-.tone-muted { color: $text-muted; }
+.tone-muted { color: $ash-gray; }
 
 .metric-panel {
     width: auto;
     min-width: 14;
     padding: 0 2;
-    background: $surface;
-    border: solid $border;
+    background: $batcave;
+    border: solid $steel-gray;
     text-style: bold;
 }
 
 .detail-panel {
     padding: 1 2;
-    background: $surface;
-    color: $text;
+    background: $batcave;
+    color: $dirty-white;
 }
 
 .state-empty,
 .state-loading {
-    color: $text-muted;
+    color: $ash-gray;
     padding: 1 2;
 }
 
 .state-error {
-    color: $error;
+    color: $alert;
     padding: 1 2;
-    border-left: thick $error;
+    border-left: thick $alert;
 }
 
 ConfirmationDialog {
@@ -150,8 +203,8 @@ ConfirmationDialog > Vertical {
     max-width: 90%;
     height: auto;
     padding: 1 2;
-    background: $elevated;
-    border: solid $accent;
+    background: $dark-concrete;
+    border: solid $signal-red;
 }
 
 ConfirmationDialog #dialog-title {
@@ -160,7 +213,7 @@ ConfirmationDialog #dialog-title {
 
 ConfirmationDialog #dialog-message {
     margin: 1 0;
-    color: $text-muted;
+    color: $ash-gray;
 }
 
 ConfirmationDialog Horizontal {
@@ -170,6 +223,29 @@ ConfirmationDialog Horizontal {
 
 ConfirmationDialog Button {
     margin-left: 1;
+}
+
+/* Primary actions use Wayne Red; destructive ones use the alert color. */
+Button {
+    background: $dark-concrete;
+    color: $dirty-white;
+    border: none;
+    border-top: none;
+    border-bottom: none;
+}
+
+Button.-primary {
+    background: $wayne-red;
+    color: $dirty-white;
+}
+
+Button.-error {
+    background: $alert;
+    color: $gotham-black;
+}
+
+Button:focus {
+    text-style: bold reverse;
 }
 
 /* Medium and narrow terminals: context opens as an overlay drawer. */
@@ -183,12 +259,17 @@ Screen.-narrow #context {
 }
 
 /* Narrow terminals: the menu takes the whole width when open. */
-Screen.-narrow #sidebar {
+Screen.-narrow #navigation {
     width: 100%;
     border-right: none;
 }
 
-/* Short terminals: drop secondary metadata. */
+/* Short terminals: drop secondary identity lines and metadata. */
+Screen.-short #header-row-2,
+Screen.-short #footer-identity {
+    display: none;
+}
+
 Screen.-short #page-body {
     margin-top: 0;
 }
