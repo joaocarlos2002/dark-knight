@@ -106,6 +106,41 @@ Screen {
     color: $text-muted;
 }
 
+/* Status tones. Always paired with a symbol and a name in the text. */
+.tone-success { color: $success; }
+.tone-error { color: $error; }
+.tone-warning { color: $warning; }
+.tone-info { color: $info; }
+.tone-ai { color: $ai; }
+.tone-muted { color: $text-muted; }
+
+.metric-panel {
+    width: auto;
+    min-width: 14;
+    padding: 0 2;
+    background: $surface;
+    border: solid $border;
+    text-style: bold;
+}
+
+.detail-panel {
+    padding: 1 2;
+    background: $surface;
+    color: $text;
+}
+
+.state-empty,
+.state-loading {
+    color: $text-muted;
+    padding: 1 2;
+}
+
+.state-error {
+    color: $error;
+    padding: 1 2;
+    border-left: thick $error;
+}
+
 /* Medium and narrow terminals: context opens as an overlay drawer. */
 Screen.-medium #context,
 Screen.-narrow #context {
