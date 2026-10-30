@@ -54,6 +54,8 @@ src/qa_workbench/
     states.py      The lifecycle state machine and its validated transitions
     schema.py      EXEC record schema and rules tying data to state
     service.py     Create executions and move them through the lifecycle
+    recording.py   Save steps as they run, before and after each one
+    recovery.py    Find interrupted runs, recover, rerun, record corrections
     cli.py         `qa-workbench executions ...` commands
   evidence/
     cli.py         `qa-workbench evidence ...` commands
@@ -254,8 +256,32 @@ until there is a result. A result can only move to `finalized`, so `blocked`,
 - `evidence add | list | verify` registers evidence for an execution and checks
   its integrity.
 
-Incremental step recording, recovery after interruption, and failure
-classification arrive with the execution-records feature.
+#### Incremental, recoverable, never overwritten
+
+- **Saved before it happens:** the execution record exists from `created`,
+  before any action. `executions step-start` saves a step as *in progress*
+  before it is carried out and `step-finish` completes it with what was
+  observed, so the file always shows what happened so far. Every write is
+  atomic, so a crash leaves the last complete state and never a half-written
+  record; leftover temporary files are ignored.
+- **Recovery:** `executions interrupted` lists running executions with no recent
+  activity (30 minutes by default) and the step that was in progress.
+  `executions recover --action resume` closes that step as `interrupted` (its
+  outcome was not observed, so none is invented) and keeps the execution
+  running so the step can be repeated; `--action abandon` ends it as
+  `inconclusive`, keeping the steps that finished. Both record what happened.
+- **Never overwritten:** `executions rerun` starts a new execution that points
+  back to the original through `rerun_of`; the original stays sealed and intact.
+  Corrections and additions to a finalized execution are separate history events
+  (`executions correct`, `executions history`) with an author, a time, and a
+  justification.
+- **Failure classification:** a failed execution (and a failed step) must say
+  whether the failure was in the `product`, the `test`, the `infrastructure`, or
+  the `evidence_collection`. Defects can only be linked to product failures, so
+  environment flakiness and test bugs are not logged as product bugs. Losing the
+  evidence is not a pass: without evidence the run is blocked or inconclusive.
+- A pass cannot contain a step that did not pass, steps are numbered in order,
+  and only the last step may be unfinished.
 
 ### Test suites
 
