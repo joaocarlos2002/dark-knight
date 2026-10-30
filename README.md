@@ -206,6 +206,8 @@ uv run qa-workbench requirements import requirements.md --project PROJ-001
 uv run qa-workbench requirements coverage --project PROJ-001
 uv run qa-workbench cases create "Log in" -p PROJ-001 --objective "Validate login" \n  --step "Open the page" --step "Submit => Dashboard is shown" \n  --expected-result "The user is authenticated" --requirement REQ-001
 uv run qa-workbench suites create Smoke -p PROJ-001 --type smoke --case TC-001
+uv run qa-workbench executions create -p PROJ-001 --type manual --executor Ana --environment staging --case TC-001
+uv run qa-workbench executions move EXEC-001 -p PROJ-001 --to planned
 uv run qa-workbench plans recommend -p PROJ-001 --requirement REQ-001 --budget 120
 uv run qa-workbench review pending --project PROJ-001
 uv run qa-workbench review decide REQ-001 -p PROJ-001 --decision approved --reviewer Ana

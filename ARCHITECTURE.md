@@ -50,6 +50,13 @@ src/qa_workbench/
     importer.py    Import into a project, preserving source and author
     coverage.py    Which requirements have related test cases
     cli.py         `qa-workbench requirements ...` commands
+  executions/
+    states.py      The lifecycle state machine and its validated transitions
+    schema.py      EXEC record schema and rules tying data to state
+    service.py     Create executions and move them through the lifecycle
+    cli.py         `qa-workbench executions ...` commands
+  evidence/
+    cli.py         `qa-workbench evidence ...` commands
   suites/
     schema.py      SUITE record schema: type, status, member cases
     service.py     Create suites, add/remove cases, membership, verification
@@ -209,6 +216,46 @@ time the case is updated through the workbench).
   values, every rule combination, valid and refused transitions, use-case
   scenarios). A case can combine several techniques, and the derived conditions
   appear in its body.
+
+### Executions and their lifecycle
+
+`qa-workbench executions create | move | list | show | states` runs test cases
+through a lifecycle validated by the domain, not by convention:
+
+```text
+created -> planned -> awaiting_approval -> running
+        -> passed | failed | blocked | inconclusive | cancelled -> finalized
+```
+
+`planned` may go straight to `running` unless the execution requires approval,
+in which case it must pass through `awaiting_approval`. Cancelling is possible
+until there is a result. A result can only move to `finalized`, so `blocked`,
+`inconclusive`, and `cancelled` are never turned into `passed`.
+
+- **Types:** manual, assisted manual, agent-driven, automated, and exploratory.
+  Agent-driven and automated runs must name their `automation_tool` (for
+  example `playwright`), and a manual or assisted run cannot, so automation
+  driven by an agent is never recorded as a human execution. Only exploratory
+  sessions can omit the test case.
+- **Rules tied to state** (also checked when a file is read): a pass needs
+  evidence and the observed result; a failure needs the observed result;
+  blocked, inconclusive, and cancelled need a reason; every result needs a finish
+  time, and a started execution needs a start time; the finish cannot precede
+  the start; a finalized execution needs its result. Evidence is never invented:
+  every cited evidence id must be a record that exists.
+- **Approval:** an execution that requires approval records who approved it and
+  when before it runs, and an agent cannot approve its own run.
+- **Record:** type, executor, environment, version, branch, commit, test case,
+  plan, suite, project, the expected result copied from the case when the
+  execution was created, observed result, evidence, bugs, notes, reason, start,
+  finish, and duration.
+- **Finalized means sealed:** finalizing seals the record (see Immutable
+  history), so it can never be edited and any change is detected.
+- `evidence add | list | verify` registers evidence for an execution and checks
+  its integrity.
+
+Incremental step recording, recovery after interruption, and failure
+classification arrive with the execution-records feature.
 
 ### Test suites
 

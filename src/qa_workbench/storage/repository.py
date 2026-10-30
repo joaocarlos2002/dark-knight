@@ -5,7 +5,7 @@ Layout, per schema::
     <root>/<schema.directory>/<ID>.md
 """
 
-from collections.abc import Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -71,11 +71,17 @@ class MarkdownRepository:
             self._schemas[schema.prefix] = schema
         self._history = HistoryStore(self.path_of)
 
-    def create(self, prefix: str, fields: Mapping[str, Any], body: str = "") -> Record:
+    def create(
+        self,
+        prefix: str,
+        fields: Mapping[str, Any],
+        body: str | Callable[[dict[str, Any]], str] = "",
+    ) -> Record:
         """Create a record with the next free id.
 
         ``id``, ``created_at``, and ``updated_at`` are managed here and cannot
-        be passed in ``fields``.
+        be passed in ``fields``. ``body`` is the Markdown text, or a function
+        that builds it from the final metadata (which includes the new id).
         """
         schema = self._schema(prefix)
         managed = [name for name in MANAGED_FIELDS if name in fields]
@@ -97,12 +103,13 @@ class MarkdownRepository:
             "updated_at": stamp,
         }
         path = folder / f"{record_id}.md"
-        self._check(schema, path, metadata, body)
+        text = body(metadata) if callable(body) else body
+        self._check(schema, path, metadata, text)
         if path.exists():
             raise StorageError(f"Refusing to overwrite existing record {path}.")
-        self._write(path, metadata, body)
+        self._write(path, metadata, text)
         self._seal_if_final(schema, record_id, metadata)
-        return Record(record_id, metadata, body, path)
+        return Record(record_id, metadata, text, path)
 
     def get(self, record_id: str) -> Record:
         """Read and validate one record."""
