@@ -9,6 +9,9 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- Project lifecycle: `qa-workbench project create|list|show|archive`, stored
+  as `project.yaml` and `README.md`, and `qa-workbench tui --project`
+  (REQ-002, REQ-003).
 - Responsive Textual application shell, opened with `qa-workbench tui`
   (REQ-004, REQ-005, NFR-006, NFR-007).
 
