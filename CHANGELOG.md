@@ -9,6 +9,11 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- Human review workflow for AI-generated requirements and test cases: required
+  provenance, approval only through a recorded review by someone other than the
+  generator, and findings classified as fact, hypothesis, recommendation, or
+  inconclusive with real sources, plus `review pending|submit|decide`
+  (REQ-013, REQ-029).
 - Test cases with the fields of the specification, validation, a secret check,
   and six design techniques (equivalence partitioning, boundary values, decision
   tables, state transitions, use cases, exploratory) with derived conditions,
