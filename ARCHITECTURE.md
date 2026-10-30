@@ -89,10 +89,24 @@ A project is a folder under the data directory:
 
 ### TUI shell
 
-`qa-workbench tui` opens `WorkbenchApp`, which composes persistent
-navigation, main content, a contextual panel, and a status bar. Decisions
-live in pure modules (`layout`, `navigation`, `status`); widgets only render
-them, so business rules stay out of presentation code.
+`qa-workbench tui` opens `WorkbenchApp`, which composes a corporate header,
+persistent navigation, main content, a contextual panel, and a footer.
+Decisions live in pure modules (`layout`, `navigation`, `status`, `identity`);
+widgets only render them, so business rules stay out of presentation code.
+
+- **Identity:** the header and footer carry the Wayne Industries / Dark Knight
+  QA identity as text (`tui/identity.py`). No logos or protected symbols are
+  used. The secondary header row and the footer identity line are hidden on
+  short terminals so the chrome never crowds the work area.
+- **Navigation:** three categories, `WORKSPACE`, `OPERATIONS`, and
+  `INTELLIGENCE`, with uppercase labels. The selected item is highlighted in
+  Wayne Red and the focused area is outlined in Signal Red.
+- **Theme:** every color is a named token in `tui/theme.py`; the stylesheet
+  never repeats a hex value. Tests check the contrast of text and functional
+  colors against the surfaces. The alert color meets the 3:1 minimum for UI
+  components and is always paired with a symbol and a name.
+- **Status:** `PASSED`, `FAILED`, `WARNING`, `RUNNING`, `BLOCKED`, `SKIPPED`,
+  `PENDING`, `AI PROCESSING`, and others, each with a symbol and a name.
 
 | Terminal | Navigation | Content | Context |
 |---|---|---|---|
@@ -115,8 +129,8 @@ status bar, the help text, and the command palette.
 |---|---|
 | `F1` | Show or hide the navigation menu |
 | `F2` | Show or hide the context panel |
-| `Ctrl+K` | Command palette: go to any page or run an action |
-| `Ctrl+L` | Focus the search field of the current page, if it has one |
+| `Ctrl+P` | Command palette: go to any page or run an action |
+| `Ctrl+K` | Go to the search field of the current page, if it has one |
 | `Esc` | Close a dialog, then the menu or context drawer |
 | `?` | List the shortcuts |
 | `Ctrl+Q` | Quit |
@@ -126,15 +140,17 @@ Override any of them in `config.toml`:
 ```toml
 [shortcuts]
 toggle_context = "f3"
-command_palette = "ctrl+p"
+command_palette = "ctrl+o"
 ```
 
 An unknown action, an empty key, a key reserved by the terminal (`Ctrl+C`,
 `Ctrl+Z`, `Ctrl+S`, `Ctrl+D`), or two actions on the same key makes
 `qa-workbench tui` exit with an error that names the problem, instead of
-starting with a broken keymap. `Ctrl+B` (browser preview) and `Ctrl+P`
-(project picker) from the visual specification are not bound yet because the
-features behind them do not exist.
+starting with a broken keymap. `Ctrl+B` (browser preview), `Ctrl+N` (new
+record), `Ctrl+R` (refresh), and `Ctrl+Enter` (primary action) from the visual
+specification are not bound yet because the features behind them do not exist.
+`Ctrl+K` focuses the search field of the current page; a cross-module global
+search arrives with the knowledge base.
 
 ### Reusable components
 
