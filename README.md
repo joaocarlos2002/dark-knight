@@ -204,6 +204,7 @@ uv run qa-workbench project list
 uv run qa-workbench tui --project PROJ-001
 uv run qa-workbench requirements import requirements.md --project PROJ-001
 uv run qa-workbench requirements coverage --project PROJ-001
+uv run qa-workbench cases create "Log in" -p PROJ-001 --objective "Validate login" \n  --step "Open the page" --step "Submit => Dashboard is shown" \n  --expected-result "The user is authenticated" --requirement REQ-001
 ```
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.

@@ -9,6 +9,10 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- Test cases with the fields of the specification, validation, a secret check,
+  and six design techniques (equivalence partitioning, boundary values, decision
+  tables, state transitions, use cases, exploratory) with derived conditions,
+  plus `cases create|list|show` (REQ-011, REQ-012).
 - Requirement import from Markdown and text with source, hash, and author
   preserved, plus `requirements list` and `requirements coverage`
   (REQ-009, REQ-010).
