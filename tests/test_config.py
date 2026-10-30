@@ -106,6 +106,9 @@ def test_startup_defaults(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> No
     assert config.splash_enabled is True
     assert config.edits_dir == ROOT / "assets" / "batman-edits"
     assert config.splash_player is None
+    assert config.edits_repo is None
+    assert config.edits_ref is None
+    assert config.edits_sha256 is None
 
 
 def test_relative_edits_dir_resolves_from_the_project_root(
@@ -161,6 +164,44 @@ def test_startup_environment_overrides_toml(
     assert config.splash_enabled is True
     assert config.edits_dir == Path.home() / "from-env"
     assert config.splash_player == "vlc"
+
+
+def test_edits_source_is_loaded_from_toml(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    (config_dir / "config.toml").write_text(
+        f'[startup]\nrepo = "owner/edits"\nref = "v1"\nsha256 = "{"AB" * 32}"\n',
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("DARK_KNIGHT_CONFIG_DIR", str(config_dir))
+
+    config = AppConfig.load()
+
+    assert config.edits_repo == "owner/edits"
+    assert config.edits_ref == "v1"
+    assert config.edits_sha256 == "ab" * 32
+
+
+def test_edits_source_environment_overrides_toml(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    (config_dir / "config.toml").write_text(
+        '[startup]\nrepo = "from-toml/edits"\nref = "v1"\n', encoding="utf-8"
+    )
+    monkeypatch.setenv("DARK_KNIGHT_CONFIG_DIR", str(config_dir))
+    monkeypatch.setenv("DARK_KNIGHT_EDITS_REPO", "from-env/edits")
+    monkeypatch.setenv("DARK_KNIGHT_EDITS_REF", "v2")
+    monkeypatch.setenv("DARK_KNIGHT_EDITS_SHA256", "CD" * 32)
+
+    config = AppConfig.load()
+
+    assert config.edits_repo == "from-env/edits"
+    assert config.edits_ref == "v2"
+    assert config.edits_sha256 == "cd" * 32
 
 
 def test_invalid_splash_flag_is_rejected(

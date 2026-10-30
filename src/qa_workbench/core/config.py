@@ -76,6 +76,9 @@ class AppConfig:
     splash_enabled: bool = True
     edits_dir: Path = field(default_factory=_default_edits_dir)
     splash_player: str | None = None
+    edits_repo: str | None = None
+    edits_ref: str | None = None
+    edits_sha256: str | None = None
 
     def __post_init__(self) -> None:
         if self.log_level.upper() not in {
@@ -144,6 +147,16 @@ class AppConfig:
             "DARK_KNIGHT_SPLASH_PLAYER", startup.get("player")
         )
         splash_player = str(configured_player) if configured_player else None
+        configured_repo = environ.get("DARK_KNIGHT_EDITS_REPO", startup.get("repo"))
+        edits_repo = str(configured_repo).strip() if configured_repo else None
+        configured_ref = environ.get("DARK_KNIGHT_EDITS_REF", startup.get("ref"))
+        edits_ref = str(configured_ref).strip() if configured_ref else None
+        configured_sha256 = environ.get(
+            "DARK_KNIGHT_EDITS_SHA256", startup.get("sha256")
+        )
+        edits_sha256 = (
+            str(configured_sha256).strip().lower() if configured_sha256 else None
+        )
 
         data_dir = _path_from_env(
             "DARK_KNIGHT_DATA_DIR",
@@ -169,4 +182,7 @@ class AppConfig:
             splash_enabled=splash_enabled,
             edits_dir=edits_dir,
             splash_player=splash_player,
+            edits_repo=edits_repo,
+            edits_ref=edits_ref,
+            edits_sha256=edits_sha256,
         )

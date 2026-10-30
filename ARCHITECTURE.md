@@ -45,6 +45,9 @@ src/qa_workbench/
     config.py      AppConfig: TOML file plus environment overrides
     logging.py     Console and file logging with secret redaction
     splash.py      Random fullscreen startup edit before the workbench
+  edits/
+    service.py     Fetch the startup edits from a GitHub archive
+    cli.py         `batman edits ...` commands
   requirements/
     schema.py      REQ record schema: statuses, priorities, criteria, tags
     parser.py      Requirements from Markdown or plain text (pure)
@@ -693,6 +696,17 @@ apart from a debug log. On Windows the console window is minimized for the
 duration and restored afterwards, and a playback failure never prevents the
 workbench from starting. `--no-splash` skips it for one launch.
 
+The videos are not kept in this repository. When `[startup] repo` names a
+GitHub repository, `batman edits fetch` downloads its zip archive
+(`codeload.github.com/<owner>/<name>/zip/<ref>`, default branch when no `ref` is
+set), verifies the optional SHA-256, and copies the video files into
+`edits_dir` (`edits/service.py`). The first interactive launch does the same
+when the folder is empty. A private repository is read with
+`DARK_KNIGHT_EDITS_TOKEN`, falling back to `GITHUB_TOKEN`; a failed download,
+checksum, or archive with no videos is reported and the splash is simply
+skipped, never blocking the workbench. `batman edits list` shows what the
+splash can choose from.
+
 Everything the app needs at run time is in `[project].dependencies` (Typer,
 Textual, Pydantic, PyYAML, Playwright, Pillow), so one install is enough; development tools live in
 the `dev` extra. Themes and styles are embedded in the code, so there are no data
@@ -707,16 +721,21 @@ instruction: Chromium for Playwright is checked and installed by `batman doctor`
 
 1. environment variables (`DARK_KNIGHT_CONFIG_DIR`, `DARK_KNIGHT_DATA_DIR`,
    `DARK_KNIGHT_LOG_LEVEL`, `DARK_KNIGHT_LOG_FILE`, `DARK_KNIGHT_SPLASH`,
-   `DARK_KNIGHT_EDITS_DIR`, `DARK_KNIGHT_SPLASH_PLAYER`);
+   `DARK_KNIGHT_EDITS_DIR`, `DARK_KNIGHT_SPLASH_PLAYER`,
+   `DARK_KNIGHT_EDITS_REPO`, `DARK_KNIGHT_EDITS_REF`,
+   `DARK_KNIGHT_EDITS_SHA256`);
 2. the `[application]`, `[shortcuts]`, and `[startup]` tables of `config.toml`
    in the configuration directory;
 3. platform defaults (`APPDATA`/`LOCALAPPDATA` on Windows,
    `~/Library/Application Support` on macOS, XDG directories elsewhere).
 
 The `[startup]` table accepts `splash` (a boolean), `edits_dir` (the folder
-with the videos; defaults to `assets/batman-edits` in the project), and `player`
+with the videos; defaults to `assets/batman-edits` in the project), `player`
 (an executable name or path; otherwise the first of `mpv`, `ffplay`, `vlc` found
-on `PATH`).
+on `PATH`), and the edits source: `repo` (`owner/name` of the GitHub repository
+with the videos), `ref` (tag, branch, or commit; the default branch when
+absent), and `sha256` (optional checksum of the downloaded archive, normalized
+to lowercase).
 
 Invalid input raises `ConfigurationError`. The message names the offending
 file, and the original parser error is kept as the exception cause. The CLI

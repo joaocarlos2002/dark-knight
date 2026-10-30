@@ -233,6 +233,21 @@ edits_dir = "assets/batman-edits"
 player = "ffplay"
 ```
 
+The edits can also live in a separate GitHub repository, keeping the videos out
+of this one. `batman edits fetch` downloads a tagged archive and copies its
+videos into `edits_dir`; on the first launch with an empty folder the same
+fetch runs automatically. `ref` defaults to the repository's default branch:
+
+```toml
+[startup]
+repo = "owner/dark-knight-edits"
+ref = "edits-v1"
+sha256 = "..."   # optional: SHA-256 of the downloaded archive
+```
+
+`batman edits list` shows what the splash can choose from. For a private
+repository, set `DARK_KNIGHT_EDITS_TOKEN` (or `GITHUB_TOKEN`) with read access.
+
 The splash needs `ffplay`, `mpv`, or `vlc` on `PATH`; `player` forces a
 specific executable. A relative `edits_dir` resolves from the project root. It
 only runs when the workbench is opened in an interactive terminal, and any key
@@ -249,7 +264,8 @@ toggle_context = "f3"
 
 Supported overrides are `DARK_KNIGHT_CONFIG_DIR`, `DARK_KNIGHT_DATA_DIR`,
 `DARK_KNIGHT_LOG_LEVEL`, `DARK_KNIGHT_LOG_FILE`, `DARK_KNIGHT_SPLASH`,
-`DARK_KNIGHT_EDITS_DIR`, and `DARK_KNIGHT_SPLASH_PLAYER`. Secrets are redacted
+`DARK_KNIGHT_EDITS_DIR`, `DARK_KNIGHT_SPLASH_PLAYER`, `DARK_KNIGHT_EDITS_REPO`,
+`DARK_KNIGHT_EDITS_REF`, and `DARK_KNIGHT_EDITS_SHA256`. Secrets are redacted
 from application logs; do not place credentials in configuration files.
 
 Projects are managed from the CLI and stored under the data directory:
