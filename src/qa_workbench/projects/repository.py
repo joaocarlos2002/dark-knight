@@ -6,9 +6,7 @@ Layout, per the product specification::
     <data_dir>/projects/<PROJ-NNN>/README.md
 """
 
-import os
 import re
-import tempfile
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -29,6 +27,7 @@ from qa_workbench.projects.models import (
     Project,
     ProjectStatus,
 )
+from qa_workbench.storage.atomic import write_text_atomic
 
 PROJECT_FILE = "project.yaml"
 README_FILE = "README.md"
@@ -50,18 +49,6 @@ class ProjectListing:
 
 def _now() -> datetime:
     return datetime.now().astimezone()
-
-
-def _write_atomic(path: Path, text: str) -> None:
-    """Write a file so readers never observe a partial update."""
-    descriptor, temporary = tempfile.mkstemp(dir=path.parent, suffix=".tmp")
-    try:
-        with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as stream:
-            stream.write(text)
-        os.replace(temporary, path)
-    except BaseException:
-        Path(temporary).unlink(missing_ok=True)
-        raise
 
 
 def _readme(project: Project) -> str:
@@ -117,7 +104,7 @@ class ProjectRepository:
         folder = self.root / project.id
         folder.mkdir(exist_ok=False)
         self._save(project)
-        _write_atomic(folder / README_FILE, _readme(project))
+        write_text_atomic(folder / README_FILE, _readme(project))
         return project
 
     def list_projects(self, *, include_archived: bool = False) -> ProjectListing:
@@ -181,7 +168,7 @@ class ProjectRepository:
     def _save(self, project: Project) -> None:
         document = project.model_dump(mode="json")
         text = yaml.safe_dump(document, sort_keys=False, allow_unicode=True)
-        _write_atomic(self.root / project.id / PROJECT_FILE, text)
+        write_text_atomic(self.root / project.id / PROJECT_FILE, text)
 
 
 def _describe(error: ValidationError) -> str:
