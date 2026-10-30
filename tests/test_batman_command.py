@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
+from qa_workbench.core.config import AppConfig
 from qa_workbench.main import app
 from qa_workbench.tui.app import WorkbenchApp
 
@@ -47,6 +48,73 @@ def test_the_tui_command_still_opens_it(launched: list[WorkbenchApp]) -> None:
 
     assert result.exit_code == 0
     assert len(launched) == 1
+
+
+def test_the_default_launch_plays_the_startup_splash(
+    monkeypatch: pytest.MonkeyPatch, launched: list[WorkbenchApp]
+) -> None:
+    played: list[AppConfig] = []
+    monkeypatch.setattr(
+        "qa_workbench.main.play_startup_splash", lambda config: played.append(config)
+    )
+
+    result = runner.invoke(app, [])
+
+    assert result.exit_code == 0
+    assert len(played) == 1
+    assert len(launched) == 1
+
+
+def test_no_splash_skips_the_startup_splash(
+    monkeypatch: pytest.MonkeyPatch, launched: list[WorkbenchApp]
+) -> None:
+    played: list[AppConfig] = []
+    monkeypatch.setattr(
+        "qa_workbench.main.play_startup_splash", lambda config: played.append(config)
+    )
+
+    result = runner.invoke(app, ["--no-splash"])
+
+    assert result.exit_code == 0
+    assert played == []
+    assert len(launched) == 1
+
+
+def test_tui_no_splash_skips_the_startup_splash(
+    monkeypatch: pytest.MonkeyPatch, launched: list[WorkbenchApp]
+) -> None:
+    played: list[AppConfig] = []
+    monkeypatch.setattr(
+        "qa_workbench.main.play_startup_splash", lambda config: played.append(config)
+    )
+
+    result = runner.invoke(app, ["tui", "--no-splash"])
+
+    assert result.exit_code == 0
+    assert played == []
+    assert len(launched) == 1
+
+
+def test_log_level_override_keeps_the_startup_configuration(
+    monkeypatch: pytest.MonkeyPatch, launched: list[WorkbenchApp], tmp_path: Path
+) -> None:
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    (config_dir / "config.toml").write_text(
+        '[startup]\nsplash = false\nedits_dir = "~/my-edits"\n', encoding="utf-8"
+    )
+    played: list[AppConfig] = []
+    monkeypatch.setattr(
+        "qa_workbench.main.play_startup_splash", lambda config: played.append(config)
+    )
+
+    result = runner.invoke(app, ["--log-level", "debug"])
+
+    assert result.exit_code == 0
+    assert len(played) == 1
+    assert played[0].log_level == "DEBUG"
+    assert played[0].splash_enabled is False
+    assert played[0].edits_dir == Path.home() / "my-edits"
 
 
 def test_a_command_does_not_open_the_workbench(launched: list[WorkbenchApp]) -> None:

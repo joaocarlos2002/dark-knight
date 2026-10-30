@@ -44,6 +44,7 @@ src/qa_workbench/
   core/
     config.py      AppConfig: TOML file plus environment overrides
     logging.py     Console and file logging with secret redaction
+    splash.py      Random fullscreen startup edit before the workbench
   requirements/
     schema.py      REQ record schema: statuses, priorities, criteria, tags
     parser.py      Requirements from Markdown or plain text (pure)
@@ -73,6 +74,29 @@ src/qa_workbench/
     opencode.py    OpenCode adapter (documented server API)
     http.py        JSON-over-HTTP port and HTTPX adapter
     cli.py         `batman ai ...` commands
+  integrations/
+    ports.py       IssueSource, RepositorySource, PipelineSource
+    models.py      Issue, Commit, MergeRequest, Pipeline, Job, states
+    errors.py      IntegrationError hierarchy with diagnostic context
+    untrusted.py   fence(): external text marked as data
+    http.py        HttpGateway port and the HTTPX adapter
+    gitlab/        client, issues, repository, pipelines, `gitlab` commands
+  api/
+    models.py      Definition (steps, auth, expectations) and results
+    definition.py  YAML loading with every problem reported together
+    transport.py   HttpTransport port and the HTTPX adapter
+    runner.py      ApiRunner: requests, checks, timing, chained flows
+    sanitize.py    Sanitizer: by name, by value, by shape
+    records.py     API record schema; save_flow with a final leak check
+    cli.py         `batman api ...` commands
+  browser/
+    ports.py       BrowserDriver / BrowserSession ports, modes, observations
+    agent.py       BrowserAgent: actions, assertions, evidence, preview frames
+    playwright_driver.py  The only module that imports Playwright
+    chromium.py    Check and guided install of the Chromium download
+    preview.py     PreviewChannel (state + frame files), PreviewController
+    render.py      Screenshot -> terminal cells (half-blocks, Pillow)
+    cli.py         `batman browser ...` and `batman doctor`
   suites/
     schema.py      SUITE record schema: type, status, member cases
     service.py     Create suites, add/remove cases, membership, verification
@@ -177,8 +201,7 @@ features.
   rechecks the record seal, that the file exists and stays inside the project,
   and its size and hash. A failed registration leaves no file behind, and a
   corrupted copy is never registered.
-- **Not here yet:** secret sanitization before persistence (REQ-025) and the
-  execution workflow that produces finalized records.
+- **Not here yet:** the execution workflow that produces finalized records.
 
 ### Requirements
 
@@ -281,6 +304,106 @@ pretending.
   approvals and autonomy modes (the approval gate is the hook for them),
   external model providers, and a persistent engine setting in `config.toml`
   (today: command options and `OLLAMA_HOST`/`OPENCODE_URL`).
+### GitLab integration
+
+`batman gitlab ...` reads from GitLab through replaceable adapters (REQ-026). The
+code that uses them depends on the ports in `integrations/ports.py`
+(`IssueSource`, `RepositorySource`, `PipelineSource`) and the models in
+`integrations/models.py`, so GitHub can be added later without touching it.
+Everything here is read-only; writing back is a separate, approved action.
+
+| Command | Reads |
+|---|---|
+| `gitlab issues`, `gitlab issue IID` | open issues by label; one issue with description, labels, and comments |
+| `gitlab commits`, `gitlab commit SHA` | commits by ref/date; one commit with the files it changed |
+| `gitlab mrs`, `gitlab mr IID` | merge requests; one with the files it changes |
+| `gitlab pipelines`, `gitlab pipeline ID` | pipelines by ref/status; one with its jobs, stages, and durations |
+| `gitlab log JOB`, `gitlab artifacts JOB`, `gitlab artifact JOB PATH --out F` | the end of a job log, the artifacts a job declares, one artifact file |
+
+- **Connection.** The server and project come from the project's repository URL
+  (`https://gitlab.example.com/group/app`) or `--url`. The token is read from
+  `GITLAB_TOKEN` (or `--token-env NAME`) and sent in a header; it is never stored,
+  put in a URL, or printed, and is masked if an error message would contain it.
+  Redirects are not followed, so the token is never replayed to another host.
+- **Failures are explicit (NFR-010).** No token or project, rejected token (401),
+  missing permission (403), not found (404), rate limit (429, with the retry
+  delay), server error, unreachable server, a non-JSON answer, and a malformed
+  item each raise a different `IntegrationError` with the endpoint, the HTTP
+  status, and what to do. An empty project is an empty list, never confused with
+  a failure. There are no silent retries.
+- **Pipeline states.** GitLab statuses map to the specification's states
+  (created, pending, running, success, failed, canceled, skipped, manual,
+  blocked); an unrecognized status becomes `unknown` and keeps the raw value.
+  `Pipeline.passed` is true only for `success`; a created or accepted pipeline is
+  neither finished nor passed, and an HTTP 2xx never means the tests passed.
+- **External text is data.** Issue text, comments, commit titles, merge request
+  titles, and job logs are printed inside `fence(...)`, which labels them as
+  untrusted and neutralizes fence markers inside the text, so an AI provider that
+  later reads them cannot mistake them for instructions. Job logs also pass
+  through `redact_secrets` and have terminal codes removed; only the end is shown.
+- **Artifacts.** Paths must be relative and stay inside the archive; downloads
+  have a size limit.
+- **Not here yet.** Pipeline triggering, `.gitlab-ci.yml` analysis, failure
+  classification, and posting comments (REQ-027 needs approval and an audit trail).
+### API tests and sanitization
+
+`batman api run FILE.yaml -p PROJ-001` runs an API test definition and saves a
+sanitized `API` record (REQ-024, REQ-025). `api list` and `api show` read them
+back. A definition has a `base_url` and ordered `steps`:
+
+```yaml
+name: Users API
+base_url: https://staging.example.test
+steps:
+  - name: login
+    method: POST
+    url: /login
+    json: {user: ada}
+    expect: {status: 200, max_ms: 800}
+    extract:
+      sid: {path: $.session, secret: true}
+  - name: profile
+    url: /users/{id}
+    path_params: {id: "7"}
+    headers: {X-Session: "{{sid}}"}
+    auth: {type: bearer, env: API_TOKEN}
+    expect:
+      status: 200
+      json_schema: {type: object, required: [name]}
+      json_equals: {"$.name": ada}
+```
+
+- **Coverage of REQ-024.** All HTTP methods, query and path parameters, JSON or
+  text payloads, authentication (`bearer`, `basic`, `header`), expected status,
+  response-time limit, header checks, body text, JSON Schema (Draft 2020-12),
+  value checks by `$.a.b[0]` path, and chained flows (`extract` carries values to
+  later steps as `{{name}}`). Authorization tests are steps that expect 401/403.
+- **Credentials are never in the file.** Authentication names an environment
+  variable; a definition that holds a literal credential is refused. A missing
+  variable is an explicit error and nothing is sent.
+- **Results.** A step is `passed`, `failed` (the API answered, but not as
+  expected; every failed rule is listed), `error` (it could not run: bad
+  definition, missing credential, no connection, timeout), or `skipped` (an
+  earlier step stopped the flow, unless `stop_on_failure: false`). Redirects are
+  reported, not followed.
+- **Sanitization (REQ-025).** `Sanitizer` works by name (sensitive headers, query
+  parameters, JSON keys), by value (every credential the run used and every
+  value extracted with `secret: true` is removed wherever it appears, even if a
+  server echoes it back), and by shape (bearer/basic tokens, JWTs, cloud and Git
+  tokens, private keys, `password=...`). E-mail addresses and CPF numbers are
+  masked. Bodies are truncated. The step's exchange is built *after* extraction,
+  so a secret captured from a response is already known when that response is
+  written down.
+- **Defense in depth.** `save_flow` scans the final Markdown with the same
+  secret detector the record schemas use and refuses to write (nothing is saved)
+  if anything still looks like a credential. Saved results are sealed like a
+  finalized execution.
+- **HTTP port.** `HttpTransport` is replaceable; `HttpxTransport` is the real
+  adapter and tests use scripted fakes or `httpx.MockTransport`, never the
+  network.
+- **Not here yet.** Registering endpoints for reuse, OpenAPI import, and the
+  approval gate for requests to production or intrusive tests (REQ-030) arrive
+  with the approvals work.
 
 ### Reports and traceability
 
@@ -524,6 +647,9 @@ status bar, the help text, and the command palette.
 | `Ctrl+P` | Command palette: go to any page or run an action |
 | `Ctrl+K` | Go to the search field of the current page, if it has one |
 | `Esc` | Close a dialog, then the menu or context drawer |
+| `Ctrl+B` | Show or hide the browser preview |
+| `F5` | Ask the running browser for its next mode |
+| `F6` | Pause or resume the running browser |
 | `?` | List the shortcuts |
 | `Ctrl+Q` | Quit |
 
@@ -538,7 +664,7 @@ command_palette = "ctrl+o"
 An unknown action, an empty key, a key reserved by the terminal (`Ctrl+C`,
 `Ctrl+Z`, `Ctrl+S`, `Ctrl+D`), or two actions on the same key makes
 `qa-workbench tui` exit with an error that names the problem, instead of
-starting with a broken keymap. `Ctrl+B` (browser preview), `Ctrl+N` (new
+starting with a broken keymap. `Ctrl+N` (new
 record), `Ctrl+R` (refresh), and `Ctrl+Enter` (primary action) from the visual
 specification are not bound yet because the features behind them do not exist.
 `Ctrl+K` focuses the search field of the current page; a cross-module global
@@ -560,8 +686,52 @@ pure functions so it can be tested without a terminal.
 | `EmptyState`, `LoadingState`, `ErrorState` | No data, waiting, and failure; errors keep their diagnostic detail |
 | `ConfirmationDialog` | Modal confirm/cancel; Esc cancels, destructive dialogs start on Cancel |
 
-Not built yet because their subsystems do not exist: `BrowserPreview`,
-`AgentChat`, and `EvidenceViewer`.
+`BrowserPreview` exists (see the Browser Agent). Not built yet because their
+subsystems do not exist: `AgentChat` and `EvidenceViewer`.
+
+### Browser Agent and Browser Preview
+
+`BrowserAgent` (REQ-021) wraps a `BrowserDriver` port. `PlaywrightDriver` is the
+only code that imports Playwright; tests use a fake driver, so no test starts a
+browser or touches the network. The agent offers `navigate`, `click`, `fill`,
+`expect_text`, `expect_visible`, and `screenshot`, and records every action
+(label, outcome, duration). It keeps what the browser reports: console messages,
+page errors, and every request with its status. Headers and bodies are never
+stored, URLs hide the value of query parameters that look like credentials, and
+the values typed into fields are never written to the action log.
+
+- **Three kinds of problem stay apart.** A browser fault is a `BrowserError`
+  (with action, selector, and URL; `BrowserTimeout` for timeouts). A page that
+  does not match the test is an `AssertionFailed`, a finding that is *not* a
+  `BrowserError`. A missing Chromium is a `BrowserSetupError`. A failed
+  screenshot is recorded in `screenshot_failures` and never fails the test.
+- **Evidence.** `close()` returns the screenshots, the Playwright trace, and the
+  video; `register_artifacts` registers them as hashed, immutable `EVD`
+  records with source `playwright`.
+- **Preview (REQ-022, REQ-023).** The mode is `headless`, `preview` (default),
+  or `visible`. In `preview` the agent saves a screenshot after an action at most
+  once per `refresh_seconds`. Agent and TUI share a folder
+  (`<data>/browser-preview/`): `frame.png` and `state.json` are replaced
+  atomically, so `batman browser run` in one terminal is followed by the
+  workbench in another. The TUI panel reads that folder on a timer, so drawing
+  never blocks it, and hiding it (`Ctrl+B`) only stops reading: the run and the
+  evidence collection continue, and showing it again draws the latest frame. The
+  image is drawn with half-block characters; the TUI does not render web pages.
+- **Controls.** `F5` (or `batman browser control --mode ...`) and `F6`
+  (`--pause`/`--resume`) write `control.json`, which the agent reads between
+  actions. `headless` and `preview` switch immediately; switching to or from
+  `visible` needs a browser restart, so while a run is active it is only
+  recorded and applies to the next run, and the panel says so.
+- **Installation.** Playwright and Pillow are runtime dependencies. Chromium is a
+  separate download, handled by `BrowserSetup`: `batman doctor` reports it,
+  `batman doctor --fix` (or the first `batman browser run`) explains the ~150 MB
+  download and installs it after confirmation (`--yes` skips the question). With
+  no terminal to ask, or an answer of no, the command stops with the exact
+  command to run later. A download that fails, or an installer that succeeds
+  without leaving a usable browser, is an explicit error.
+- **Not here yet.** Scripted flows from test cases, authenticated profiles, and
+  approval of destructive browser actions arrive with the approvals work.
+  Sensitive data inside traces and videos is not scrubbed.
 
 ### Entry points and distribution
 
@@ -572,24 +742,38 @@ is the primary one; every other capability is a subcommand, and `--help` and
 `--version` never open the TUI. A broken configuration or an invalid shortcut
 keymap stops the launch with an error that names the problem.
 
+Opening the TUI plays a random fullscreen edit from the startup folder before
+the workbench appears (`core/splash.py`). The splash runs only when stdout is
+an interactive terminal, `splash` is enabled, the folder has a playable file,
+and `ffplay`, `mpv`, or `vlc` is available; otherwise it is skipped silently
+apart from a debug log. On Windows the console window is minimized for the
+duration and restored afterwards, and a playback failure never prevents the
+workbench from starting. `--no-splash` skips it for one launch.
+
 Everything the app needs at run time is in `[project].dependencies` (Typer,
-Textual, Pydantic, PyYAML), so one install is enough; development tools live in
+Textual, Pydantic, PyYAML, Playwright, Pillow), so one install is enough; development tools live in
 the `dev` extra. Themes and styles are embedded in the code, so there are no data
-files to forget. A clean-environment install of the built wheel was checked: both
-commands are created, the CLI works, and the TUI renders. When a dependency that
-needs a separate download is added (for example browsers for Playwright), the
-install must handle it too, through a guided `batman` step rather than a manual
-instruction.
+files to forget. A clean-environment install of the built wheel is checked: both
+commands are created, the CLI works, and the TUI renders. A dependency that needs
+a separate download is handled by a guided `batman` step rather than a manual
+instruction: Chromium for Playwright is checked and installed by `batman doctor`.
 
 ### Configuration
 
 `AppConfig.load()` resolves values in this order, highest priority first:
 
 1. environment variables (`DARK_KNIGHT_CONFIG_DIR`, `DARK_KNIGHT_DATA_DIR`,
-   `DARK_KNIGHT_LOG_LEVEL`, `DARK_KNIGHT_LOG_FILE`);
-2. the `[application]` table of `config.toml` in the configuration directory;
+   `DARK_KNIGHT_LOG_LEVEL`, `DARK_KNIGHT_LOG_FILE`, `DARK_KNIGHT_SPLASH`,
+   `DARK_KNIGHT_EDITS_DIR`, `DARK_KNIGHT_SPLASH_PLAYER`);
+2. the `[application]`, `[shortcuts]`, and `[startup]` tables of `config.toml`
+   in the configuration directory;
 3. platform defaults (`APPDATA`/`LOCALAPPDATA` on Windows,
    `~/Library/Application Support` on macOS, XDG directories elsewhere).
+
+The `[startup]` table accepts `splash` (a boolean), `edits_dir` (the folder
+with the videos; defaults to `assets/batman-edits` in the project), and `player`
+(an executable name or path; otherwise the first of `mpv`, `ffplay`, `vlc` found
+on `PATH`).
 
 Invalid input raises `ConfigurationError`. The message names the offending
 file, and the original parser error is kept as the exception cause. The CLI
@@ -614,8 +798,6 @@ README for order.
 | Execution Engine | Recoverable executions with explicit state and failure types |
 | Browser Agent | Authorized Playwright sessions and browser evidence |
 | API Verification | Contracts, schemas, authentication, timing |
-| Pipeline Intelligence | CI jobs, logs, artifacts, probable failure context |
-| Issue Operations | GitHub/GitLab through replaceable adapters |
 | Evidence Vault | Screenshots, logs, network data, hashes, sources |
 
 External systems (issue trackers, AI providers, browsers) sit behind

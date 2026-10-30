@@ -16,3 +16,5 @@ docs/
 !.env.example
 playwright-report/
 test-results/
+assets/batman-edits/*
+!assets/batman-edits/.gitkeep

@@ -6,9 +6,14 @@ from textual.events import Resize
 from textual.widgets import OptionList, Static
 from textual.widgets.option_list import Option
 
+from qa_workbench.browser.errors import BrowserError
+from qa_workbench.browser.ports import BrowserMode
+from qa_workbench.browser.preview import PreviewChannel
+from qa_workbench.core.config import AppConfig
 from qa_workbench.projects.models import Project
 from qa_workbench.tui import identity, navigation
 from qa_workbench.tui.commands import WorkbenchCommands
+from qa_workbench.tui.components.browser_preview import BrowserPreview
 from qa_workbench.tui.components.chrome import AppFooter, AppHeader
 from qa_workbench.tui.keymap import Keymap
 from qa_workbench.tui.layout import ShellLayout, WidthClass, layout_for
@@ -48,7 +53,10 @@ class WorkbenchApp(App[None]):
     COMMANDS = {WorkbenchCommands}
 
     def __init__(
-        self, project: Project | None = None, keymap: Keymap | None = None
+        self,
+        project: Project | None = None,
+        keymap: Keymap | None = None,
+        preview_channel: PreviewChannel | None = None,
     ) -> None:
         self._workbench_keymap = keymap or Keymap.default()
         # Read by Textual while it builds its default bindings.
@@ -58,6 +66,9 @@ class WorkbenchApp(App[None]):
             if shortcut.action != "command_palette":
                 self.bind(shortcut.key, shortcut.action, description=shortcut.label)
         self._project = project
+        self._preview_channel = preview_channel or PreviewChannel(
+            AppConfig.load().data_dir / "browser-preview"
+        )
         self._shell_layout: ShellLayout | None = None
         self._sidebar_visible = True
         self._context_visible = True
@@ -72,12 +83,14 @@ class WorkbenchApp(App[None]):
             with Vertical(id="main"):
                 yield Static(id="page-title")
                 yield Static(id="page-body")
+                yield BrowserPreview(self._preview_channel, id="browser-preview")
             yield Static(_context_text(self._project), id="context")
         yield AppFooter(
             _status_bar_text(self._project, self._workbench_keymap), id="footer"
         )
 
     def on_mount(self) -> None:
+        self.query_one("#browser-preview").display = False
         self._show_page(self._current)
         self._apply_layout(self.size.width, self.size.height)
         self.query_one("#sidebar", OptionList).focus()
@@ -117,6 +130,49 @@ class WorkbenchApp(App[None]):
     def action_toggle_context(self) -> None:
         self._context_visible = not self._context_visible
         self._refresh_regions()
+
+    def action_toggle_browser_preview(self) -> None:
+        """Show or hide the preview. The browser itself is never affected."""
+        panel = self.query_one("#browser-preview", BrowserPreview)
+        panel.display = not panel.display
+        if panel.display:
+            panel.refresh_preview(force=True)
+
+    def action_cycle_browser_mode(self) -> None:
+        """Ask the running browser for its next mode (applied between actions)."""
+        modes = [mode.value for mode in BrowserMode]
+        try:
+            state = self._preview_channel.read()
+            requested = self._preview_channel.read_control().get("mode")
+            current = str(
+                requested or (state.mode if state else BrowserMode.PREVIEW.value)
+            )
+            wanted = modes[(modes.index(current) + 1) % len(modes)]
+            self._preview_channel.request(mode=wanted)
+        except (BrowserError, OSError) as error:
+            self.notify(f"Could not change the mode: {error}", severity="error")
+            return
+        note = (
+            " (visible needs a restart: it applies to the next run)"
+            if (
+                wanted == BrowserMode.VISIBLE.value
+                or current == BrowserMode.VISIBLE.value
+            )
+            else ""
+        )
+        self.notify(f"Browser mode requested: {wanted}{note}")
+
+    def action_toggle_browser_pause(self) -> None:
+        try:
+            state = self._preview_channel.read()
+            if state is None or state.execution_state != "running":
+                self.notify("No browser is running.", severity="warning")
+                return
+            self._preview_channel.request(paused=not state.paused)
+        except (BrowserError, OSError) as error:
+            self.notify(f"Could not pause or resume: {error}", severity="error")
+            return
+        self.notify("Resume requested." if state.paused else "Pause requested.")
 
     def action_help(self) -> None:
         self.notify(
@@ -175,6 +231,14 @@ class WorkbenchApp(App[None]):
 
     def _show_page(self, item: navigation.NavItem) -> None:
         self.query_one("#page-title", Static).update(item.title.upper())
+        if item.key == "browser-preview":
+            self.query_one("#page-body", Static).update(
+                "Follow the browser Playwright is driving. Ctrl+B shows or hides it."
+            )
+            panel = self.query_one("#browser-preview", BrowserPreview)
+            panel.display = True
+            panel.refresh_preview(force=True)
+            return
         self.query_one("#page-body", Static).update(
             f"{format_status(Status.PENDING)}  This module is not available yet."
         )

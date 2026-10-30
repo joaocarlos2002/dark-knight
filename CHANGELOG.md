@@ -17,6 +17,36 @@ use the `vMAJOR.MINOR.PATCH` format.
   (REQ-028, REQ-029). `batman ai status|ask`.
 - Ollama adapter (local runtime) and OpenCode adapter on its documented server
   API, with explicit unsupported-capability errors and cancellation (REQ-028).
+- A random fullscreen Batman edit plays before the workbench opens, chosen from
+  `assets/batman-edits` (configurable with `[startup] edits_dir`), with the
+  terminal minimized first on Windows, no player controls, any key or click to
+  skip, and `--no-splash` to bypass it. Uses `ffplay`, `mpv`, or `vlc`.
+- GitLab adapter for issues (description, labels, comments), commits, and merge
+  requests with their changed files, behind replaceable ports, with `batman gitlab
+  issues|issue|commits|commit|mrs|mr`; external text is marked as untrusted data
+  (REQ-026).
+- GitLab adapter for pipelines, jobs, logs, and artifacts with the specification's
+  states, a rule that only a reported success counts as passed, and
+  `batman gitlab pipelines|pipeline|log|artifacts|artifact`; job logs are masked
+  and trimmed; failures (token, permission, not found, rate limit, server,
+  unreachable) are explicit (REQ-026, NFR-010).
+- API test runner on HTTPX: methods, parameters, payloads, bearer/basic/header
+  authentication from environment variables, status, timing, header, schema and
+  value checks, and chained flows, with `batman api run|list|show` (REQ-024).
+- Sanitization of requests, responses, headers, URLs, and tokens before they are
+  saved, including values the run itself used or extracted, with a final leak
+  check that refuses to write a result that still looks like it holds a
+  credential (REQ-025, NFR-005).
+- Browser Agent on Playwright behind a replaceable port: navigation, clicks,
+  forms, text and visibility checks, screenshots, trace, video, console, network
+  and HTTP-failure capture, with browser faults, failed checks, and screenshot
+  failures kept apart, and evidence registered with hashes (REQ-021).
+- Browser Preview in the TUI: `headless`, `preview`, and `visible` modes, a panel
+  that follows the browser without blocking it, `Ctrl+B` to hide and show it with
+  the latest image kept, `F5`/`F6` and `batman browser control` for mode and
+  pause, with restart-bound changes deferred honestly (REQ-022, REQ-023).
+- Guided Chromium setup: `batman doctor [--fix]`, `batman browser install`, and a
+  first-run prompt that explains the download; `batman browser run|status|control`.
 - A `batman` command: installing the package puts `batman` in the terminal, and
   running it without arguments opens the workbench. `qa-workbench` and
   `python -m qa_workbench` remain as the same program.
