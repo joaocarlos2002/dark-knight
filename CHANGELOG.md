@@ -1,4 +1,4 @@
-﻿# Changelog
+# Changelog
 
 All notable changes to Dark Knight QA are documented in this file.
 
