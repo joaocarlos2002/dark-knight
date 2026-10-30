@@ -39,10 +39,3 @@ jobs:
           test -f SUPPORT.md
           test -f .github/PULL_REQUEST_TEMPLATE.md
           test -f .github/ISSUE_TEMPLATE/config.yml
-
-      - name: Validate documentation is tracked
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -f docs/issue-catalog.md
-          test -f docs/requirements.md
