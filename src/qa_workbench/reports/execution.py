@@ -162,6 +162,14 @@ def _traceability(repository: MarkdownRepository, record: Record) -> str:
             f"Defects: {', '.join(bugs)} (referenced; defect records are not "
             "stored yet)"
         )
+    elif bugs:
+        stored = set(repository.record_ids("BUG"))
+        missing = [bug for bug in bugs if bug not in stored]
+        if missing:
+            rows.append(
+                f"Defects: {', '.join(missing)} (referenced; no such defect "
+                "record was found)"
+            )
     return _bullets(rows)
 
 
