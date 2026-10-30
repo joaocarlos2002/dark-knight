@@ -128,3 +128,31 @@ def test_corrupt_project_is_reported_and_fails_the_listing(
     assert result.exit_code == 1
     assert "PROJ-001  active    Good" in output
     assert "Warning: Invalid project record" in output
+
+
+def test_tui_opens_the_requested_project(monkeypatch: pytest.MonkeyPatch) -> None:
+    from qa_workbench.tui.app import WorkbenchApp
+
+    _run("create", "Shop")
+    opened: list[str] = []
+    monkeypatch.setattr(
+        WorkbenchApp, "run", lambda self: opened.append(self._project.id)
+    )
+
+    result = runner.invoke(app, ["tui", "--project", "PROJ-001"])
+
+    assert result.exit_code == 0
+    assert opened == ["PROJ-001"]
+
+
+def test_tui_refuses_an_unknown_project(monkeypatch: pytest.MonkeyPatch) -> None:
+    from qa_workbench.tui.app import WorkbenchApp
+
+    started: list[bool] = []
+    monkeypatch.setattr(WorkbenchApp, "run", lambda self: started.append(True))
+
+    result = runner.invoke(app, ["tui", "--project", "PROJ-404"])
+
+    assert result.exit_code == 1
+    assert "PROJ-404 was not found" in _plain(result.output)
+    assert started == []

@@ -40,6 +40,16 @@ Screen {
     text-style: bold;
 }
 
+#header-title {
+    width: auto;
+}
+
+#header-project {
+    width: 1fr;
+    text-align: right;
+    color: $text-muted;
+}
+
 #body {
     height: 1fr;
 }

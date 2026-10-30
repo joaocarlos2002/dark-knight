@@ -8,6 +8,8 @@ import typer
 from qa_workbench.core.config import AppConfig, ConfigurationError
 from qa_workbench.core.logging import configure_logging
 from qa_workbench.projects.cli import project_app
+from qa_workbench.projects.errors import ProjectError
+from qa_workbench.projects.repository import ProjectRepository
 
 try:
     __version__ = version("dark-knight-qa")
@@ -66,11 +68,23 @@ def main(
 
 
 @app.command()
-def tui() -> None:
+def tui(
+    project: Annotated[
+        str | None,
+        typer.Option("--project", help="Open the workbench on this project id."),
+    ] = None,
+) -> None:
     """Open the terminal user interface."""
     from qa_workbench.tui.app import WorkbenchApp
 
-    WorkbenchApp().run()
+    opened = None
+    if project is not None:
+        try:
+            opened = ProjectRepository(AppConfig.load().data_dir).open(project)
+        except (ConfigurationError, ProjectError) as error:
+            typer.echo(f"Error: {error}", err=True)
+            raise typer.Exit(1) from error
+    WorkbenchApp(opened).run()
 
 
 if __name__ == "__main__":
