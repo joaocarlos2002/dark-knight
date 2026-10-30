@@ -64,6 +64,14 @@ src/qa_workbench/
     cli.py         `qa-workbench executions ...` commands
   evidence/
     cli.py         `qa-workbench evidence ...` commands
+  api/
+    models.py      Definition (steps, auth, expectations) and results
+    definition.py  YAML loading with every problem reported together
+    transport.py   HttpTransport port and the HTTPX adapter
+    runner.py      ApiRunner: requests, checks, timing, chained flows
+    sanitize.py    Sanitizer: by name, by value, by shape
+    records.py     API record schema; save_flow with a final leak check
+    cli.py         `batman api ...` commands
   browser/
     ports.py       BrowserDriver / BrowserSession ports, modes, observations
     agent.py       BrowserAgent: actions, assertions, evidence, preview frames
@@ -176,8 +184,7 @@ features.
   rechecks the record seal, that the file exists and stays inside the project,
   and its size and hash. A failed registration leaves no file behind, and a
   corrupted copy is never registered.
-- **Not here yet:** secret sanitization before persistence (REQ-025) and the
-  execution workflow that produces finalized records.
+- **Not here yet:** the execution workflow that produces finalized records.
 
 ### Requirements
 
@@ -231,6 +238,66 @@ time the case is updated through the workbench).
   values, every rule combination, valid and refused transitions, use-case
   scenarios). A case can combine several techniques, and the derived conditions
   appear in its body.
+
+### API tests and sanitization
+
+`batman api run FILE.yaml -p PROJ-001` runs an API test definition and saves a
+sanitized `API` record (REQ-024, REQ-025). `api list` and `api show` read them
+back. A definition has a `base_url` and ordered `steps`:
+
+```yaml
+name: Users API
+base_url: https://staging.example.test
+steps:
+  - name: login
+    method: POST
+    url: /login
+    json: {user: ada}
+    expect: {status: 200, max_ms: 800}
+    extract:
+      sid: {path: $.session, secret: true}
+  - name: profile
+    url: /users/{id}
+    path_params: {id: "7"}
+    headers: {X-Session: "{{sid}}"}
+    auth: {type: bearer, env: API_TOKEN}
+    expect:
+      status: 200
+      json_schema: {type: object, required: [name]}
+      json_equals: {"$.name": ada}
+```
+
+- **Coverage of REQ-024.** All HTTP methods, query and path parameters, JSON or
+  text payloads, authentication (`bearer`, `basic`, `header`), expected status,
+  response-time limit, header checks, body text, JSON Schema (Draft 2020-12),
+  value checks by `$.a.b[0]` path, and chained flows (`extract` carries values to
+  later steps as `{{name}}`). Authorization tests are steps that expect 401/403.
+- **Credentials are never in the file.** Authentication names an environment
+  variable; a definition that holds a literal credential is refused. A missing
+  variable is an explicit error and nothing is sent.
+- **Results.** A step is `passed`, `failed` (the API answered, but not as
+  expected; every failed rule is listed), `error` (it could not run: bad
+  definition, missing credential, no connection, timeout), or `skipped` (an
+  earlier step stopped the flow, unless `stop_on_failure: false`). Redirects are
+  reported, not followed.
+- **Sanitization (REQ-025).** `Sanitizer` works by name (sensitive headers, query
+  parameters, JSON keys), by value (every credential the run used and every
+  value extracted with `secret: true` is removed wherever it appears, even if a
+  server echoes it back), and by shape (bearer/basic tokens, JWTs, cloud and Git
+  tokens, private keys, `password=...`). E-mail addresses and CPF numbers are
+  masked. Bodies are truncated. The step's exchange is built *after* extraction,
+  so a secret captured from a response is already known when that response is
+  written down.
+- **Defense in depth.** `save_flow` scans the final Markdown with the same
+  secret detector the record schemas use and refuses to write (nothing is saved)
+  if anything still looks like a credential. Saved results are sealed like a
+  finalized execution.
+- **HTTP port.** `HttpTransport` is replaceable; `HttpxTransport` is the real
+  adapter and tests use scripted fakes or `httpx.MockTransport`, never the
+  network.
+- **Not here yet.** Registering endpoints for reuse, OpenAPI import, and the
+  approval gate for requests to production or intrusive tests (REQ-030) arrive
+  with the approvals work.
 
 ### Reports and traceability
 
@@ -608,6 +675,7 @@ README for order.
 | Requirements Intelligence | Analyze requirements, ambiguity, and testability |
 | Test Operations | Cases, suites, plans, risks, exit criteria |
 | Execution Engine | Recoverable executions with explicit state and failure types |
+| Browser Agent | Authorized Playwright sessions and browser evidence |
 | API Verification | Contracts, schemas, authentication, timing |
 | Pipeline Intelligence | CI jobs, logs, artifacts, probable failure context |
 | Issue Operations | GitHub/GitLab through replaceable adapters |

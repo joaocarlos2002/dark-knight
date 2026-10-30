@@ -9,6 +9,13 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- API test runner on HTTPX: methods, parameters, payloads, bearer/basic/header
+  authentication from environment variables, status, timing, header, schema and
+  value checks, and chained flows, with `batman api run|list|show` (REQ-024).
+- Sanitization of requests, responses, headers, URLs, and tokens before they are
+  saved, including values the run itself used or extracted, with a final leak
+  check that refuses to write a result that still looks like it holds a
+  credential (REQ-025, NFR-005).
 - Browser Agent on Playwright behind a replaceable port: navigation, clicks,
   forms, text and visibility checks, screenshots, trace, video, console, network
   and HTTP-failure capture, with browser faults, failed checks, and screenshot
