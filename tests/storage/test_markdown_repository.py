@@ -390,3 +390,9 @@ def test_the_body_can_be_built_from_the_final_metadata(
 
     assert record.body == "# TC-001 - Login\n"
     assert repo.get(record.id).body == "# TC-001 - Login\n"
+
+
+def test_schemas_returns_what_the_repository_was_opened_with(
+    repo: MarkdownRepository,
+) -> None:
+    assert [schema.prefix for schema in repo.schemas] == ["TC", "REQ"]
