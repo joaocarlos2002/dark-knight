@@ -14,7 +14,7 @@
     <img src="https://github.com/joaocarlos2002/dark-knight/actions/workflows/repository.yml/badge.svg" alt="Repository checks">
   </a>
   <a href="https://github.com/joaocarlos2002/dark-knight/releases">
-    <img src="https://img.shields.io/badge/version-v0.1.0-b08d57?style=flat-square&labelColor=111827" alt="Version 0.1.0">
+    <img src="https://img.shields.io/badge/version-v0.2.0-b08d57?style=flat-square&labelColor=111827" alt="Version 0.2.0">
   </a>
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/license-MIT-b08d57?style=flat-square&labelColor=111827" alt="MIT License">
@@ -24,7 +24,7 @@
   </a>
 </p>
 
-> **Internal designation:** `DK-QA / FOUNDATION-0.1.0`
+> **Internal designation:** `DK-QA / FOUNDATION-0.2.0`
 > **Mission:** turn fragmented QA activity into traceable, evidence-backed engineering intelligence.
 
 ## The mission
@@ -127,7 +127,7 @@ Every link exists to answer one question: **why do we believe this result?**
 
 ## Current status
 
-**Foundation phase // v0.1.0**
+**Foundation phase // v0.2.0**
 
 The product specification, requirements, visual direction, issue catalog, and
 repository collaboration standards are established. Core application modules

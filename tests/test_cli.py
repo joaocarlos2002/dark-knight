@@ -24,4 +24,4 @@ def test_version_exposes_application_version() -> None:
     result = runner.invoke(app, ["--version"])
 
     assert result.exit_code == 0
-    assert result.stdout.strip() == "Dark Knight QA 0.1.0"
+    assert result.stdout.strip() == "Dark Knight QA 0.2.0"
