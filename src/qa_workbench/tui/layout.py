@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from enum import Enum
 
-WIDE_MIN_COLUMNS = 120
+WIDE_MIN_COLUMNS = 100
 MEDIUM_MIN_COLUMNS = 80
 SHORT_MAX_ROWS = 24
 

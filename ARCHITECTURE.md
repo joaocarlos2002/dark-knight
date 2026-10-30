@@ -96,8 +96,8 @@ them, so business rules stay out of presentation code.
 
 | Terminal | Navigation | Content | Context |
 |---|---|---|---|
-| Wide (120+ columns) | sidebar | center | side panel |
-| Medium (80-119) | sidebar | center | drawer, `F2` |
+| Wide (100+ columns) | sidebar | center | side panel |
+| Medium (80-99) | sidebar | center | drawer, `F2` |
 | Narrow (under 80) | menu, `F1` | single column | drawer, `F2` |
 | Short (under 24 rows) | unchanged | tighter spacing | unchanged |
 

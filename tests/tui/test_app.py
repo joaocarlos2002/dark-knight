@@ -43,7 +43,7 @@ def test_medium_terminal_hides_context_until_requested() -> None:
         await pilot.press("f2")
         assert app.query_one("#context").display
 
-    _run((100, 40), scenario)
+    _run((90, 40), scenario)
 
 
 def test_narrow_terminal_shows_content_and_opens_menu_on_demand() -> None:
@@ -117,7 +117,7 @@ def test_section_headers_are_not_selectable() -> None:
     _run((140, 40), scenario)
 
 
-@pytest.mark.parametrize("size", [(140, 40), (100, 40), (60, 40)])
+@pytest.mark.parametrize("size", [(140, 40), (90, 40), (60, 40)])
 def test_help_shortcut_does_not_break_the_shell(size: tuple[int, int]) -> None:
     async def scenario(app: WorkbenchApp, pilot) -> None:
         await pilot.press("question_mark")
@@ -198,7 +198,7 @@ def test_escape_closes_the_context_drawer_on_medium_terminals() -> None:
         await pilot.press("escape")
         assert not app.query_one("#context").display
 
-    _run((100, 40), scenario)
+    _run((90, 40), scenario)
 
 
 def test_escape_closes_the_menu_on_narrow_terminals() -> None:
@@ -254,3 +254,10 @@ def test_status_bar_shows_the_effective_shortcuts() -> None:
             assert "F3 Context" in str(app.query_one("#status-bar", Static).render())
 
     asyncio.run(runner())
+
+
+def test_a_100_column_terminal_shows_all_three_areas() -> None:
+    async def scenario(app: WorkbenchApp, pilot) -> None:
+        assert _visible(app) == {"sidebar": True, "main": True, "context": True}
+
+    _run((100, 40), scenario)
