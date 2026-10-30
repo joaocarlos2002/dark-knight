@@ -41,3 +41,31 @@ def test_toml_configuration_is_loaded(
 
     assert config.data_dir == Path.home() / "dark-knight-data"
     assert config.log_level == "WARNING"
+
+
+def test_invalid_toml_preserves_file_context(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    config_file = config_dir / "config.toml"
+    config_file.write_text("[application\n", encoding="utf-8")
+    monkeypatch.setenv("DARK_KNIGHT_CONFIG_DIR", str(config_dir))
+
+    with pytest.raises(ConfigurationError, match="Invalid TOML") as error:
+        AppConfig.load()
+
+    assert str(config_file) in str(error.value)
+    assert error.value.__cause__ is not None
+
+
+def test_application_section_must_be_a_table(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    (config_dir / "config.toml").write_text("application = 1\n", encoding="utf-8")
+    monkeypatch.setenv("DARK_KNIGHT_CONFIG_DIR", str(config_dir))
+
+    with pytest.raises(ConfigurationError, match="must be a table"):
+        AppConfig.load()
