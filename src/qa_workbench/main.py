@@ -63,5 +63,13 @@ def main(
     configure_logging(config)
 
 
+@app.command()
+def tui() -> None:
+    """Open the terminal user interface."""
+    from qa_workbench.tui.app import WorkbenchApp
+
+    WorkbenchApp().run()
+
+
 if __name__ == "__main__":
     app()
