@@ -9,6 +9,9 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- A `batman` command: installing the package puts `batman` in the terminal, and
+  running it without arguments opens the workbench. `qa-workbench` and
+  `python -m qa_workbench` remain as the same program.
 - Execution reports (the ten sections of the specification, explicit
   limitations, nothing inferred), a requirement-to-evidence traceability trace
   and matrix, saved reports that detect when they are stale, and

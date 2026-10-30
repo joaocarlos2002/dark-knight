@@ -505,6 +505,24 @@ pure functions so it can be tested without a terminal.
 Not built yet because their subsystems do not exist: `BrowserPreview`,
 `AgentChat`, and `EvidenceViewer`.
 
+### Entry points and distribution
+
+The package declares two console scripts that run the same Typer app:
+`batman` (the product command) and `qa-workbench`; `python -m qa_workbench` does
+the same. With no command the app opens the TUI, because the terminal interface
+is the primary one; every other capability is a subcommand, and `--help` and
+`--version` never open the TUI. A broken configuration or an invalid shortcut
+keymap stops the launch with an error that names the problem.
+
+Everything the app needs at run time is in `[project].dependencies` (Typer,
+Textual, Pydantic, PyYAML), so one install is enough; development tools live in
+the `dev` extra. Themes and styles are embedded in the code, so there are no data
+files to forget. A clean-environment install of the built wheel was checked: both
+commands are created, the CLI works, and the TUI renders. When a dependency that
+needs a separate download is added (for example browsers for Playwright), the
+install must handle it too, through a guided `batman` step rather than a manual
+instruction.
+
 ### Configuration
 
 `AppConfig.load()` resolves values in this order, highest priority first:
