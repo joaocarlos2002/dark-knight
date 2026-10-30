@@ -1,6 +1,8 @@
 """The record kinds of a project and how to open its repository."""
 
 from qa_workbench.core.config import AppConfig
+from qa_workbench.plans.schema import REVIEW_POLICY as PLAN_REVIEW
+from qa_workbench.plans.schema import TEST_PLAN_SCHEMA
 from qa_workbench.projects.errors import ProjectStateError
 from qa_workbench.projects.repository import ProjectRepository
 from qa_workbench.requirements.schema import REQUIREMENT_SCHEMA
@@ -15,12 +17,12 @@ from qa_workbench.testcases.schema import TEST_CASE_SCHEMA
 
 def all_schemas() -> list[RecordSchema]:
     """Every record schema the workbench knows. New record kinds are added here."""
-    return [EVIDENCE_SCHEMA, REQUIREMENT_SCHEMA, TEST_CASE_SCHEMA]
+    return [EVIDENCE_SCHEMA, REQUIREMENT_SCHEMA, TEST_CASE_SCHEMA, TEST_PLAN_SCHEMA]
 
 
 def review_policies() -> dict[str, ReviewPolicy]:
     """The record kinds that go through human review, by prefix."""
-    return {"REQ": REQUIREMENT_REVIEW, "TC": TEST_CASE_REVIEW}
+    return {"REQ": REQUIREMENT_REVIEW, "TC": TEST_CASE_REVIEW, "TP": PLAN_REVIEW}
 
 
 def open_repository(project_id: str, *, writable: bool = True) -> MarkdownRepository:
