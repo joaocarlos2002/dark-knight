@@ -9,6 +9,15 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- GitLab adapter for issues (description, labels, comments), commits, and merge
+  requests with their changed files, behind replaceable ports, with `batman gitlab
+  issues|issue|commits|commit|mrs|mr`; external text is marked as untrusted data
+  (REQ-026).
+- GitLab adapter for pipelines, jobs, logs, and artifacts with the specification's
+  states, a rule that only a reported success counts as passed, and
+  `batman gitlab pipelines|pipeline|log|artifacts|artifact`; job logs are masked
+  and trimmed; failures (token, permission, not found, rate limit, server,
+  unreachable) are explicit (REQ-026, NFR-010).
 - A `batman` command: installing the package puts `batman` in the terminal, and
   running it without arguments opens the workbench. `qa-workbench` and
   `python -m qa_workbench` remain as the same program.
