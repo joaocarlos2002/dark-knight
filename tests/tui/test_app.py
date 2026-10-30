@@ -7,6 +7,7 @@ from textual.widgets import OptionList, Static
 
 from qa_workbench.projects.models import Environment, Project
 from qa_workbench.tui.app import WorkbenchApp
+from qa_workbench.tui.keymap import Keymap
 
 
 def _run(
@@ -168,3 +169,88 @@ def test_without_a_project_the_shell_says_so() -> None:
         )
 
     _run((140, 40), scenario)
+
+
+def _title(app: WorkbenchApp) -> str:
+    return str(app.query_one("#page-title", Static).render())
+
+
+def test_palette_opens_with_ctrl_k_and_navigates() -> None:
+    async def scenario(app: WorkbenchApp, pilot) -> None:
+        await pilot.press("ctrl+k")
+        await pilot.pause()
+        await pilot.press(*"reports")
+        await pilot.pause(0.5)
+        await pilot.press("enter")
+        await pilot.pause()
+        assert _title(app) == "REPORTS"
+        sidebar = app.query_one("#sidebar", OptionList)
+        assert sidebar.highlighted_option is not None
+        assert sidebar.highlighted_option.id == "reports"
+
+    _run((140, 40), scenario)
+
+
+def test_escape_closes_the_context_drawer_on_medium_terminals() -> None:
+    async def scenario(app: WorkbenchApp, pilot) -> None:
+        await pilot.press("f2")
+        assert app.query_one("#context").display
+        await pilot.press("escape")
+        assert not app.query_one("#context").display
+
+    _run((100, 40), scenario)
+
+
+def test_escape_closes_the_menu_on_narrow_terminals() -> None:
+    async def scenario(app: WorkbenchApp, pilot) -> None:
+        await pilot.press("f1")
+        assert app.query_one("#sidebar").display
+        await pilot.press("escape")
+        assert not app.query_one("#sidebar").display
+        assert app.query_one("#main").display
+
+    _run((60, 40), scenario)
+
+
+def test_escape_leaves_a_wide_layout_untouched() -> None:
+    async def scenario(app: WorkbenchApp, pilot) -> None:
+        await pilot.press("escape")
+        assert _visible(app) == {"sidebar": True, "main": True, "context": True}
+
+    _run((140, 40), scenario)
+
+
+def test_focus_search_without_a_search_field_says_so() -> None:
+    async def scenario(app: WorkbenchApp, pilot) -> None:
+        await pilot.press("ctrl+l")
+        await pilot.pause()
+        assert any("no search field" in n.message for n in app._notifications)
+
+    _run((140, 40), scenario)
+
+
+def test_custom_shortcut_replaces_the_default() -> None:
+    keymap = Keymap.from_overrides({"toggle_context": "f3"})
+
+    async def runner() -> None:
+        app = WorkbenchApp(keymap=keymap)
+        async with app.run_test(size=(140, 40)) as pilot:
+            await pilot.pause()
+            await pilot.press("f2")
+            assert app.query_one("#context").display
+            await pilot.press("f3")
+            assert not app.query_one("#context").display
+
+    asyncio.run(runner())
+
+
+def test_status_bar_shows_the_effective_shortcuts() -> None:
+    keymap = Keymap.from_overrides({"toggle_context": "f3"})
+
+    async def runner() -> None:
+        app = WorkbenchApp(keymap=keymap)
+        async with app.run_test(size=(140, 40)) as pilot:
+            await pilot.pause()
+            assert "F3 Context" in str(app.query_one("#status-bar", Static).render())
+
+    asyncio.run(runner())

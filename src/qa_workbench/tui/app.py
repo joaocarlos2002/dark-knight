@@ -1,7 +1,6 @@
 """Textual application shell: navigation, content, context, and status bar."""
 
 from textual.app import App, ComposeResult
-from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.events import Resize
 from textual.widgets import OptionList, Static
@@ -9,16 +8,17 @@ from textual.widgets.option_list import Option
 
 from qa_workbench.projects.models import Project
 from qa_workbench.tui import navigation
+from qa_workbench.tui.commands import WorkbenchCommands
+from qa_workbench.tui.keymap import Keymap
 from qa_workbench.tui.layout import ShellLayout, WidthClass, layout_for
+from qa_workbench.tui.palette import PaletteEntry, destination_key, palette_entries
 from qa_workbench.tui.status import Status, format_status
 from qa_workbench.tui.theme import SHELL_CSS
 
-_HELP = "F1 menu · F2 context · Enter open · Ctrl+Q quit"
 
-
-def _status_bar_text(project: Project | None) -> str:
+def _status_bar_text(project: Project | None, keymap: Keymap) -> str:
     label = project.id if project else "No project"
-    return f"{label} │ {format_status(Status.READY)} │ F1 Menu │ F2 Context │ ? Help"
+    return f"{label} │ {format_status(Status.READY)} │ {keymap.help_bar()}"
 
 
 def _header_project_text(project: Project | None) -> str:
@@ -42,15 +42,18 @@ class WorkbenchApp(App[None]):
 
     TITLE = "QA WORKBENCH"
     CSS = SHELL_CSS
-    BINDINGS = [
-        Binding("f1", "toggle_sidebar", "Menu"),
-        Binding("f2", "toggle_context", "Context"),
-        Binding("question_mark", "help", "Help"),
-        Binding("ctrl+q", "quit", "Quit"),
-    ]
+    COMMANDS = {WorkbenchCommands}
 
-    def __init__(self, project: Project | None = None) -> None:
+    def __init__(
+        self, project: Project | None = None, keymap: Keymap | None = None
+    ) -> None:
+        self._workbench_keymap = keymap or Keymap.default()
+        # Read by Textual while it builds its default bindings.
+        self.COMMAND_PALETTE_BINDING = self._workbench_keymap.key_for("command_palette")
         super().__init__()
+        for shortcut in self._workbench_keymap.shortcuts:
+            if shortcut.action != "command_palette":
+                self.bind(shortcut.key, shortcut.action, description=shortcut.label)
         self._project = project
         self._shell_layout: ShellLayout | None = None
         self._sidebar_visible = True
@@ -67,7 +70,9 @@ class WorkbenchApp(App[None]):
                 yield Static(id="page-title")
                 yield Static(id="page-body")
             yield Static(_context_text(self._project), id="context")
-        yield Static(_status_bar_text(self._project), id="status-bar")
+        yield Static(
+            _status_bar_text(self._project, self._workbench_keymap), id="status-bar"
+        )
 
     def on_mount(self) -> None:
         self._show_page(self._current)
@@ -80,14 +85,27 @@ class WorkbenchApp(App[None]):
     def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
         if event.option.id is None:
             return
-        self._current = navigation.find_item(event.option.id)
+        self.navigate(event.option.id)
+
+    def navigate(self, key: str) -> None:
+        """Open a destination and keep the sidebar highlight in sync."""
+        self._current = navigation.find_item(key)
         self._show_page(self._current)
-        if (
-            self._shell_layout is not None
-            and self._shell_layout.width_class is WidthClass.NARROW
-        ):
+        sidebar = self.query_one("#sidebar", OptionList)
+        sidebar.highlighted = sidebar.get_option_index(key)
+        if self._is_narrow():
             self._sidebar_visible = False
             self._refresh_regions()
+
+    def palette_entries(self) -> list[PaletteEntry]:
+        return palette_entries(self._workbench_keymap)
+
+    async def run_palette_action(self, action: str) -> None:
+        destination = destination_key(action)
+        if destination is not None:
+            self.navigate(destination)
+        else:
+            await self.run_action(action)
 
     def action_toggle_sidebar(self) -> None:
         self._sidebar_visible = not self._sidebar_visible
@@ -98,7 +116,35 @@ class WorkbenchApp(App[None]):
         self._refresh_regions()
 
     def action_help(self) -> None:
-        self.notify(_HELP, title="Shortcuts")
+        self.notify(
+            self._workbench_keymap.help_text(), title="Keyboard shortcuts", timeout=15
+        )
+
+    def action_focus_search(self) -> None:
+        fields = self.screen.query(".searchable")
+        if not fields:
+            self.notify("This page has no search field.", severity="warning")
+            return
+        fields.first().focus()
+
+    def action_go_back(self) -> None:
+        """Close the topmost overlay: the narrow menu, then the context drawer."""
+        if self._is_narrow() and self._sidebar_visible:
+            self._sidebar_visible = False
+        elif self._shell_layout is not None and (
+            self._shell_layout.width_class is not WidthClass.WIDE
+            and self._context_visible
+        ):
+            self._context_visible = False
+        else:
+            return
+        self._refresh_regions()
+
+    def _is_narrow(self) -> bool:
+        return (
+            self._shell_layout is not None
+            and self._shell_layout.width_class is WidthClass.NARROW
+        )
 
     def _apply_layout(self, columns: int, rows: int) -> None:
         if columns <= 0 or rows <= 0:
@@ -118,10 +164,7 @@ class WorkbenchApp(App[None]):
         self._refresh_regions()
 
     def _refresh_regions(self) -> None:
-        narrow = (
-            self._shell_layout is not None
-            and self._shell_layout.width_class is WidthClass.NARROW
-        )
+        narrow = self._is_narrow()
         self.query_one("#sidebar").display = self._sidebar_visible
         self.query_one("#context").display = self._context_visible
         # A narrow menu takes the whole width, so content steps aside.
