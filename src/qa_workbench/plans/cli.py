@@ -54,6 +54,9 @@ def create_command(
         list[str] | None, typer.Option(help="Environment. Repeatable.")
     ] = None,
     owner: Annotated[list[str] | None, typer.Option(help="Owner. Repeatable.")] = None,
+    suite: Annotated[
+        list[str] | None, typer.Option(help="SUITE id to include. Repeatable.")
+    ] = None,
 ) -> None:
     """Create a test plan as a draft."""
     repository = _open(project, writable=True)
@@ -66,6 +69,7 @@ def create_command(
         exit_criteria=exit_criterion or [],
         environments=environment or [],
         owners=owner or [],
+        suites=suite or [],
     )
     try:
         record = create_plan(repository, draft)
