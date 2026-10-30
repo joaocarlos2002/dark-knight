@@ -9,6 +9,12 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- Execution reports (the ten sections of the specification, explicit
+  limitations, nothing inferred), a requirement-to-evidence traceability trace
+  and matrix, saved reports that detect when they are stale, and
+  `reports execution|traceability|trace` (REQ-032).
+- The CLI now writes UTF-8 even when its output is piped on Windows, so status
+  symbols no longer crash it.
 - Incremental, recoverable executions: steps saved before and after they run,
   recovery of interrupted runs without inventing outcomes, reruns that never
   overwrite, corrections as separate events, and failure classification

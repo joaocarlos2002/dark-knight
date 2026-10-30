@@ -6,6 +6,7 @@ from typing import Annotated
 import typer
 
 from qa_workbench.core.config import AppConfig, ConfigurationError
+from qa_workbench.core.console import ensure_utf8_output
 from qa_workbench.core.logging import configure_logging
 from qa_workbench.evidence.cli import evidence_app
 from qa_workbench.executions.cli import executions_app
@@ -13,6 +14,7 @@ from qa_workbench.plans.cli import plans_app
 from qa_workbench.projects.cli import project_app
 from qa_workbench.projects.errors import ProjectError
 from qa_workbench.projects.repository import ProjectRepository
+from qa_workbench.reports.cli import reports_app
 from qa_workbench.requirements.cli import requirements_app
 from qa_workbench.review.cli import review_app
 from qa_workbench.suites.cli import suites_app
@@ -36,6 +38,7 @@ app.add_typer(review_app, name="review")
 app.add_typer(plans_app, name="plans")
 app.add_typer(executions_app, name="executions")
 app.add_typer(evidence_app, name="evidence")
+app.add_typer(reports_app, name="reports")
 
 
 def _show_version(value: bool) -> None:
@@ -65,6 +68,7 @@ def main(
     ] = None,
 ) -> None:
     """Run the Dark Knight QA workbench."""
+    ensure_utf8_output()
     if version_option:
         return
     try:

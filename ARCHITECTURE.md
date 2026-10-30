@@ -50,6 +50,11 @@ src/qa_workbench/
     importer.py    Import into a project, preserving source and author
     coverage.py    Which requirements have related test cases
     cli.py         `qa-workbench requirements ...` commands
+  reports/
+    traceability.py  Link graph, upstream/downstream trace, requirement matrix
+    execution.py     Execution report from recorded facts
+    writer.py        Save reports with a source hash; detect stale ones
+    cli.py           `qa-workbench reports ...` commands
   executions/
     states.py      The lifecycle state machine and its validated transitions
     schema.py      EXEC record schema and rules tying data to state
@@ -218,6 +223,38 @@ time the case is updated through the workbench).
   values, every rule combination, valid and refused transitions, use-case
   scenarios). A case can combine several techniques, and the derived conditions
   appear in its body.
+
+### Reports and traceability
+
+`qa-workbench reports execution | traceability | trace` turns records into
+reports. Reports are generated, never typed in: they state facts taken from the
+records and nothing else.
+
+- **Execution report:** the ten sections of the specification (identification,
+  objective, environment, preconditions, procedure, expected result, observed
+  result, status, evidence, conclusion), plus limitations and traceability. The
+  status shows a symbol and a name. The conclusion only repeats what the record
+  says (a pass cites its evidence count; a failure cites what was observed and
+  what kind of failure it was; blocked, inconclusive, and cancelled cite their
+  reason; a run in progress claims no conclusion).
+- **Limitations are explicit:** the execution is not finalized; no evidence was
+  collected; steps were not recorded one by one; steps were interrupted or the
+  run was recovered; the failure was an infrastructure or test problem, not a
+  product one; evidence files fail their integrity check; the finalized record
+  was modified; corrections were recorded after finalization; referenced
+  defects are not stored. Nothing is inferred to fill a gap.
+- **Traceability:** records form the chain requirement, test case, suite, plan,
+  execution, evidence or defect. A link can be written on either side, and
+  `reports trace ID` follows the chain upstream and downstream without wandering
+  sideways into unrelated records (two requirements that share a case do not
+  show up in each other's trace). `reports traceability` prints a matrix of
+  each requirement, its cases, and the latest execution of each (passed, has
+  failures, not executed, in progress or inconclusive, or no test case), plus the
+  gaps: requirements without cases and cases without a requirement.
+- **Saved reports** go to `<project>/reports/` with the SHA-256 of the execution
+  and its history. A correction recorded later makes the saved report stale, and
+  `reports execution` says so. Defects and pipelines are not part of the chain
+  yet because their records do not exist.
 
 ### Executions and their lifecycle
 
