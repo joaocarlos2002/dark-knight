@@ -9,6 +9,9 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- The Browser Agent now saves the console messages, page errors, and every
+  network request of a run as sanitized `console.json` and `network.json`
+  evidence, with failed requests flagged (#42).
 - TUI Test Suites and Test Plans pages: browse with search and filters, see
   members, estimates, last execution, and the plan's selection with reasons;
   create suites and plans, and add or remove cases, from forms that validate

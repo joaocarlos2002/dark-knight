@@ -934,9 +934,14 @@ the values typed into fields are never written to the action log.
   does not match the test is an `AssertionFailed`, a finding that is *not* a
   `BrowserError`. A missing Chromium is a `BrowserSetupError`. A failed
   screenshot is recorded in `screenshot_failures` and never fails the test.
-- **Evidence.** `close()` returns the screenshots, the Playwright trace, and the
-  video; `register_artifacts` registers them as hashed, immutable `EVD`
-  records with source `playwright`.
+- **Evidence.** `close()` returns the screenshots, the Playwright trace, the video,
+  and two JSON logs, `console.json` (console messages and page errors) and
+  `network.json` (every request with method, URL, status, and a `failed` flag for
+  4xx/5xx, requests that never completed, and requests blocked by the host
+  restriction). The logs are sanitized before they are written (a page can print
+  a token; URL credentials and sensitive query values are removed) and never hold
+  headers or bodies. `register_artifacts` registers all of it as hashed,
+  immutable `EVD` records with source `playwright`.
 - **Preview (REQ-022, REQ-023).** The mode is `headless`, `preview` (default),
   or `visible`. In `preview` the agent saves a screenshot after an action at most
   once per `refresh_seconds`. Agent and TUI share a folder
