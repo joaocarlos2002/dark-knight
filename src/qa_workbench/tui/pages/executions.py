@@ -42,11 +42,12 @@ class ExecutionsPage(BrowserPage):
     columns = EXECUTION_COLUMNS
     empty_message = "No executions yet."
     empty_hint = "Press N to start one from a test case."
-    shortcuts_hint = "N new   M move to the next state"
+    shortcuts_hint = "N new   M move   E edit"
 
     BINDINGS = [
         Binding("n", "new_execution", "New"),
         Binding("m", "move_execution", "Move"),
+        Binding("e", "edit_execution", "Edit"),
     ]
 
     def load(self) -> BrowseData:
@@ -150,6 +151,65 @@ class ExecutionsPage(BrowserPage):
                 fields,
                 submit_label="Move",
                 validate=validate,
+                commit=commit,
+            ),
+            done,
+        )
+
+    def action_edit_execution(self) -> None:
+        execution_id = self.selected_key()
+        if self.writable_project() is None or execution_id is None:
+            return
+        try:
+            record = self.context.repository().get(execution_id)
+        except StorageError as error:
+            self.app.notify(str(error), severity="error")
+            return
+        meta = record.metadata
+
+        # Only allow editing if the execution is in a draft state
+        if meta["status"] not in ("created", "planned"):
+            self.app.notify(
+                f"{execution_id} cannot be edited in '{meta['status']}' state.",
+                severity="warning",
+            )
+            return
+
+        def commit(values: dict[str, str]) -> str | None:
+            try:
+                self.context.repository().update(
+                    execution_id,
+                    {
+                        "executor": values["executor"],
+                        "environment": values["environment"],
+                        "version": values["version"] or None,
+                    },
+                )
+            except (ExecutionError, StorageError, ValueError) as error:
+                return str(error)
+            return None
+
+        def done(values: dict[str, str] | None) -> None:
+            if values is not None:
+                self.refresh_data()
+                self.app.notify(f"{execution_id} updated.")
+
+        self.app.push_screen(
+            FormDialog(
+                f"Edit {execution_id}",
+                (
+                    FormField(
+                        "executor", "Executor", required=True, default=meta["executor"]
+                    ),
+                    FormField(
+                        "environment",
+                        "Environment",
+                        required=True,
+                        default=meta["environment"],
+                    ),
+                    FormField("version", "Version", default=meta.get("version", "")),
+                ),
+                submit_label="Save",
                 commit=commit,
             ),
             done,

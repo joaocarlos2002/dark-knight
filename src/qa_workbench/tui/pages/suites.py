@@ -12,6 +12,7 @@ from qa_workbench.suites.service import (
 )
 from qa_workbench.tui.browse import BrowseData
 from qa_workbench.tui.browse_planning import SUITE_COLUMNS, suite_detail, suite_rows
+from qa_workbench.tui.components.dialog import ConfirmationDialog
 from qa_workbench.tui.components.form import FormDialog, FormField
 from qa_workbench.tui.pages.browser import BrowserPage
 from qa_workbench.tui.pages.registry import register
@@ -43,12 +44,14 @@ class SuitesPage(BrowserPage):
     columns = SUITE_COLUMNS
     empty_message = "No suites yet."
     empty_hint = "Press N to group test cases into the first one."
-    shortcuts_hint = "N new   A add cases   R remove cases"
+    shortcuts_hint = "N new   A add cases   R remove cases   E edit   D archive"
 
     BINDINGS = [
         Binding("n", "new_suite", "New"),
         Binding("a", "add_cases", "Add"),
         Binding("r", "remove_cases", "Remove"),
+        Binding("e", "edit_suite", "Edit"),
+        Binding("d", "archive_suite", "Archive"),
     ]
 
     def load(self) -> BrowseData:
@@ -122,3 +125,88 @@ class SuitesPage(BrowserPage):
 
     def action_remove_cases(self) -> None:
         self._change_cases("Remove cases from", remove_cases, "removed")
+
+    def action_edit_suite(self) -> None:
+        suite_id = self.selected_key()
+        if self.writable_project() is None or suite_id is None:
+            return
+        try:
+            record = self.context.repository().get(suite_id)
+        except StorageError as error:
+            self.app.notify(str(error), severity="error")
+            return
+        meta = record.metadata
+
+        def split_ids(text: str) -> list[str]:
+            return [part.strip() for part in text.split(",") if part.strip()]
+
+        def commit(values: dict[str, str]) -> str | None:
+            if values["type"] not in TYPES:
+                return f"Type must be one of: {', '.join(sorted(TYPES))}."
+            try:
+                self.context.repository().update(
+                    suite_id,
+                    {
+                        "title": values["title"],
+                        "type": values["type"],
+                        "description": values["description"] or None,
+                        "cases": split_ids(values["cases"]),
+                    },
+                )
+            except (SuiteError, StorageError, ValueError) as error:
+                return str(error)
+            return None
+
+        def done(values: dict[str, str] | None) -> None:
+            if values is not None:
+                self.refresh_data()
+                self.app.notify(f"{suite_id} updated.")
+
+        cases_text = ", ".join(meta.get("cases", []))
+
+        self.app.push_screen(
+            FormDialog(
+                f"Edit {suite_id}",
+                (
+                    FormField("title", "Title", required=True, default=meta["title"]),
+                    FormField("type", "Type", required=True, default=meta["type"]),
+                    FormField(
+                        "description",
+                        "Description",
+                        default=meta.get("description", ""),
+                    ),
+                    FormField(
+                        "cases",
+                        "Test cases (TC ids, comma separated)",
+                        default=cases_text,
+                    ),
+                ),
+                submit_label="Save",
+                commit=commit,
+            ),
+            done,
+        )
+
+    def action_archive_suite(self) -> None:
+        suite_id = self.selected_key()
+        if self.writable_project() is None or suite_id is None:
+            return
+
+        def done(result: bool | None) -> None:
+            if not result:
+                return
+            try:
+                self.context.repository().update(suite_id, {"status": "archived"})
+            except (StorageError, ValueError) as error:
+                self.app.notify(str(error), severity="error")
+                return
+            self.refresh_data()
+            self.app.notify(f"{suite_id} archived.")
+
+        self.app.push_screen(
+            ConfirmationDialog(
+                f"Archive {suite_id}?",
+                "Set status to 'archived'. This action can be undone by editing.",
+            ),
+            done,
+        )
