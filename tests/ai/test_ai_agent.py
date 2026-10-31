@@ -124,6 +124,23 @@ def test_endless_tool_calls_stop_with_an_error() -> None:
         agent.ask("q")
 
 
+def test_the_last_step_withholds_the_tools_so_the_model_must_answer() -> None:
+    provider = FakeProvider(
+        [
+            reply("", ToolCall("get_record", {})),
+            reply("", ToolCall("get_record", {})),
+            reply(UNSURE),
+        ]
+    )
+    agent = OwnAgent(provider, ToolRegistry([_tool(lambda a: "x")]), max_steps=3)
+
+    answer = agent.ask("q")
+
+    assert answer.statements[0].kind == "inconclusive"
+    assert [bool(r.tools) for r in provider.requests] == [True, True, False]
+    assert "No more tool calls" in provider.requests[-1].messages[-1].content
+
+
 @pytest.mark.parametrize(
     "bad",
     [

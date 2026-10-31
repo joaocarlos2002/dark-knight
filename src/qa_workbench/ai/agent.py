@@ -56,7 +56,15 @@ SYSTEM_PROMPT = (
     '(3) Reply ONLY with JSON: {"statements": [{"kind": '
     '"fact|hypothesis|recommendation|inconclusive", "text": "...", '
     '"sources": ["record ids"]}]}. A fact must list the record ids that support '
-    "it; anything you cannot support is a hypothesis. Say when you are unsure."
+    "it; anything you cannot support is a hypothesis. Say when you are unsure. "
+    "(4) Call a tool only when the question needs a record. For a greeting or a "
+    "general question, answer directly without tools."
+)
+# On the last step the model gets no tools and is told to answer, so a small model
+# that keeps calling tools still ends with an answer instead of an error.
+FINAL_STEP = (
+    "No more tool calls are possible. Answer now with the JSON structure, using "
+    "only what you have already seen; say when it is not enough."
 )
 
 
@@ -196,17 +204,22 @@ class OwnAgent:
         schema = ANSWER_SCHEMA if self.provider.capabilities.structured_output else None
         made: list[str] = []
         for step in range(1, self.max_steps + 1):
+            final = use_tools and step == self.max_steps
+            if final:
+                messages.append(Message("user", FINAL_STEP))
             result = self.provider.complete(
                 CompletionRequest(
                     tuple(messages),
                     self.model,
-                    self.tools.specs(),
+                    () if final else self.tools.specs(),
                     schema,
                     self.timeout_seconds,
                 ),
                 cancel,
             )
-            if not result.tool_calls:
+            if final and result.tool_calls and not result.text.strip():
+                break
+            if final or not result.tool_calls:
                 items = parse_answer(result.text, self.provider.name)
                 return AgentAnswer(verify_answer(items, known_ids), tuple(made), step)
             messages.append(Message("assistant", result.text, result.tool_calls))
