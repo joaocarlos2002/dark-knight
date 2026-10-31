@@ -172,6 +172,7 @@ src/qa_workbench/
     browse.py      Rows and detail text for requirements and cases (pure)
     browse_planning.py  The same for suites and test plans
     browse_executions.py  The same for executions and their next states
+    browse_results.py   The same for defects, API runs, releases, security
     pages/         One Page per navigation key: Overview, Projects,
                    Requirements, Test Cases (BrowserPage is their base)
 tests/             Pytest suite mirroring the package layout
@@ -871,6 +872,20 @@ by the CLI in another terminal show up. Pages without a class still show
   approval-gated one needs an approver). A refusal keeps the form open with the
   reason. A finalized execution says it is final, and steps are still recorded
   with `batman executions` so each one is saved before and after it runs.
+- **Result pages.** Bug Hunting (`BUG`), API Testing (`API`), and Release
+  Analysis (`REL`) are list + detail pages over records the CLI saved: a header
+  from the metadata followed by the readable Markdown body written when the record
+  was saved (API requests and responses are the sanitized copies; a defect also
+  shows its classification history). They are read-only: results are created by
+  the commands that produce evidence.
+- **Security.** One list of approval requests (`APR-...`) and security-check runs
+  (`SEC-...`) with the audit log's health in the summary line (`Audit log intact:
+  N entries`, or the damage if the hash chain is broken, in which case the
+  approvals are not listed rather than trusted). `A` approves and `D` denies the
+  selected pending request through a form that asks for the person's name (and a
+  reason for a denial); the same rules as `batman security approve|deny` apply,
+  so the requester cannot decide their own request and a decided request cannot
+  be decided again.
 - **Read-only when archived.** On an archived project the lists work and `N`/`I`
   explain that it cannot be changed.
 - **Not here yet.** Executions and the integration pages are still
