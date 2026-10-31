@@ -150,11 +150,19 @@ def issues_command(
     state: Annotated[str, typer.Option(help="opened, closed, or all.")] = "opened",
     label: Annotated[list[str] | None, typer.Option(help="Repeatable.")] = None,
     limit: LimitOption = 20,
+    include_test_cases: Annotated[
+        bool, typer.Option("--include-test-cases", help="Also list test cases.")
+    ] = False,
 ) -> None:
-    """List issues."""
+    """List issues (features and bugs; test cases only with --include-test-cases)."""
     source = GitLabIssues(_client(project, url, token_env))
     found = _run(
-        lambda: source.list_issues(state=state, labels=tuple(label or ()), limit=limit)
+        lambda: source.list_issues(
+            state=state,
+            labels=tuple(label or ()),
+            limit=limit,
+            include_test_cases=include_test_cases,
+        )
     )
     for issue in found:
         labels = ", ".join(issue.labels) or "-"

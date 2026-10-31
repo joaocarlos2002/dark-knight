@@ -52,12 +52,21 @@ class GitLabIssues:
         self._client = client
 
     def list_issues(
-        self, *, state: str = "opened", labels: tuple[str, ...] = (), limit: int = 20
+        self,
+        *,
+        state: str = "opened",
+        labels: tuple[str, ...] = (),
+        limit: int = 20,
+        include_test_cases: bool = False,
     ) -> list[Issue]:
+        """Features and bugs. Test cases are issues too, so they are left out
+        unless asked for."""
         path = self._client.project_path("/issues")
         params = {"state": state, "order_by": "updated_at", "sort": "desc"}
         if labels:
             params["labels"] = ",".join(labels)
+        if not include_test_cases:
+            params["not[labels]"] = "type::testcase"
         return [
             issue_from(item, path)
             for item in self._client.get_list(path, params, limit=limit)

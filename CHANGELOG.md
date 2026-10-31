@@ -27,6 +27,10 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- Group-wide boards: `batman gitlab board --labels FILTER,COLUMN` reads a board
+  column across every project of the group, `issue-links` shows an issue's
+  related issues and merge requests, and a Board page does both in the TUI.
+  Test cases are kept out of issue lists unless `--include-test-cases` (#166).
 - A Review page in the TUI to read, submit, approve, reject, or ask changes on
   the records the AI generated, with its findings and sources, and the same
   rules as `batman review` (no self-approval, a reason for a rejection). The

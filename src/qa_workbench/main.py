@@ -18,6 +18,7 @@ from qa_workbench.edits.cli import edits_app
 from qa_workbench.edits.service import ensure_edits
 from qa_workbench.evidence.cli import evidence_app
 from qa_workbench.executions.cli import executions_app
+from qa_workbench.integrations.gitlab import group_cli  # noqa: F401  (adds commands)
 from qa_workbench.integrations.gitlab.cli import gitlab_app
 from qa_workbench.plans.cli import plans_app
 from qa_workbench.projects.cli import project_app
