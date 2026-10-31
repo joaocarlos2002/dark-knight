@@ -41,11 +41,11 @@ def filter_rows(rows: Sequence[BrowseRow], query: str, status: str) -> list[Brow
     ]
 
 
-def _list(value: Any) -> list[str]:
+def as_list(value: Any) -> list[str]:
     return [str(item) for item in value] if isinstance(value, list) else []
 
 
-def _lines(title: str, items: Sequence[str], empty: str = "none") -> list[str]:
+def section(title: str, items: Sequence[str], empty: str = "none") -> list[str]:
     return ["", title, *([f"  - {item}" for item in items] or [f"  ({empty})"])]
 
 
@@ -76,7 +76,7 @@ def requirement_rows(repository: MarkdownRepository) -> BrowseData:
         status = str(meta["status"])
         priority = str(meta.get("priority") or "-")
         title = str(meta["title"])
-        tags = " ".join(_list(meta.get("tags")))
+        tags = " ".join(as_list(meta.get("tags")))
         rows.append(
             BrowseRow(
                 record.id,
@@ -102,7 +102,7 @@ def requirement_detail(repository: MarkdownRepository, record_id: str) -> str:
     source = f"Source {meta['source']}"
     if meta.get("source_ref"):
         source += f" ({meta['source_ref']})"
-    tags = ", ".join(_list(meta.get("tags"))) or "-"
+    tags = ", ".join(as_list(meta.get("tags"))) or "-"
     lines = [
         f"{record.id}  {meta['title']}",
         f"Status {meta['status']}   Priority {meta.get('priority') or '-'}   "
@@ -110,15 +110,15 @@ def requirement_detail(repository: MarkdownRepository, record_id: str) -> str:
         source,
         f"Author {meta.get('author') or '-'}   Tags {tags}",
     ]
-    lines += _lines("ACCEPTANCE CRITERIA", _list(meta.get("acceptance_criteria")))
-    lines += _lines(
+    lines += section("ACCEPTANCE CRITERIA", as_list(meta.get("acceptance_criteria")))
+    lines += section(
         "RELATED TEST CASES", _titles(repository, cases), "no test case covers this"
     )
     if report and report.missing_cases:
-        lines += _lines("NAMED BUT MISSING", list(report.missing_cases))
+        lines += section("NAMED BUT MISSING", list(report.missing_cases))
     reviews = meta.get("reviews")
     if isinstance(reviews, list) and reviews:
-        lines += _lines(
+        lines += section(
             "REVIEWS",
             [
                 f"{r.get('decision')} by {r.get('reviewer')} on {r.get('at', '-')}"
@@ -144,8 +144,8 @@ def case_rows(repository: MarkdownRepository) -> BrowseData:
         meta = record.metadata
         status = str(meta["status"])
         title = str(meta["title"])
-        tags = " ".join(_list(meta.get("tags")))
-        requirements = " ".join(_list(meta.get("requirements")))
+        tags = " ".join(as_list(meta.get("tags")))
+        requirements = " ".join(as_list(meta.get("requirements")))
         rows.append(
             BrowseRow(
                 record.id,
@@ -173,13 +173,13 @@ def case_detail(repository: MarkdownRepository, record_id: str) -> str:
         f"Status {meta['status']}   Priority {meta['priority']}   "
         f"Type {meta['type']}   Origin {meta['origin']}",
         f"Objective: {meta['objective']}",
-        "Requirements: " + (", ".join(_list(meta.get("requirements"))) or "-"),
-        "Suites: " + (", ".join(_list(meta.get("suites"))) or "-"),
-        "Tags: " + (", ".join(_list(meta.get("tags"))) or "-"),
+        "Requirements: " + (", ".join(as_list(meta.get("requirements"))) or "-"),
+        "Suites: " + (", ".join(as_list(meta.get("suites"))) or "-"),
+        "Tags: " + (", ".join(as_list(meta.get("tags"))) or "-"),
     ]
-    lines += _lines("PRECONDITIONS", _list(meta.get("preconditions")))
+    lines += section("PRECONDITIONS", as_list(meta.get("preconditions")))
     lines += ["", "STEPS", *(f"  {s}" for s in steps or ["  (no steps)"])]
     lines += ["", "EXPECTED RESULT", f"  {meta.get('expected_result') or '(none)'}"]
     if meta.get("test_data"):
-        lines += _lines("TEST DATA", _list(meta["test_data"]))
+        lines += section("TEST DATA", as_list(meta["test_data"]))
     return "\n".join(lines)
