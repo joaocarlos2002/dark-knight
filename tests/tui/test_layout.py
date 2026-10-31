@@ -18,11 +18,11 @@ def test_width_breakpoints(columns: int, expected: WidthClass) -> None:
     assert classify_width(columns) is expected
 
 
-def test_wide_layout_shows_every_region() -> None:
+def test_wide_layout_shows_menu_and_content_with_context_on_demand() -> None:
     layout = layout_for(140, 40)
 
     assert layout.sidebar_visible
-    assert layout.context_visible
+    assert not layout.context_visible
     assert not layout.short
 
 

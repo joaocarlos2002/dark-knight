@@ -40,9 +40,9 @@ def classify_width(columns: int) -> WidthClass:
 def layout_for(columns: int, rows: int) -> ShellLayout:
     """Return the default region visibility for a terminal size.
 
-    Wide terminals show every region. Medium terminals keep navigation and
-    content, with context available on demand. Narrow terminals show content
-    only, with navigation available on demand.
+    Wide and medium terminals show navigation and content. Narrow terminals show
+    content only, with navigation available on demand. The context panel is
+    always on demand, so the content never competes with it for space.
     """
     if rows <= 0:
         raise ValueError(f"Terminal height must be positive, got {rows}.")
@@ -51,5 +51,5 @@ def layout_for(columns: int, rows: int) -> ShellLayout:
         width_class=width_class,
         short=rows < SHORT_MAX_ROWS,
         sidebar_visible=width_class is not WidthClass.NARROW,
-        context_visible=width_class is WidthClass.WIDE,
+        context_visible=False,
     )

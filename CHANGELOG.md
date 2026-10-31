@@ -15,6 +15,16 @@ use the `vMAJOR.MINOR.PATCH` format.
   server addresses are still typed. A question without a model now says to press
   `Ctrl+G`.
 
+### Changed
+
+- The TUI shell was simplified. The header is one line (product on the left,
+  project on the right); the Wayne Industries / Gotham City branding, the
+  tagline, and the corporate footer line are gone; the footer is one line, and the
+  shortcuts of the current page show on their own line (the bar used to have no
+  room and never appeared). The menu groups are separated by a blank line, list
+  pages give the table and the detail their own space, and the context panel opens
+  on demand with `F2` instead of taking space on wide terminals.
+
 ### Added
 
 - Claude as an AI engine through Claude Code, with no API key: `batman ai ask

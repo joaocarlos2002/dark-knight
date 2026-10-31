@@ -32,7 +32,7 @@ from qa_workbench.tui.components.dialog import ConfirmationDialog
 from qa_workbench.tui.components.form import FormDialog, FormField
 from qa_workbench.workspace import repository_for
 
-WELCOME_TITLE = f"{identity.COMPANY} / {identity.PRODUCT}"
+WELCOME_TITLE = identity.PRODUCT
 WELCOME_MESSAGE = (
     "Welcome. This workbench keeps your quality evidence in one place: "
     "requirements, test cases, executions, and what proves each result.\n\n"

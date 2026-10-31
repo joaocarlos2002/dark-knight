@@ -10,9 +10,9 @@ from qa_workbench.tui.keymap import Keymap, display_key
 
 
 class HelpBar(Horizontal):
-    """A bar showing contextual shortcuts for the current page.
+    """A bar showing the shortcuts of the current page.
 
-    Combines global shortcuts from the keymap with page-specific BINDINGS.
+    The global shortcuts are in the footer, so they are not repeated here.
     """
 
     def __init__(self, keymap: Keymap, **kwargs: Any) -> None:
@@ -28,27 +28,17 @@ class HelpBar(Horizontal):
 
     def _refresh(self) -> None:
         self.remove_children()
-        self.mount(*self._compose_items())
+        items = self._compose_items()
+        self.display = bool(items)
+        if items:
+            self.mount(*items)
 
     def _compose_items(self) -> list[Static]:
         items: list[Static] = []
-
-        # Global shortcuts (always shown)
-        global_actions = ("toggle_sidebar", "toggle_context", "command_palette", "help")
-        for shortcut in self._keymap.shortcuts:
-            if shortcut.action in global_actions:
-                items.append(
-                    Static(
-                        f"[{shortcut.label}] {shortcut.description}",
-                        classes="help-item",
-                    )
-                )
-
-        # Page-specific shortcuts
         for binding in self._page_bindings:
             key_display = display_key(binding.key)
             items.append(
-                Static(f"[{key_display}] {binding.description}", classes="help-item")
+                Static(f"{key_display} {binding.description}", classes="help-item")
             )
 
         return items

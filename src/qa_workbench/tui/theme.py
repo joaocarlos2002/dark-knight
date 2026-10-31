@@ -1,4 +1,4 @@
-"""Wayne Industries theme tokens and shell stylesheet.
+"""Theme tokens and shell stylesheet.
 
 Colors communicate state, not decoration. Every color lives in ``TOKENS``;
 the stylesheet refers to tokens only, so no hex value is repeated elsewhere.
@@ -41,65 +41,39 @@ Screen {
     layout: vertical;
 }
 
-/* Header: corporate identity, discreet. */
+/* Header: the product and the active project, on one line. */
 #header {
-    height: auto;
-    padding: 0 1;
-    background: $industrial-black;
-    border-bottom: solid $steel-gray;
-}
-
-#header-row-1,
-#header-row-2 {
     height: 1;
+    padding: 0 2;
+    background: $industrial-black;
 }
 
-#header-company {
+#header-product {
     width: 1fr;
     text-style: bold;
     color: $dirty-white;
 }
 
-#header-division,
-#header-location {
-    color: $ash-gray;
-}
-
-#header-division {
-    width: 1fr;
-}
-
 #header-project {
     width: auto;
-    color: $dirty-white;
-}
-
-#header-location {
-    width: auto;
+    color: $ash-gray;
 }
 
 #body {
     height: 1fr;
 }
 
-/* Navigation: brand block above the menu. */
+/* Navigation: the menu, with a blank line between groups. */
 #navigation {
-    width: 30;
+    width: 28;
     background: $industrial-black;
     border-right: solid $steel-gray;
-}
-
-#brand {
-    height: auto;
-    padding: 1 0 0 2;
-    color: $dirty-white;
-    text-style: bold;
 }
 
 #sidebar {
     height: 1fr;
     background: $industrial-black;
-    padding: 0 1;
+    padding: 1 1 0 1;
     border: none;
 }
 
@@ -130,6 +104,7 @@ Screen {
 #page-title {
     text-style: bold;
     color: $dirty-white;
+    margin-bottom: 1;
 }
 
 #page-body {
@@ -146,22 +121,20 @@ Screen {
 }
 
 #context {
-    width: 30;
+    width: 36;
     background: $batcave;
     border-left: solid $steel-gray;
     padding: 1 2;
     color: $ash-gray;
 }
 
-/* Footer: identity line and status/shortcut line. */
+/* Footer: the project and the global shortcuts, on one line. */
 #footer {
-    height: auto;
+    height: 1;
     background: $industrial-black;
-    border-top: solid $steel-gray;
-    padding: 0 1;
+    padding: 0 2;
 }
 
-#footer-identity,
 #status-bar {
     height: 1;
     color: $ash-gray;
@@ -364,10 +337,9 @@ Screen.-narrow #navigation {
     border-right: none;
 }
 
-/* Short terminals: drop secondary identity lines and metadata. */
-Screen.-short #header-row-2,
-Screen.-short #footer-identity {
-    display: none;
+/* Short terminals: tighter spacing. */
+Screen.-short #page-title {
+    margin-bottom: 0;
 }
 
 Screen.-short #page-body {
@@ -377,9 +349,8 @@ Screen.-short #page-body {
 /* HelpBar: contextual shortcuts at the bottom */
 #help-bar {
     height: 1;
-    background: $industrial-black;
-    border-top: solid $steel-gray;
-    padding: 0 1;
+    background: $batcave;
+    padding: 0 2;
 }
 
 #help-bar .help-item {
@@ -394,6 +365,31 @@ Screen.-short #page-body {
 
 #help-bar .help-desc {
     color: $ash-gray;
+}
+
+/* List and detail pages: each part has its own space. */
+#browse-summary {
+    margin-bottom: 1;
+}
+
+#browse-search {
+    margin-bottom: 1;
+}
+
+#browse-table {
+    height: auto;
+    max-height: 50%;
+}
+
+#browse-detail-box {
+    height: 1fr;
+    margin-top: 1;
+    padding: 1 2;
+    background: $batcave;
+}
+
+#browse-problems {
+    color: $warning;
 }
 """
 )

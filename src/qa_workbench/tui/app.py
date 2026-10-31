@@ -88,7 +88,6 @@ class WorkbenchApp(App[None]):
         yield AppHeader(_header_project_text(self._project), id="header")
         with Horizontal(id="body"):
             with Vertical(id="navigation"):
-                yield Static(identity.brand_text(), id="brand")
                 yield OptionList(*self._sidebar_options(), id="sidebar")
             with Vertical(id="main"):
                 yield Static(id="page-title")
@@ -98,10 +97,10 @@ class WorkbenchApp(App[None]):
                         yield page_class(self._page_context(), id=f"page-{key}")
                 yield BrowserPreview(self._preview_channel, id="browser-preview")
             yield Static(_context_text(self._project), id="context")
+        yield HelpBar(self._workbench_keymap, id="help-bar")
         yield AppFooter(
             _status_bar_text(self._project, self._workbench_keymap), id="footer"
         )
-        yield HelpBar(self._workbench_keymap, id="help-bar")
 
     def on_mount(self) -> None:
         self.query_one("#browser-preview").display = False
@@ -336,8 +335,12 @@ class WorkbenchApp(App[None]):
     @staticmethod
     def _sidebar_options() -> list[Option]:
         options: list[Option] = []
-        for section in navigation.SECTIONS:
-            options.append(Option(section.title.upper(), disabled=True))
+        for index, section in enumerate(navigation.SECTIONS):
+            # A blank line above each group keeps the groups apart.
+            heading = section.title.upper()
+            options.append(
+                Option(heading if index == 0 else f"\n{heading}", disabled=True)
+            )
             options.extend(
                 Option(item.title.upper(), id=item.key) for item in section.items
             )
