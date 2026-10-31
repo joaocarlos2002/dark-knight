@@ -208,6 +208,12 @@ The code of the repository can be read without leaving the tool:
 branch, `--url` for another repository), or the Repository page in the menu.
 Large and binary files are refused, and secrets in code are masked.
 
+Test cases can go to GitLab as `test_case` issues in the team's standard layout:
+`batman cases push TC-001 -p PROJ-001 --by YOURNAME` (or `G` on the Test Cases
+page). Someone else approves it once (`batman security approve APR-... --by
+NAME`) and you run the push again. Pushing again changes nothing unless the case
+changed, and then only the changed sections are rewritten. `batman gitlab
+test-cases [LABEL]` lists what GitLab already has.
 What the AI creates is only a draft. The Review page in the menu lists it with
 the AI's statements and their sources; press `S` to submit a draft, then `A` to
 approve, `X` to reject, or `C` to ask for changes. The same steps exist as

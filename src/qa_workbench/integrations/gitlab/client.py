@@ -170,6 +170,11 @@ class GitLabClient:
         response = self._send("POST", path, None, dict(body))
         return self._decode(path, response)
 
+    def put_json(self, path: str, body: Mapping[str, Any]) -> Any:
+        """PUT JSON. As for a POST, a network failure leaves the outcome unknown."""
+        response = self._send("PUT", path, None, dict(body))
+        return self._decode(path, response)
+
     def _request(self, path: str, params: Mapping[str, str] | None) -> GatewayResponse:
         return self._send("GET", path, params, None)
 
@@ -189,14 +194,10 @@ class GitLabClient:
             body,
         )
         try:
-            response = (
-                self._gateway.post(request)
-                if method == "POST"
-                else self._gateway.get(request)
-            )
+            response = getattr(self._gateway, method.lower())(request)
         except GatewayError as error:
             hint = f"Check that {self._connection.base_url} is reachable"
-            if method == "POST":
+            if method in ("POST", "PUT"):
                 hint = (
                     "The request may or may not have been applied; check GitLab "
                     "before retrying"

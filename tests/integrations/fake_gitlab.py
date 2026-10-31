@@ -44,6 +44,9 @@ class FakeGateway:
     def post(self, request: GatewayRequest) -> GatewayResponse:
         return self.get(request)
 
+    def put(self, request: GatewayRequest) -> GatewayResponse:
+        return self.get(request)
+
 
 def make_client(
     gateway: FakeGateway, environment: dict[str, str] | None = None

@@ -1,9 +1,21 @@
-"""Test cases: browse them and write a new one (spec 4.3)."""
+"""Test cases: browse them, write a new one, and push them to GitLab (spec 4.3)."""
+
+import getpass
 
 from textual.binding import Binding
 
+from qa_workbench.core.config import ConfigurationError
+from qa_workbench.integrations.errors import IntegrationError
+from qa_workbench.integrations.gitlab import cli as gitlab_cli
+from qa_workbench.integrations.gitlab.connect import open_writer
+from qa_workbench.integrations.gitlab.test_cases import GitLabTestCases
+from qa_workbench.projects.errors import ProjectError
+from qa_workbench.security.audit import AuditError
+from qa_workbench.security.guard import SecurityError
+from qa_workbench.security.settings import SecuritySettingsError
 from qa_workbench.storage.errors import StorageError
 from qa_workbench.testcases.builder import Step, TestCaseDraft, create_test_case
+from qa_workbench.testcases.gitlab_push import PushError, push_case
 from qa_workbench.testcases.schema import PRIORITIES
 from qa_workbench.tui.browse import CASE_COLUMNS, BrowseData, case_detail, case_rows
 from qa_workbench.tui.components.dialog import ConfirmationDialog
@@ -69,12 +81,13 @@ class TestCasesPage(BrowserPage):
     columns = CASE_COLUMNS
     empty_message = "No test cases yet."
     empty_hint = "Press N to write the first one."
-    shortcuts_hint = "N new   E edit   D deprecate"
+    shortcuts_hint = "N new   E edit   D deprecate   G push to GitLab"
 
     BINDINGS = [
         Binding("n", "new_case", "New"),
         Binding("e", "edit_case", "Edit"),
         Binding("d", "deprecate_case", "Deprecate"),
+        Binding("g", "push_case", "GitLab"),
     ]
 
     def load(self) -> BrowseData:
@@ -82,6 +95,72 @@ class TestCasesPage(BrowserPage):
 
     def describe(self, key: str) -> str:
         return case_detail(self.context.repository(), key)
+
+    def action_push_case(self) -> None:
+        """Push the selected case to GitLab (needs an approval of this content)."""
+        case_id = self.selected_key()
+        project = self.writable_project()
+        if project is None or case_id is None:
+            return
+
+        def done(values: dict[str, str] | None) -> None:
+            if values is None:
+                return
+            self.app.notify(f"Pushing {case_id}...", title="GitLab")
+            self.run_worker(
+                lambda: self._push(project.id, case_id, values["by"]),
+                thread=True,
+                exclusive=True,
+                name="gitlab-push",
+            )
+
+        self.app.push_screen(
+            FormDialog(
+                f"Push {case_id} to GitLab",
+                (
+                    FormField(
+                        "by", "Your name", required=True, default=getpass.getuser()
+                    ),
+                ),
+                submit_label="Push",
+            ),
+            done,
+        )
+
+    def _push(self, project_id: str, case_id: str, by: str) -> None:
+        try:
+            client, guard = open_writer(
+                project_id, gitlab_cli.default_gateway(), data_dir=self.context.data_dir
+            )
+            result = push_case(
+                self.context.repository(),
+                case_id,
+                guard=guard,
+                remote=GitLabTestCases(client),
+                actor=by,
+            )
+        except (
+            PushError,
+            SecurityError,
+            IntegrationError,
+            AuditError,
+            SecuritySettingsError,
+            ConfigurationError,
+            ProjectError,
+            StorageError,
+            OSError,
+        ) as error:
+            self.app.call_from_thread(self._push_failed, str(error))
+            return
+        message = f"{case_id}: {result.action} #{result.iid} {result.url}".strip()
+        self.app.call_from_thread(self._pushed, message)
+
+    def _pushed(self, message: str) -> None:
+        self.refresh_data()
+        self.app.notify(message, title="GitLab", timeout=10)
+
+    def _push_failed(self, message: str) -> None:
+        self.app.notify(message, severity="warning", title="GitLab", timeout=12)
 
     def action_new_case(self) -> None:
         if self.writable_project() is None:

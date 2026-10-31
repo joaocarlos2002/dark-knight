@@ -31,6 +31,11 @@ use the `vMAJOR.MINOR.PATCH` format.
   column across every project of the group, `issue-links` shows an issue's
   related issues and merge requests, and a Board page does both in the TUI.
   Test cases are kept out of issue lists unless `--include-test-cases` (#166).
+- GitLab test cases: `batman gitlab test-cases` and `test-case` read them, and
+  `batman cases push` (or `G` in the TUI) creates or updates a `test_case` issue
+  in the team's standard layout, after a person approves the exact content. It
+  never duplicates (unchanged is skipped, same title is updated) and an update
+  rewrites only the changed sections (#165).
 - A Review page in the TUI to read, submit, approve, reject, or ask changes on
   the records the AI generated, with its findings and sources, and the same
   rules as `batman review` (no self-approval, a reason for a rejection). The

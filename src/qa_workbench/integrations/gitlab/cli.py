@@ -17,6 +17,7 @@ from qa_workbench.integrations.gitlab.files import GitLabFiles
 from qa_workbench.integrations.gitlab.issues import GitLabIssues
 from qa_workbench.integrations.gitlab.pipelines import GitLabPipelines
 from qa_workbench.integrations.gitlab.repository import GitLabRepository
+from qa_workbench.integrations.gitlab.test_cases import GitLabTestCases
 from qa_workbench.integrations.gitlab.wiki import DEFAULT_PREFIX, GitLabWiki
 from qa_workbench.integrations.http import HttpGateway, HttpxGateway
 from qa_workbench.integrations.untrusted import fence
@@ -349,6 +350,41 @@ def artifact_command(
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_bytes(data)
     typer.echo(f"Saved {len(data)} bytes to {out}")
+
+
+@gitlab_app.command("test-cases")
+def test_cases_command(
+    project: ProjectOption,
+    label: Annotated[
+        str, typer.Argument(help="A requirement code such as GE02.01.")
+    ] = "",
+    url: UrlOption = None,
+    token_env: TokenEnvOption = DEFAULT_TOKEN_ENV,
+    limit: LimitOption = 100,
+) -> None:
+    """List the test cases (type test_case), optionally by requirement label."""
+    source = GitLabTestCases(_client(project, url, token_env))
+    found = _run(lambda: source.list_cases(label, limit=limit))
+    for case in found:
+        labels = ", ".join(case.labels) or "-"
+        typer.echo(f"#{case.iid:<5} {case.state:<7} {case.title}  [{labels}]")
+    if not found:
+        typer.echo("No test cases match.")
+
+
+@gitlab_app.command("test-case")
+def test_case_command(
+    iid: Annotated[int, typer.Argument(help="Issue number of the test case.")],
+    project: ProjectOption,
+    url: UrlOption = None,
+    token_env: TokenEnvOption = DEFAULT_TOKEN_ENV,
+) -> None:
+    """Show one test case. Its text is marked as untrusted data."""
+    source = GitLabTestCases(_client(project, url, token_env))
+    case = _run(lambda: source.get_case(iid))
+    typer.echo(f"#{case.iid} {case.state}  {case.url}")
+    typer.echo(f"Labels: {', '.join(case.labels) or '-'}")
+    typer.echo(fence(case.description, source=f"GitLab test case #{iid}"))
 
 
 @gitlab_app.command("branches")
