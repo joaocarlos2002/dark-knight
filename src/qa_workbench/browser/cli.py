@@ -211,7 +211,7 @@ def run_command(
     if store is not None:
         try:
             records = register_artifacts(
-                store, artifacts, execution=execution, source_url=url
+                store, artifacts, execution=execution, source_url=_source_url(url)
             )
         except (StorageError, ValueError) as error:
             _fail(f"Evidence could not be registered: {error}")
@@ -243,6 +243,11 @@ def _drive(agent: BrowserAgent, url: str, expect_text: str | None) -> str:
     except BrowserError as error:
         problem = f"Browser error: {error}"
     return problem
+
+
+def _source_url(url: str) -> str | None:
+    """Evidence records only accept web URLs as a source (not file:// pages)."""
+    return url if url.startswith(("http://", "https://")) else None
 
 
 def _run_name() -> str:

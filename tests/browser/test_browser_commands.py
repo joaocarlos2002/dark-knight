@@ -48,6 +48,7 @@ def test_run_opens_the_page_and_reports_what_the_browser_saw(
     assert result.exit_code == 0, out
     assert "Console errors: 1" in out and "HTTP failures: 1" in out
     assert "Saved screenshot" in out
+    assert "Saved console log" in out and "Saved network log" in out
     assert (isolated / "out" / "page.png").is_file()
 
 
@@ -89,6 +90,21 @@ def test_run_registers_evidence_in_a_project(
         "browser", "run", "http://localhost", "-p", "PROJ-001",
         "--out", str(isolated / "out"),
     )  # fmt: skip
+
+    assert result.exit_code == 0, out
+    assert "Registered EVD-001" in out
+
+
+def test_a_local_file_page_can_be_registered_as_evidence(
+    driver: FakeDriver, isolated: Path
+) -> None:
+    assert _run("project", "create", "Demo")[0].exit_code == 0
+    page = isolated / "page.html"
+    page.write_text("<html></html>", encoding="utf-8")
+
+    result, out = _run(
+        "browser", "run", page.as_uri(), "-p", "PROJ-001", "--out", str(isolated / "o")
+    )
 
     assert result.exit_code == 0, out
     assert "Registered EVD-001" in out

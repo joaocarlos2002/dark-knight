@@ -104,7 +104,7 @@ def test_screenshots_trace_become_evidence(tmp_path: Path) -> None:
 
     records = register_artifacts(EvidenceStore(repository), artifacts)
 
-    assert len(records) == 2  # the screenshot and the trace
+    assert len(records) == 4  # screenshot, trace, console log, network log
     assert {r.metadata["source"] for r in records} == {"playwright"}
 
 

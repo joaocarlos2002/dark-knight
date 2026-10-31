@@ -9,6 +9,9 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- The Browser Agent now saves the console messages, page errors, and every
+  network request of a run as sanitized `console.json` and `network.json`
+  evidence, with failed requests flagged (#42).
 - TUI Pipelines page: read the latest GitLab pipelines on demand through the
   action guard, with their jobs by stage and failure reasons; every navigation
   destination now has a page.
