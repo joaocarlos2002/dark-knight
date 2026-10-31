@@ -13,11 +13,11 @@ from pathlib import Path
 
 import yaml
 
-from qa_workbench.ai import nvidia, ollama, opencode
+from qa_workbench.ai import claude_code, nvidia, ollama, opencode
 from qa_workbench.ai.agent import AgentAnswer, OwnAgent, SingleShotAgent
 from qa_workbench.ai.cli import record_tools
 from qa_workbench.ai.errors import NoProviderAvailable, ProviderError
-from qa_workbench.ai.guarded import guarded_http
+from qa_workbench.ai.guarded import guarded_http, guarded_runner
 from qa_workbench.ai.http import JsonHttp
 from qa_workbench.ai.selection import MODES, REMOTE, select_engine
 from qa_workbench.storage.atomic import write_text_atomic
@@ -140,6 +140,7 @@ def ask_alfred(
     repository: MarkdownRepository,
     http: JsonHttp,
     question: str,
+    runner: claude_code.Runner | None = None,
 ) -> Reply:
     """Ask once. Raises :class:`NoProviderAvailable` or a ``ProviderError``."""
     if not question.strip():
@@ -169,8 +170,20 @@ def ask_alfred(
         )
         return provider, SingleShotAgent(provider, model=settings.model, style=style)
 
+    def claude():
+        provider = claude_code.ClaudeCodeProvider(
+            guarded_runner(
+                runner or claude_code.SubprocessRunner(),
+                repository.root,
+                claude_code.HOST_URL,
+            ),
+            model=settings.model,
+        )
+        return provider, SingleShotAgent(provider, model=settings.model, style=style)
+
     choice = select_engine(
-        settings.engine, {"own": own, "opencode": external, "nvidia": hosted}
+        settings.engine,
+        {"own": own, "opencode": external, "nvidia": hosted, "claude": claude},
     )
     answer = choice.engine.ask(question, context)
     return Reply(answer, choice.mode, tuple(context), tuple(missing))
@@ -182,6 +195,8 @@ def list_models(
     """The models of the configured engine (``auto`` means the local ``own``)."""
     http = guarded_http(http, repository.root)
     engine = "own" if settings.engine == "auto" else settings.engine
+    if engine == "claude":
+        return engine, list(claude_code.MODELS)
     if engine == "nvidia":
         provider = nvidia.NvidiaProvider(http, base_url=settings.nvidia_url)
     elif engine == "opencode":

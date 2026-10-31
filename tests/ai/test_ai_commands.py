@@ -2,7 +2,7 @@ import re
 from pathlib import Path
 
 import pytest
-from fake_ai import FakeHttp, answer, down, ok
+from fake_ai import FakeHttp, FakeRunner, answer, claude_reply, down, ok
 from typer.testing import CliRunner
 
 from qa_workbench.ai import cli
@@ -21,6 +21,9 @@ def isolated(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setenv("DARK_KNIGHT_DATA_DIR", str(tmp_path / "data"))
     monkeypatch.delenv("OLLAMA_HOST", raising=False)
     monkeypatch.delenv("OPENCODE_URL", raising=False)
+    monkeypatch.delenv("CLAUDE_CODE_PATH", raising=False)
+    # No real process: Claude Code is "not installed" unless a test says otherwise.
+    monkeypatch.setattr(cli, "default_runner", lambda: FakeRunner(version=None))
 
 
 def _serve(monkeypatch: pytest.MonkeyPatch, routes) -> FakeHttp:
@@ -251,3 +254,80 @@ def test_status_reports_nvidia_key_presence_and_reachability(monkeypatch) -> Non
     _, out = _run("status", "-p", "PROJ-001")
     assert "nvidia    available" in out and "API key present" in out
     assert KEY not in out
+
+
+# -- Claude Code ---------------------------------------------------------------
+
+
+def _claude(monkeypatch, runner: FakeRunner) -> FakeRunner:
+    monkeypatch.setattr(cli, "default_runner", lambda: runner)
+    return runner
+
+
+def _allow_anthropic() -> None:
+    runner.invoke(app, ["project", "create", "Demo"])
+    runner.invoke(
+        app,
+        [
+            "security",
+            "set",
+            "-p",
+            "PROJ-001",
+            "--allow-host",
+            "api.anthropic.com",
+            "--by",
+            "qa",
+        ],
+    )
+
+
+def test_ask_claude_runs_the_cli_and_says_it_is_remote(monkeypatch) -> None:
+    _allow_anthropic()
+    reply = answer({"kind": "recommendation", "text": "Run the smoke suite"})
+    fake = _claude(monkeypatch, FakeRunner(claude_reply(reply)))
+
+    result, out = _run("ask", "q", "-p", "PROJ-001", "--engine", "claude")
+
+    assert result.exit_code == 0, out
+    assert "RECOMMENDATION" in out and "leave this machine" in out
+    assert len(fake.runs) == 1 and "--tools" in fake.runs[0][0]
+
+
+def test_ask_claude_without_the_host_allowed_starts_nothing(monkeypatch) -> None:
+    runner.invoke(app, ["project", "create", "Demo"])
+    fake = _claude(monkeypatch, FakeRunner(claude_reply("x")))
+
+    result, out = _run("ask", "q", "-p", "PROJ-001", "--engine", "claude")
+
+    assert result.exit_code == 1
+    assert "nothing was sent" in out and "--allow-host api.anthropic.com" in out
+    assert fake.runs == []
+
+
+def test_auto_never_uses_claude_even_when_it_is_the_only_engine(monkeypatch) -> None:
+    _allow_anthropic()
+    fake = _claude(monkeypatch, FakeRunner(claude_reply("x")))
+    _serve(
+        monkeypatch,
+        {("GET", "/api/version"): down(), ("GET", "/global/health"): down()},
+    )
+
+    result, out = _run("ask", "q", "-p", "PROJ-001")
+
+    assert result.exit_code == 1 and "No AI engine is available" in out
+    assert fake.runs == []
+
+
+def test_status_and_models_show_claude(monkeypatch) -> None:
+    _allow_anthropic()
+    _claude(monkeypatch, FakeRunner())
+    _serve(
+        monkeypatch,
+        {("GET", "/api/version"): down(), ("GET", "/global/health"): down()},
+    )
+
+    status, out = _run("status")
+    assert status.exit_code == 0 and "claude    available" in out and "remote" in out
+
+    _, models = _run("models", "-p", "PROJ-001", "--engine", "claude")
+    assert "sonnet" in models and "opus" in models and "api.anthropic.com" in models

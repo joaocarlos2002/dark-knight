@@ -100,6 +100,7 @@ src/qa_workbench/
     ollama.py      Ollama adapter
     opencode.py    OpenCode adapter (documented server API)
     nvidia.py      hosted NVIDIA API Catalog adapter (OpenAI-compatible)
+    claude_code.py Claude Code CLI adapter (own login, tools disabled)
     guarded.py     JsonHttp behind the action guard and the audit log
     http.py        JSON-over-HTTP port and HTTPX adapter
     cli.py         `batman ai ...` commands
@@ -343,6 +344,18 @@ pretending.
   rate limit applies, and the audit log gets the action and URL (loopback servers
   are in scope but still audited). `batman ai models` and the Alfred model picker
   list the engine's models.
+- **Claude Code adapter.** `ai/claude_code.py` runs `claude -p --output-format
+  json` as a child process, so it uses the person's Claude login and needs no key
+  (written against Claude Code 2.1, October 2026). The prompt goes through standard
+  input; the process is started with `--tools ""`, `--no-session-persistence`,
+  `--disable-slash-commands`, and `--strict-mcp-config`, in an empty temporary
+  directory, so the model can only answer. `find_claude` looks at
+  `CLAUDE_CODE_PATH` / `--claude-path`, then `claude` on the PATH, then the copy
+  inside the VS Code extension. The process is behind a `Runner` port (a fake in
+  tests) and `GuardedRunner` asks the action guard for `api.anthropic.com` before
+  it starts, auditing the start but never the prompt. It is a remote engine like
+  `nvidia` (`REMOTE`), runs behind `SingleShotAgent`, and lists the aliases
+  `sonnet`, `opus`, `haiku`.
 - **OpenCode adapter.** Isolated in `ai/opencode.py`, using only the documented
   `opencode serve` API (`/global/health`, `POST /session`,
   `POST /session/:id/message`, `/session/:id/abort`, `/config/providers`) with

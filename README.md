@@ -188,6 +188,15 @@ PROJ-001` shows whether it is reachable, and `batman doctor` shows whether a key
 is present. Questions and the records they mention leave your machine; secrets
 are redacted first and nothing is sent to a host you did not allow.
 
+If you have Claude Code, Claude is available as an engine with no API key: it
+uses your own Claude login. Allow its host once for the project
+(`batman security set -p PROJ-001 --allow-host api.anthropic.com --by NAME`),
+then `batman ai ask "..." -p PROJ-001 --engine claude [--model sonnet|opus|haiku]`,
+or pick `claude` under Engine in Alfred (`Ctrl+O`). The `claude` program is found
+on your PATH or inside the VS Code extension; set `CLAUDE_CODE_PATH` if it lives
+elsewhere. Claude Code runs with every tool turned off, so it can only answer: it
+cannot read files or run commands. Like NVIDIA it is remote, so `auto` never uses it.
+
 To upgrade, run `uv tool upgrade dark-knight-qa` (or `pipx upgrade
 dark-knight-qa`). The first run creates its data folder on its own; where it
 lives and how to change it is described under Contributing below.
