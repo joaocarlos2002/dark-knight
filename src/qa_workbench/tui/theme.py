@@ -240,10 +240,12 @@ FormDialog {
 FormDialog > Vertical {
     width: 70;
     max-width: 95%;
+    max-height: 80%;
     height: auto;
     padding: 1 2;
     background: $dark-concrete;
     border: solid $signal-red;
+    overflow-y: auto;
 }
 
 FormDialog #dialog-title {
