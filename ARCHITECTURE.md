@@ -853,12 +853,6 @@ by the CLI in another terminal show up. Pages without a class still show
   the form), `A` adds cases to the selected suite and `R` removes them; adding a
   case that is already there, or one that does not exist, keeps the form open
   with the reason.
-- **Test plans.** Columns ID, status, suites, selected cases, title. The detail
-  shows scope, strategy, objectives, entry and exit criteria, the selected suites
-  with their size, the selection (how many cases are included and excluded, the
-  estimate, and the recorded reason for each inclusion), and risks. A plan with no
-  selection says so and points to `batman plans recommend`. `N` creates a draft
-  plan from a form that checks the suites exist.
 - **AI Agent (Alfred).** A chat with the project's assistant. `AgentChat` is a
   reusable transcript plus message box in which every speaker is named (YOU,
   ALFRED, NOTICE), never only colored. A question runs in a worker thread, so the
@@ -876,6 +870,12 @@ by the CLI in another terminal show up. Pages without a class still show
   to the system prompt *after* the fixed rules and state that they never override
   them. A broken settings file is an error, not a silent return to defaults, and
   an archived project's settings cannot be changed. `Ctrl+L` clears the chat.
+- **Test plans.** Columns ID, status, suites, selected cases, title. The detail
+  shows scope, strategy, objectives, entry and exit criteria, the selected suites
+  with their size, the selection (how many cases are included and excluded, the
+  estimate, and the recorded reason for each inclusion), and risks. A plan with no
+  selection says so and points to `batman plans recommend`. `N` creates a draft
+  plan from a form that checks the suites exist.
 - **Result pages.** Bug Hunting (`BUG`), API Testing (`API`), and Release
   Analysis (`REL`) are list + detail pages over records the CLI saved: a header
   from the metadata followed by the readable Markdown body written when the record
