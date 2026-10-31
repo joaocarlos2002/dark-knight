@@ -8,12 +8,14 @@ workbench needs on top: every action is recorded, what the browser reports
 the test result.
 """
 
+import json
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 from urllib.parse import urlsplit
 
+from qa_workbench.api.sanitize import Sanitizer
 from qa_workbench.browser.errors import AssertionFailed, BrowserError
 from qa_workbench.browser.ports import (
     BrowserDriver,
@@ -31,6 +33,7 @@ from qa_workbench.browser.preview import (
 )
 from qa_workbench.security.guard import ActionGuard
 from qa_workbench.security.policy import ActionRequest, Category
+from qa_workbench.storage.atomic import write_text_atomic
 from qa_workbench.storage.evidence import EvidenceStore
 from qa_workbench.storage.repository import Record
 
@@ -56,6 +59,8 @@ class BrowserArtifacts:
     screenshots: tuple[Path, ...] = ()
     trace: Path | None = None
     video: Path | None = None
+    console_log: Path | None = None
+    network_log: Path | None = None
 
     def files(self) -> list[tuple[Path, str]]:
         found = [(path, "screenshot") for path in self.screenshots]
@@ -63,6 +68,10 @@ class BrowserArtifacts:
             found.append((self.trace, "Playwright trace"))
         if self.video is not None:
             found.append((self.video, "video"))
+        if self.console_log is not None:
+            found.append((self.console_log, "console log"))
+        if self.network_log is not None:
+            found.append((self.network_log, "network log"))
         return found
 
 
@@ -138,7 +147,10 @@ class BrowserAgent:
             self._publish(execution_state="finished", action="browser closed")
         if video is not None and not video.is_file():
             video = None  # the video file exists only after the context closes
-        self._artifacts = BrowserArtifacts(tuple(self._screenshots), trace_path, video)
+        console_log, network_log = write_logs(self.artifacts_dir, self.observations)
+        self._artifacts = BrowserArtifacts(
+            tuple(self._screenshots), trace_path, video, console_log, network_log
+        )
         return self._artifacts
 
     def __enter__(self) -> "BrowserAgent":
@@ -354,6 +366,48 @@ class BrowserAgent:
 
 
 LOCAL_HOSTS = ("localhost", "127.0.0.1")
+
+
+def write_logs(directory: Path, observations: Observations) -> tuple[Path, Path]:
+    """Save what the browser reported as sanitized JSON, ready to be evidence.
+
+    Console text, page errors, and URLs are sanitized before they are written (a
+    page can print a token); request headers and bodies were never collected.
+    ``failed`` marks HTTP 4xx/5xx and requests that never completed, so a log
+    shows failures without anyone having to read every line.
+    """
+    sanitizer = Sanitizer()
+    console = {
+        "console": [
+            {
+                "level": entry.level,
+                "text": sanitizer.text(entry.text),
+                "location": sanitizer.url(entry.location) if entry.location else "",
+            }
+            for entry in observations.console
+        ],
+        "page_errors": [sanitizer.text(error) for error in observations.page_errors],
+    }
+    network = {
+        "requests": [
+            {
+                "method": entry.method,
+                "url": sanitizer.url(entry.url),
+                "status": entry.status,
+                "resource_type": entry.resource_type,
+                "failure": entry.failure,
+                "failed": entry.failed,
+            }
+            for entry in observations.network
+        ],
+        "failed": len(observations.http_failures),
+    }
+    console_path = directory / "console.json"
+    network_path = directory / "network.json"
+    directory.mkdir(parents=True, exist_ok=True)
+    write_text_atomic(console_path, json.dumps(console, indent=2, ensure_ascii=False))
+    write_text_atomic(network_path, json.dumps(network, indent=2, ensure_ascii=False))
+    return console_path, network_path
 
 
 def is_local(url: str) -> bool:

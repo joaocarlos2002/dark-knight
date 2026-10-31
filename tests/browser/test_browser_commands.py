@@ -48,6 +48,7 @@ def test_run_opens_the_page_and_reports_what_the_browser_saw(
     assert result.exit_code == 0, out
     assert "Console errors: 1" in out and "HTTP failures: 1" in out
     assert "Saved screenshot" in out
+    assert "Saved console log" in out and "Saved network log" in out
     assert (isolated / "out" / "page.png").is_file()
 
 
