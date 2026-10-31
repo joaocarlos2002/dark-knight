@@ -2,7 +2,6 @@
 
 import base64
 import json
-import os
 import re
 from collections.abc import Mapping
 from typing import Any
@@ -30,6 +29,7 @@ from qa_workbench.api.transport import (
     PreparedRequest,
     TransportResponse,
 )
+from qa_workbench.security.credentials import default_environment
 
 _VARIABLE = re.compile(r"\{\{\s*([A-Za-z_][\w.-]*)\s*\}\}")
 _PATH_TOKEN = re.compile(r"\.([A-Za-z_][\w-]*)|\[(\d+)\]")
@@ -71,7 +71,9 @@ class ApiRunner:
         mask_personal_data: bool = True,
     ) -> None:
         self._transport = transport
-        self._environment = os.environ if environment is None else environment
+        self._environment = (
+            default_environment() if environment is None else environment
+        )
         self._mask_personal_data = mask_personal_data
 
     def run(self, definition: ApiDefinition) -> FlowResult:

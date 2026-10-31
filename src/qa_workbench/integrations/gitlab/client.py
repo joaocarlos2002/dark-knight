@@ -1,7 +1,6 @@
 """The GitLab REST client: authentication, pagination, and explicit failures."""
 
 import json
-import os
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
@@ -23,6 +22,7 @@ from qa_workbench.integrations.http import (
     GatewayResponse,
     HttpGateway,
 )
+from qa_workbench.security.credentials import CredentialError, default_environment
 
 SYSTEM = "GitLab"
 DEFAULT_TOKEN_ENV = "GITLAB_TOKEN"
@@ -81,7 +81,10 @@ class GitLabClient:
     ) -> None:
         self._connection = connection
         self._gateway = gateway
-        self._environment = os.environ if environment is None else environment
+        # The environment first, then tokens stored with `batman config token`.
+        self._environment = (
+            default_environment() if environment is None else environment
+        )
         self._timeout = timeout_seconds
         self._project = quote(connection.project_path, safe="")
 
@@ -141,12 +144,18 @@ class GitLabClient:
 
     def _token(self) -> str:
         name = self._connection.token_env
-        token = self._environment.get(name, "")
+        try:
+            token = self._environment.get(name, "")
+        except CredentialError as error:
+            raise NotConfiguredError(SYSTEM, str(error)) from error
         if not token:
             raise NotConfiguredError(
                 SYSTEM,
                 f"environment variable {name} is not set",
-                hint=f"Create a token with the read_api scope and export it as {name}",
+                hint=(
+                    "Create a token with the read_api scope and export it as "
+                    f"{name}, or keep it with `batman config token set {name}`"
+                ),
             )
         return token
 
