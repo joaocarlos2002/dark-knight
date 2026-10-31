@@ -7,6 +7,14 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ## [Unreleased]
 
+### Changed
+
+- Alfred's settings are picked, not typed: `Ctrl+O` opens a menu to choose the
+  engine, the model (listed from the engine), the style, and the answer language
+  (English, Português (Brasil), Español, Français, Deutsch, Italiano). Only the
+  server addresses are still typed. A question without a model now says to press
+  `Ctrl+G`.
+
 ### Added
 
 - API tokens in the interface: Settings has an API tokens category to set and

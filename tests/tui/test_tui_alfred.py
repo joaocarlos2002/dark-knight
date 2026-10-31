@@ -173,30 +173,50 @@ def test_no_engine_is_a_notice_not_a_fake_answer(
     _run(tmp_path, scenario, project)
 
 
-def test_the_settings_form_saves_and_validates(tmp_path, project, repo) -> None:
+async def _pick(pilot, app, label: str) -> None:
+    """Choose the entry that starts with ``label`` in the open choice dialog."""
+    await _until(pilot, lambda: isinstance(app.screen, ChoiceDialog))
+    options = app.screen.query_one("#choices")
+    texts = [
+        str(options.get_option_at_index(i).prompt) for i in range(options.option_count)
+    ]
+    options.highlighted = next(i for i, t in enumerate(texts) if t.startswith(label))
+    await pilot.press("enter")
+
+
+async def _menu(pilot, app, entry: str) -> None:
+    await pilot.press("ctrl+o")
+    await _pick(pilot, app, entry)
+
+
+def test_engine_style_and_language_are_picked_not_typed(
+    tmp_path, project, repo
+) -> None:
     async def scenario(app, pilot) -> None:
         app.navigate("ai-agent")
         await pilot.pause()
-        await pilot.press("ctrl+o")
-        await pilot.pause()
-        assert isinstance(app.screen, FormDialog)
-        assert app.screen.query_one("#field-engine", Input).value == "own"
 
-        app.screen.query_one("#field-engine", Input).value = "magic"
-        await pilot.pause()
-        app.screen.query_one("#submit", Button).press()
-        await pilot.pause()
-        await pilot.pause()
-        error = str(app.screen.query_one("#form-error", Static).render())
-        assert "engine must be one of" in error
-
-        app.screen.query_one("#field-engine", Input).value = "opencode"
-        app.screen.query_one("#field-style", Input).value = "concise"
-        await pilot.pause()
-        app.screen.query_one("#submit", Button).press()
+        await _menu(pilot, app, "Engine")
+        await _pick(pilot, app, "opencode")
         await _until(pilot, lambda: load_settings(repo.root).engine == "opencode")
+
+        # Back at the menu after each choice.
+        await _until(pilot, lambda: isinstance(app.screen, ChoiceDialog))
+        await pilot.press("escape")
+        await _menu(pilot, app, "Style")
+        await _pick(pilot, app, "concise")
+        await _until(pilot, lambda: load_settings(repo.root).style == "concise")
+
+        await _until(pilot, lambda: isinstance(app.screen, ChoiceDialog))
+        await pilot.press("escape")
+        await _menu(pilot, app, "Answer language")
+        await _pick(pilot, app, "Português")
+        await _until(
+            pilot, lambda: load_settings(repo.root).language == "Brazilian Portuguese"
+        )
+
         saved = load_settings(repo.root)
-        assert saved.style == "concise" and saved.model == "m"
+        assert saved.model == "m"  # the other settings are kept
         await _until(
             pilot,
             lambda: (
@@ -204,6 +224,66 @@ def test_the_settings_form_saves_and_validates(tmp_path, project, repo) -> None:
                 in str(app.query_one("#alfred-summary", Static).render())
             ),
         )
+
+    _run(tmp_path, scenario, project)
+
+
+def test_the_model_is_picked_from_the_menu(
+    tmp_path, project, repo, monkeypatch
+) -> None:
+    _hosted(repo, monkeypatch)
+
+    async def scenario(app, pilot) -> None:
+        app.navigate("ai-agent")
+        await pilot.pause()
+        await _menu(pilot, app, "Model")
+        await _until(
+            pilot,
+            lambda: (
+                isinstance(app.screen, ChoiceDialog)
+                and "Models of" in str(app.screen.query_one("#dialog-title").render())
+            ),
+        )
+        await _pick(pilot, app, "b/two")
+        await _until(pilot, lambda: load_settings(repo.root).model == "b/two")
+
+    _run(tmp_path, scenario, project)
+
+
+def test_server_addresses_are_the_only_typed_setting(tmp_path, project, repo) -> None:
+    async def scenario(app, pilot) -> None:
+        app.navigate("ai-agent")
+        await pilot.pause()
+        await _menu(pilot, app, "Server addresses")
+        await _until(pilot, lambda: isinstance(app.screen, FormDialog))
+        app.screen.query_one("#field-ollama_url", Input).value = "ftp://nope"
+        app.screen.query_one("#submit", Button).press()
+        await pilot.pause()
+        await pilot.pause()
+        error = str(app.screen.query_one("#form-error", Static).render())
+        assert "must start with http" in error
+
+        app.screen.query_one("#field-ollama_url", Input).value = "http://10.0.0.5:11434"
+        app.screen.query_one("#submit", Button).press()
+        await _until(
+            pilot,
+            lambda: load_settings(repo.root).ollama_url == "http://10.0.0.5:11434",
+        )
+
+    _run(tmp_path, scenario, project)
+
+
+def test_a_missing_model_tells_the_person_how_to_pick_one(
+    tmp_path, project, repo, monkeypatch
+) -> None:
+    save_settings(repo.root, AlfredSettings(engine="own", model=""))
+    monkeypatch.setattr(ai_cli, "default_http", lambda: Http())
+
+    async def scenario(app, pilot) -> None:
+        app.navigate("ai-agent")
+        await pilot.pause()
+        await _ask(app, pilot, "hello")
+        await _until(pilot, lambda: "Press Ctrl+G" in _spoken(app))
 
     _run(tmp_path, scenario, project)
 

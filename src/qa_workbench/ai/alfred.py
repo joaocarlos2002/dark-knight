@@ -30,6 +30,16 @@ STYLES = {
     "concise": "Answer in at most five short statements.",
     "detailed": "Explain the reasoning briefly and cite the record behind each fact.",
 }
+# What the person picks for the answer language: (label shown, value in the prompt).
+LANGUAGES = (
+    ("Default - the model decides", ""),
+    ("English", "English"),
+    ("Português (Brasil)", "Brazilian Portuguese"),
+    ("Español", "Spanish"),
+    ("Français", "French"),
+    ("Deutsch", "German"),
+    ("Italiano", "Italian"),
+)
 MENTION = re.compile(r"@([A-Z]{2,6}(?:-EXEC)?-\d{3,})")
 MAX_CONTEXT_CHARS = 6000
 
@@ -197,6 +207,7 @@ __all__ = [
     "NoProviderAvailable",
     "ProviderError",
     "Reply",
+    "LANGUAGES",
     "STYLES",
     "ask_alfred",
     "attach_mentions",
