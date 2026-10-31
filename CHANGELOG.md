@@ -9,6 +9,10 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- Documentation (#54): an `examples/` folder (a requirements file, an API test, and a
+  first session end to end, all exercised by the test suite), `RELEASING.md`
+  with the release checks the workflow enforces, and a Security Policy section that
+  states how the application applies its security principles and its known limits.
 - TUI Executions page: follow executions with steps, evidence, and next states,
   start one from a test case, and move it through its lifecycle with the same
   validation as the CLI. Form fields can now carry a default value.
