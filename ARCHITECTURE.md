@@ -998,6 +998,16 @@ by the CLI in another terminal show up. Pages without a class still show
   the same service and schema checks as `batman review`, so a record cannot be
   approved by its author or generator: the dialog shows the reason and keeps
   what was typed. The Overview shows how many records wait.
+- **GitLab and comments in the TUI.** The GitLab page reads issues, merge
+  requests, or commits on demand (`R`, the kind chosen from a list) in a worker
+  after the guard allows the host; selecting one loads its detail, with GitLab
+  text fenced as untrusted data. `C` on an issue drafts a comment: it must cite
+  evidence (chosen from the registered ones), it is checked for secrets and hosts
+  that are not allowed, and nothing is sent. The Comments page lists the drafts
+  with exactly what will be sent; `P` publishes one, which needs a person's
+  approval of that exact text (the request id is shown, and someone else approves
+  it on the Security page), then it is sealed. On Pipelines, `L` reads a job's
+  log (secrets masked, fenced) and `A` lists its artifacts.
 - **Findings and evidence.** The Bug Hunting page records a finding (`N`; it
   starts as `suspected`), reclassifies it (`C`: the classification is picked from
   a list, then who and why, plus how many times it was tried and reproduced), and

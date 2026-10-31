@@ -6,6 +6,7 @@ from textual.containers import VerticalScroll
 from textual.widgets import DataTable as TextualDataTable
 from textual.widgets import Static
 
+from qa_workbench.core.secrets import redact_secrets
 from qa_workbench.integrations.errors import IntegrationError
 from qa_workbench.integrations.gitlab import cli as gitlab_cli
 from qa_workbench.integrations.gitlab.client import (
@@ -15,6 +16,7 @@ from qa_workbench.integrations.gitlab.client import (
 )
 from qa_workbench.integrations.gitlab.pipelines import GitLabPipelines
 from qa_workbench.integrations.models import Job, Pipeline
+from qa_workbench.integrations.untrusted import fence
 from qa_workbench.security.audit import AuditError, AuditLog
 from qa_workbench.security.guard import ActionGuard, SecurityError
 from qa_workbench.security.policy import ActionRequest, Category
@@ -24,6 +26,7 @@ from qa_workbench.tui.browse_pipelines import (
     pipeline_cells,
     pipeline_detail,
 )
+from qa_workbench.tui.components.choice import ChoiceDialog
 from qa_workbench.tui.components.table import DataTable
 from qa_workbench.tui.pages.base import Page
 from qa_workbench.tui.pages.registry import register
@@ -39,7 +42,11 @@ class PipelinesPage(Page):
     """Pipelines are read on demand (``R``), in a worker thread, and kept only in
     memory: they are the server's current word, not a record of this project."""
 
-    BINDINGS = [Binding("r", "fetch", "Fetch")]
+    BINDINGS = [
+        Binding("r", "fetch", "Fetch"),
+        Binding("l", "job_log", "Job log"),
+        Binding("a", "artifacts", "Artifacts"),
+    ]
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -174,6 +181,60 @@ class PipelinesPage(Page):
                 self.app.call_from_thread(self._jobs_loaded, pipeline_id, loaded)
 
         self.run_worker(work, thread=True, exclusive=True, group="jobs")
+
+    # -- job logs and artifacts -------------------------------------------------
+
+    def _pick_job(self, title: str, then) -> None:
+        jobs = self._jobs.get(self._selected or -1) or []
+        source = self._source
+        if not jobs or source is None:
+            self.app.notify("Select a pipeline and wait for its jobs first.")
+            return
+        labels = {f"{job.name} ({job.raw_status}) #{job.id}": job for job in jobs}
+
+        def chosen(label: str | None) -> None:
+            if label is not None:
+                then(source, labels[label])
+
+        self.app.push_screen(ChoiceDialog(title, list(labels)), chosen)
+
+    def _show(self, text: str) -> None:
+        self.query_one("#pipe-detail", Static).update(text)
+
+    def action_job_log(self) -> None:
+        def read(source: GitLabPipelines, job: Job) -> None:
+            self._show(f"Reading the log of {job.name} ...")
+
+            def work() -> None:
+                try:
+                    log = source.job_log(job.id, max_chars=8000)
+                except IntegrationError as error:
+                    text = f"{format_status(Status.FAILED)}  {error}"
+                else:
+                    text = fence(redact_secrets(log), source=f"GitLab job {job.id} log")
+                self.app.call_from_thread(self._show, text)
+
+            self.run_worker(work, thread=True, exclusive=True, group="job-log")
+
+        self._pick_job("Read the log of", read)
+
+    def action_artifacts(self) -> None:
+        def read(source: GitLabPipelines, job: Job) -> None:
+            def work() -> None:
+                try:
+                    found = source.list_artifacts(job.id)
+                except IntegrationError as error:
+                    text = f"{format_status(Status.FAILED)}  {error}"
+                else:
+                    lines = [f"Artifacts of {job.name} (#{job.id})"] + [
+                        f"  {a.filename}  {a.size} bytes  {a.kind}" for a in found
+                    ]
+                    text = "\n".join(lines if found else [lines[0], "  (none)"])
+                self.app.call_from_thread(self._show, text)
+
+            self.run_worker(work, thread=True, exclusive=True, group="job-artifacts")
+
+        self._pick_job("Artifacts of", read)
 
     def _jobs_loaded(self, pipeline_id: int, jobs: list[Job]) -> None:
         self._jobs[pipeline_id] = jobs

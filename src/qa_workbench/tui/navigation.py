@@ -49,6 +49,8 @@ SECTIONS: tuple[NavSection, ...] = (
             NavItem("release-analysis", "Release Analysis"),
             NavItem("pipelines", "Pipelines"),
             NavItem("board", "Board"),
+            NavItem("gitlab", "GitLab"),
+            NavItem("comments", "Comments"),
             NavItem("repository", "Repository"),
             NavItem("knowledge-base", "Knowledge Base"),
         ),

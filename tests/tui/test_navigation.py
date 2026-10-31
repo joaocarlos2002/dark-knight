@@ -42,6 +42,8 @@ def test_sections_follow_the_visual_specification() -> None:
         "Release Analysis",
         "Pipelines",
         "Board",
+        "GitLab",
+        "Comments",
         "Repository",
         "Knowledge Base",
         "Reports",

@@ -27,6 +27,10 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- GitLab in the TUI: a GitLab page for issues, merge requests, and commits; job
+  logs and artifacts on Pipelines; and drafting (`C`) and publishing (`P`) of
+  issue comments through a Comments page, with the same approval, evidence, and
+  audit rules as `batman comments` (#176).
 - Start runs from the TUI: API tests (`R`, definition chosen in a folder tree),
   release analysis (`R`), and security checks (`U` authorize, `T` run, `K`
   revoke, with the authorization always shown). They run in the background with
