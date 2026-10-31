@@ -27,6 +27,10 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- A Review page in the TUI to read, submit, approve, reject, or ask changes on
+  the records the AI generated, with its findings and sources, and the same
+  rules as `batman review` (no self-approval, a reason for a rejection). The
+  Overview shows how many records are waiting (#173).
 - Requirements from the GitLab group wiki: `batman gitlab wiki` and `wiki-page`
   read it, `batman requirements import-wiki` (or `W` on the Requirements page)
   imports each page as a draft requirement with its source, URL, and hash, and

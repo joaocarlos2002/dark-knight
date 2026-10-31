@@ -208,6 +208,12 @@ The code of the repository can be read without leaving the tool:
 branch, `--url` for another repository), or the Repository page in the menu.
 Large and binary files are refused, and secrets in code are masked.
 
+What the AI creates is only a draft. The Review page in the menu lists it with
+the AI's statements and their sources; press `S` to submit a draft, then `A` to
+approve, `X` to reject, or `C` to ask for changes. The same steps exist as
+`batman review pending|submit|decide`. A record cannot be approved by whoever
+wrote it or generated it.
+
 To upgrade, run `uv tool upgrade dark-knight-qa` (or `pipx upgrade
 dark-knight-qa`). The first run creates its data folder on its own; where it
 lives and how to change it is described under Contributing below.

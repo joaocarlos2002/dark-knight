@@ -5,6 +5,7 @@ from textual.containers import Horizontal
 from textual.widgets import Static
 
 from qa_workbench.storage.errors import StorageError
+from qa_workbench.tui.browse_review import pending_count
 from qa_workbench.tui.components.metric import MetricPanel
 from qa_workbench.tui.components.states import EmptyState
 from qa_workbench.tui.components.table import DataTable
@@ -33,6 +34,7 @@ def identity_text(data: OverviewData) -> str:
 class OverviewPage(Page):
     def compose(self) -> ComposeResult:
         yield Static("", id="overview-identity", markup=False)
+        yield Static("", id="overview-review", markup=False)
         with Horizontal(id="overview-metrics"):
             yield MetricPanel("Test cases", None, id="metric-cases")
             yield MetricPanel("Passed", None, id="metric-passed")
@@ -58,7 +60,8 @@ class OverviewPage(Page):
         project = self.context.project
         has_project = project is not None
         self.query_one("#overview-empty").display = not has_project
-        for selector in ("#overview-identity", "#overview-metrics", "#overview-recent"):
+        selectors = ("#overview-identity", "#overview-review", "#overview-metrics")
+        for selector in (*selectors, "#overview-recent"):
             self.query_one(selector).display = has_project
         if not has_project:
             return
@@ -75,6 +78,12 @@ class OverviewPage(Page):
 
     def _show(self, data: OverviewData) -> None:
         self.query_one("#overview-identity", Static).update(identity_text(data))
+        waiting = pending_count(self.context.repository())
+        self.query_one("#overview-review", Static).update(
+            f"{waiting} AI record(s) waiting for your review. Open Review in the menu."
+            if waiting
+            else ""
+        )
         self.query_one("#metric-cases", MetricPanel).set_value(data.test_cases)
         for key in ("passed", "failed", "blocked"):
             self.query_one(f"#metric-{key}", MetricPanel).set_value(data.results[key])
