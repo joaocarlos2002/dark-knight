@@ -41,6 +41,13 @@ class DataTable(Vertical):
             super().__init__()
             self.key = key
 
+    class Highlighted(Message):
+        """Posted when the cursor moves to another row (or the table empties)."""
+
+        def __init__(self, key: str | None) -> None:
+            super().__init__()
+            self.key = key
+
     def __init__(
         self,
         columns: Sequence[str],
@@ -77,6 +84,12 @@ class DataTable(Vertical):
         if event.row_key.value is not None:
             self.post_message(self.Activated(event.row_key.value))
 
+    def on_data_table_row_highlighted(
+        self, event: TextualDataTable.RowHighlighted
+    ) -> None:
+        event.stop()
+        self.post_message(self.Highlighted(event.row_key.value))
+
     def _refresh(self) -> None:
         table = self.query_one(TextualDataTable)
         table.clear()
@@ -84,3 +97,5 @@ class DataTable(Vertical):
             table.add_row(*cells, key=key)
         table.display = bool(self._rows)
         self.query_one(EmptyState).display = not self._rows
+        if not self._rows:
+            self.post_message(self.Highlighted(None))

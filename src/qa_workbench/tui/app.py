@@ -241,7 +241,9 @@ class WorkbenchApp(App[None]):
         )
 
     def action_focus_search(self) -> None:
-        fields = self.screen.query(".searchable")
+        # Only the visible page counts: hidden pages stay mounted.
+        scope = self._page_for(self._current.key) or self.screen
+        fields = scope.query(".searchable")
         if not fields:
             self.notify("This page has no search field.", severity="warning")
             return
