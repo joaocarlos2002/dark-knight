@@ -8,6 +8,7 @@ from qa_workbench.testcases.schema import PRIORITIES
 from qa_workbench.tui.browse import CASE_COLUMNS, BrowseData, case_detail, case_rows
 from qa_workbench.tui.components.form import FormDialog, FormField
 from qa_workbench.tui.pages.browser import BrowserPage
+from qa_workbench.tui.pages.registry import register
 
 NEW_CASE_FIELDS = (
     FormField("title", "Title", "Customer can log in", required=True),
@@ -59,6 +60,7 @@ def validate_new_case(values: dict[str, str]) -> str | None:
     return None
 
 
+@register("test-cases")
 class TestCasesPage(BrowserPage):
     __test__ = False  # not a pytest test class
 

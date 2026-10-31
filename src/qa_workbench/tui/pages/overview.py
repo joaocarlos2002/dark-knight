@@ -10,6 +10,7 @@ from qa_workbench.tui.components.states import EmptyState
 from qa_workbench.tui.components.table import DataTable
 from qa_workbench.tui.data import OverviewData, build_overview
 from qa_workbench.tui.pages.base import Page
+from qa_workbench.tui.pages.registry import register
 from qa_workbench.tui.status import Status, format_status
 
 NO_PROJECT = "No project is open."
@@ -28,6 +29,7 @@ def identity_text(data: OverviewData) -> str:
     )
 
 
+@register("overview")
 class OverviewPage(Page):
     def compose(self) -> ComposeResult:
         yield Static("", id="overview-identity", markup=False)
