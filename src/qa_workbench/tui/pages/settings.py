@@ -9,6 +9,12 @@ from textual.containers import Horizontal, Vertical
 from textual.widgets import Button, RadioButton, RadioSet, Static
 
 from qa_workbench.core.config import AppConfig
+from qa_workbench.security.credentials import (
+    SERVICES,
+    CredentialError,
+    default_store,
+    token_report,
+)
 from qa_workbench.security.policy import AutonomyMode
 from qa_workbench.security.settings import (
     SecuritySettings,
@@ -18,6 +24,7 @@ from qa_workbench.security.settings import (
 from qa_workbench.tui.components.form import FormDialog, FormField
 from qa_workbench.tui.components.states import EmptyState
 from qa_workbench.tui.pages.base import Page
+from qa_workbench.tui.pages.registry import register
 
 NO_PROJECT = "No project is open. Open Projects in the menu first."
 
@@ -38,9 +45,13 @@ SETTINGS_CATEGORIES: tuple[SettingsCategory, ...] = (
     SettingsCategory("shortcuts", "Shortcuts", "Keyboard shortcut overrides"),
     SettingsCategory("security", "Security", "Project autonomy mode and allowed hosts"),
     SettingsCategory("browser", "Browser", "Default browser mode and capture settings"),
+    SettingsCategory(
+        "credentials", "API tokens", "Tokens kept by the application, never shown"
+    ),
 )
 
 
+@register("settings")
 class SettingsPage(Page):
     """View and edit application and project settings."""
 
@@ -65,7 +76,7 @@ class SettingsPage(Page):
 
         with Horizontal(id="settings-body"):
             # Category sidebar
-            with Vertical(id="settings-categories"):
+            with RadioSet(id="settings-categories"):
                 for cat in SETTINGS_CATEGORIES:
                     yield RadioButton(cat.title, id=f"cat-{cat.key}", name="category")
 
@@ -112,6 +123,8 @@ class SettingsPage(Page):
             form.update(self._render_security())
         elif category == "browser":
             form.update(self._render_browser())
+        elif category == "credentials":
+            form.update(self._render_credentials())
 
     def _render_general(self) -> str:
         """Render the general settings as a form."""
@@ -173,6 +186,65 @@ class SettingsPage(Page):
         ]
         return "\n".join(lines)
 
+    def _render_credentials(self) -> str:
+        """Which tokens are set and where from; a value is never shown."""
+        try:
+            report = token_report(default_store())
+        except CredentialError as error:
+            return str(error)
+        lines = [
+            f"{variable:<24} {f'set ({source})' if source else 'not set'}"
+            for variable, source in report
+        ]
+        lines += [
+            "",
+            "Stored outside any project, in your configuration folder. An",
+            "environment variable of the same name wins over the stored value.",
+            "Save Changes sets a token; Reset removes a stored one.",
+        ]
+        return "\n".join(lines)
+
+    def _credentials_form(self, *, remove: bool) -> None:
+        """Set or remove a stored token. The value is typed hidden and is never
+        shown, logged, or echoed back, not even in an error."""
+        fields = [
+            FormField(
+                "service",
+                f"Service ({', '.join(SERVICES)}) or variable name",
+                required=True,
+            )
+        ]
+        if not remove:
+            fields.append(FormField("token", "Token", required=True, secret=True))
+
+        def commit(values: dict[str, str]) -> str | None:
+            store = default_store()
+            if store is None:
+                return (
+                    "The configuration is invalid, so there is nowhere to keep tokens."
+                )
+            try:
+                if remove:
+                    done = store.remove(values["service"])
+                    message = "Token removed." if done else "That token was not stored."
+                else:
+                    store.set(values["service"], values["token"])
+                    message = "Token stored. The value is not shown again."
+            except CredentialError as error:
+                return str(error)
+            self.app.notify(message, title="API tokens")
+            return None
+
+        self.app.push_screen(
+            FormDialog(
+                "Remove a token" if remove else "Set a token",
+                fields,
+                submit_label="Remove" if remove else "Save",
+                commit=commit,
+            ),
+            lambda _: self._show_category("credentials"),
+        )
+
     def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
         event.stop()
         if event.radio_set.id == "settings-categories":
@@ -188,7 +260,9 @@ class SettingsPage(Page):
 
     def action_save(self) -> None:
         """Save the current category's settings."""
-        if self._active_category == "security" and self._security_settings:
+        if self._active_category == "credentials":
+            self._credentials_form(remove=False)
+        elif self._active_category == "security" and self._security_settings:
             # Show a form dialog to edit security settings
             self._show_security_form()
         else:
@@ -198,6 +272,9 @@ class SettingsPage(Page):
 
     def action_reset(self) -> None:
         """Reset the current category to defaults."""
+        if self._active_category == "credentials":
+            self._credentials_form(remove=True)
+            return
         self.app.notify("Use the CLI or edit config.toml to reset.", severity="warning")
 
     def _show_security_form(self) -> None:

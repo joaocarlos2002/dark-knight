@@ -154,3 +154,26 @@ def test_the_token_is_not_saved_inside_any_project(config, tmp_path) -> None:
     assert leaks == []
     assert (config / "credentials.json").is_file()
     assert os.path.commonpath([config, tmp_path / "data"]) == str(tmp_path)
+
+
+def test_doctor_reports_each_service_and_where_its_token_comes_from(
+    config, monkeypatch
+) -> None:
+    from qa_workbench.browser import cli as browser_cli
+    from qa_workbench.browser.chromium import BrowserSetup, SetupStatus
+
+    ready = SetupStatus(True, Path("chromium.exe"))
+    monkeypatch.setattr(
+        browser_cli, "default_setup", lambda: BrowserSetup(lambda: ready)
+    )
+    runner.invoke(app, ["config", "token", "set", "nvidia", "--stdin"], input=SECRET)
+    monkeypatch.setenv("GITLAB_TOKEN", SECRET + "-env")
+
+    result = runner.invoke(app, ["doctor"])
+    out = _plain(result.output)
+
+    assert result.exit_code == 0, out
+    assert "GITLAB_TOKEN" in out and "set (environment)" in out
+    assert "NVIDIA_API_KEY" in out and "set (stored)" in out
+    assert "OPENCODE_SERVER_PASSWORD" in out and "not set" in out
+    assert SECRET not in out

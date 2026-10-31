@@ -14,6 +14,12 @@ from qa_workbench.projects.errors import ProjectError
 from qa_workbench.projects.models import Project
 from qa_workbench.projects.repository import ProjectRepository
 from qa_workbench.security.audit import AuditError, AuditLog
+from qa_workbench.security.credentials import (
+    CredentialError,
+    CredentialStore,
+    StoredEnvironment,
+    default_store,
+)
 from qa_workbench.security.guard import LOOPBACK_HOSTS
 from qa_workbench.security.settings import (
     SecuritySettings,
@@ -128,6 +134,7 @@ def _offer_host(app: Any, project: Project) -> None:
                 f"`batman security set -p {project.id} --allow-host {host} --by NAME`.",
                 title="Host not allowed",
             )
+        _offer_token(app, host)
 
     app.push_screen(
         ConfirmationDialog(
@@ -139,6 +146,56 @@ def _offer_host(app: Any, project: Project) -> None:
             confirm_label=f"Allow {host}",
         ),
         decided,
+    )
+
+
+def _offer_token(app: Any, host: str) -> None:
+    """Offer to keep the GitLab token, unless one is already available."""
+    store = default_store()
+    try:
+        if StoredEnvironment(store).source_of("gitlab"):
+            return
+    except CredentialError:
+        return
+
+    def decided(go: bool | None) -> None:
+        if go:
+            _ask_token(app, store)
+        else:
+            app.notify(
+                "Add it later with `batman config token set gitlab`.",
+                title="GitLab token",
+            )
+
+    app.push_screen(
+        ConfirmationDialog(
+            "Keep a GitLab token?",
+            f"Reading from {host} needs a token. It is kept in your configuration "
+            "folder, outside any project, and is never shown again.",
+            confirm_label="Set token",
+        ),
+        decided,
+    )
+
+
+def _ask_token(app: Any, store: CredentialStore | None) -> None:
+    def commit(values: dict[str, str]) -> str | None:
+        if store is None:
+            return "The configuration is invalid, so there is nowhere to keep tokens."
+        try:
+            store.set("gitlab", values["token"])
+        except CredentialError as error:
+            return str(error)
+        app.notify("Token stored. The value is not shown again.", title="GitLab token")
+        return None
+
+    app.push_screen(
+        FormDialog(
+            "GitLab token",
+            (FormField("token", "Token", required=True, secret=True),),
+            submit_label="Save",
+            commit=commit,
+        )
     )
 
 

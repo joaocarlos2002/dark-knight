@@ -9,6 +9,11 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- API tokens in the interface: Settings has an API tokens category to set and
+  remove a token (typed hidden, never shown again), the first-run welcome offers to
+  keep the GitLab token after the project is created, and `batman doctor` lists
+  every token as set or not and where it comes from. The Settings page was not
+  reachable from the menu before; it is now (#158).
 - A hosted AI engine: `batman ai ask --engine nvidia --model MODEL` uses the NVIDIA
   API Catalog (OpenAI-compatible, configurable URL). `batman ai models` lists the
   models the key can use and Alfred's `Ctrl+G` picks one. It is remote, so `auto`
