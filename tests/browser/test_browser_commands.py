@@ -95,6 +95,21 @@ def test_run_registers_evidence_in_a_project(
     assert "Registered EVD-001" in out
 
 
+def test_a_local_file_page_can_be_registered_as_evidence(
+    driver: FakeDriver, isolated: Path
+) -> None:
+    assert _run("project", "create", "Demo")[0].exit_code == 0
+    page = isolated / "page.html"
+    page.write_text("<html></html>", encoding="utf-8")
+
+    result, out = _run(
+        "browser", "run", page.as_uri(), "-p", "PROJ-001", "--out", str(isolated / "o")
+    )
+
+    assert result.exit_code == 0, out
+    assert "Registered EVD-001" in out
+
+
 def test_execution_without_project_is_refused(driver: FakeDriver) -> None:
     result, out = _run("browser", "run", "http://localhost", "--execution", "EXEC-001")
 
