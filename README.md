@@ -208,6 +208,12 @@ The code of the repository can be read without leaving the tool:
 branch, `--url` for another repository), or the Repository page in the menu.
 Large and binary files are refused, and secrets in code are masked.
 
+Test cases can go to GitLab as `test_case` issues in the team's standard layout:
+`batman cases push TC-001 -p PROJ-001 --by YOURNAME` (or `G` on the Test Cases
+page). Someone else approves it once (`batman security approve APR-... --by
+NAME`) and you run the push again. Pushing again changes nothing unless the case
+changed, and then only the changed sections are rewritten. `batman gitlab
+test-cases [LABEL]` lists what GitLab already has.
 What the AI creates is only a draft. The Review page in the menu lists it with
 the AI's statements and their sources; press `S` to submit a draft, then `A` to
 approve, `X` to reject, or `C` to ask for changes. The same steps exist as
@@ -221,6 +227,27 @@ Overview (it says how many requirements have none), or run `batman ai populate
 Review page; nothing is final until a person approves it, and running it again
 does not duplicate. A remote engine needs `--remote-ok`, because the requirement
 text leaves your machine.
+Findings and evidence can be handled in the TUI too. On the Bug Hunting page,
+`N` records a finding, `E` attaches a file from a folder tree, and `C`
+reclassifies it (a confirmed defect needs evidence and two reproductions). The
+Evidence page adds files with `A` and checks their hashes with `V`.
+The team's boards span the whole group, so a column can be read across all of
+its projects: `batman gitlab board -p PROJ-001 --labels team::dev,workflow::QA`
+(a board's filter label and a column label; both are required). `batman gitlab
+issue-links 7 -p PROJ-001` lists an issue's related issues and merge requests
+(add `--url` for an issue of another project). The Board page in the menu does
+the same. Test cases are left out of these lists unless you ask for them.
+
+Runs can start from the TUI as well: `R` on API Testing (pick a YAML definition
+from the folder tree), `R` on Release Analysis, and on Security `U` to authorize
+the checks (scope and expiry are always shown), `T` to run them, and `K` to
+revoke. They obey the same rules as the commands: hosts must be allowed, and
+security checks need an authorization.
+
+In the TUI, the GitLab page reads issues, merge requests, and commits (`R`); on
+an issue, `C` drafts a comment that cites evidence, and the Comments page
+publishes it (`P`) only after someone else approves that exact text on the
+Security page. On Pipelines, `L` shows a job log and `A` its artifacts.
 
 To upgrade, run `uv tool upgrade dark-knight-qa` (or `pipx upgrade
 dark-knight-qa`). The first run creates its data folder on its own; where it

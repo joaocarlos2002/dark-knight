@@ -393,6 +393,36 @@ code that uses them depends on the ports in `integrations/ports.py`
 `integrations/models.py`, so GitHub can be added later without touching it.
 Everything here is read-only; writing back is a separate, approved action.
 
+- **Group boards and issue links.** The boards are group-level: a board is a
+  filter label plus a column label, and a column mixes issues from several
+  projects. `integrations/gitlab/board.py` reads a column as the group's issues
+  that carry every label (`GET /groups/:id/issues`, labels ANDed), optionally
+  narrowed to one project, and leaves test cases (`type::testcase`) out unless
+  asked: `batman gitlab issues` does the same now (`--include-test-cases`). The
+  project of each issue comes from its full reference. An issue's links (related
+  issues, related merge requests, and the merge requests that close it) are read
+  from any project with `--url`. `batman gitlab board --labels A,B` and
+  `issue-links IID` are the commands; the Board page reads a column (`R`) and an
+  issue's links (`L`) in a worker and asks the guard first. Text from GitLab is
+  untrusted.
+- **GitLab test cases.** The team's test cases are issues of type `test_case` in a
+  fixed Portuguese layout (`Objetivo`, `Pré-condições`, `Passos` as a table,
+  `Resultado Esperado`, `Critérios/Cobertura`, and `Requisitos relacionados`
+  with the wiki link), which is a stable contract (`integrations/gitlab/
+  test_cases.py`). `batman gitlab test-cases [LABEL]` and `test-case IID` read
+  them; `batman cases push TC-001 --by NAME` (or `G` on the Test Cases page)
+  creates or updates one. A push is an outward write, so it asks the guard for
+  an approval bound to the exact content (the SHA-256 of the text is part of
+  the action, so changing the case needs a new approval, and the requester
+  cannot approve their own push) and is audited. An unchanged case is not sent
+  again; a case whose title already exists in GitLab is updated, never copied;
+  and an update rewrites only the sections that changed (`merge_description`),
+  keeping every other character and any section it does not know. The record
+  keeps `gitlab_iid`, `gitlab_url`, and `gitlab_sha256`. Labels are the
+  requirement codes (from the linked requirements) and `type::testcase`; the
+  coverage section lists the business rules (`RN-...`) of those requirements.
+  `HttpGateway` gained `put` for updates. Not here yet: pulling GitLab cases
+  into local records.
 - **Group wiki and requirement import.** The team keeps its requirements in the
   group wiki. `integrations/gitlab/wiki.py` reads it (`GET /groups/:id/wikis`,
   `with_content` only when importing; slugs are passed unencoded and encoded
@@ -983,6 +1013,35 @@ by the CLI in another terminal show up. Pages without a class still show
   the same service and schema checks as `batman review`, so a record cannot be
   approved by its author or generator: the dialog shows the reason and keeps
   what was typed. The Overview shows how many records wait.
+- **GitLab and comments in the TUI.** The GitLab page reads issues, merge
+  requests, or commits on demand (`R`, the kind chosen from a list) in a worker
+  after the guard allows the host; selecting one loads its detail, with GitLab
+  text fenced as untrusted data. `C` on an issue drafts a comment: it must cite
+  evidence (chosen from the registered ones), it is checked for secrets and hosts
+  that are not allowed, and nothing is sent. The Comments page lists the drafts
+  with exactly what will be sent; `P` publishes one, which needs a person's
+  approval of that exact text (the request id is shown, and someone else approves
+  it on the Security page), then it is sealed. On Pipelines, `L` reads a job's
+  log (secrets masked, fenced) and `A` lists its artifacts.
+- **Findings and evidence.** The Bug Hunting page records a finding (`N`; it
+  starts as `suspected`), reclassifies it (`C`: the classification is picked from
+  a list, then who and why, plus how many times it was tried and reproduced), and
+  attaches evidence (`E`). A confirmed defect (`reproduced`) still needs evidence,
+  steps, expected and observed results, and two reproductions: the service says
+  what is missing and the dialog keeps what was typed. The Evidence page adds a
+  file (`A`, which records its SHA-256) and verifies all of it (`V`), reporting
+  any file that no longer matches. Files are chosen with `FileDialog`, a folder
+  tree, so no path is typed.
+- **Runs from the pages.** `tui/runs.py` starts an API test (`R` on API Testing,
+  the definition chosen in a `FileDialog`), a release analysis (`R` on Release
+  Analysis, with an optional ref, date, and number of commits), and the security
+  checks (`U` authorize, `T` run, `K` revoke on Security) with the same services
+  the commands call, behind the same action guard and audit log. A refusal (host
+  not allowed, no authorization) is shown with its reason and nothing is sent.
+  Runs happen in a worker (`BrowserPage.run_job`), so the TUI stays responsive,
+  and the page reloads when they end. The Security page always shows the current
+  authorization, its scope, and its expiry. Browser runs are still started with
+  `batman browser run`.
 - **Alfred's settings** (`Ctrl+O`, saved per project in `ai/alfred.yaml`): engine
   (`own`, `opencode`, `nvidia`, `auto`), model, style (`balanced`, `concise`,
   `detailed`), answer language, and the Ollama, OpenCode, and NVIDIA URLs. They
