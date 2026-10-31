@@ -6,6 +6,7 @@ from qa_workbench.storage.errors import StorageError
 from qa_workbench.testcases.builder import Step, TestCaseDraft, create_test_case
 from qa_workbench.testcases.schema import PRIORITIES
 from qa_workbench.tui.browse import CASE_COLUMNS, BrowseData, case_detail, case_rows
+from qa_workbench.tui.components.dialog import ConfirmationDialog
 from qa_workbench.tui.components.form import FormDialog, FormField
 from qa_workbench.tui.pages.browser import BrowserPage
 from qa_workbench.tui.pages.registry import register
@@ -68,9 +69,13 @@ class TestCasesPage(BrowserPage):
     columns = CASE_COLUMNS
     empty_message = "No test cases yet."
     empty_hint = "Press N to write the first one."
-    shortcuts_hint = "N new"
+    shortcuts_hint = "N new   E edit   D deprecate"
 
-    BINDINGS = [Binding("n", "new_case", "New")]
+    BINDINGS = [
+        Binding("n", "new_case", "New"),
+        Binding("e", "edit_case", "Edit"),
+        Binding("d", "deprecate_case", "Deprecate"),
+    ]
 
     def load(self) -> BrowseData:
         return case_rows(self.context.repository())
@@ -108,6 +113,128 @@ class TestCasesPage(BrowserPage):
                 submit_label="Create",
                 validate=validate_new_case,
                 commit=commit,
+            ),
+            done,
+        )
+
+    def action_edit_case(self) -> None:
+        tc_id = self.selected_key()
+        if self.writable_project() is None or tc_id is None:
+            return
+        try:
+            record = self.context.repository().get(tc_id)
+        except StorageError as error:
+            self.app.notify(str(error), severity="error")
+            return
+        meta = record.metadata
+
+        def parse_steps(text: str) -> list[dict]:
+            steps = []
+            for part in text.split(";"):
+                action, _, expected = part.partition("=>")
+                if action.strip():
+                    steps.append(
+                        {"action": action.strip(), "expected": expected.strip()}
+                    )
+            return steps
+
+        def commit(values: dict[str, str]) -> str | None:
+            if values["priority"] not in PRIORITIES:
+                return f"Priority must be one of: {', '.join(sorted(PRIORITIES))}."
+            steps = parse_steps(values["steps"])
+            if not steps:
+                return "Give at least one step."
+            try:
+                self.context.repository().update(
+                    tc_id,
+                    {
+                        "title": values["title"],
+                        "objective": values["objective"],
+                        "steps": steps,
+                        "expected_result": values["expected"],
+                        "priority": values["priority"],
+                        "requirements": [
+                            r.strip()
+                            for r in values["requirements"].split(",")
+                            if r.strip()
+                        ],
+                    },
+                )
+            except (StorageError, ValueError) as error:
+                return str(error)
+            return None
+
+        def done(values: dict[str, str] | None) -> None:
+            if values is not None:
+                self.refresh_data()
+                self.app.notify(f"{tc_id} updated.")
+
+        steps_text = "; ".join(
+            f"{s.get('action', '')} => {s.get('expected', '')}"
+            for s in meta.get("steps", [])
+        )
+        reqs_text = ", ".join(meta.get("requirements", []))
+
+        self.app.push_screen(
+            FormDialog(
+                f"Edit {tc_id}",
+                (
+                    FormField("title", "Title", required=True, default=meta["title"]),
+                    FormField(
+                        "objective",
+                        "Objective",
+                        required=True,
+                        default=meta["objective"],
+                    ),
+                    FormField(
+                        "steps",
+                        "Steps (separate with ;  use 'action => expected')",
+                        required=True,
+                        default=steps_text,
+                    ),
+                    FormField(
+                        "expected",
+                        "Expected result",
+                        required=True,
+                        default=meta.get("expected_result", ""),
+                    ),
+                    FormField(
+                        "priority",
+                        "Priority (high, medium, low)",
+                        default=meta["priority"],
+                    ),
+                    FormField(
+                        "requirements",
+                        "Requirements (REQ ids, comma separated)",
+                        default=reqs_text,
+                    ),
+                ),
+                submit_label="Save",
+                commit=commit,
+            ),
+            done,
+        )
+
+    def action_deprecate_case(self) -> None:
+        tc_id = self.selected_key()
+        if self.writable_project() is None or tc_id is None:
+            return
+
+        def done(result: bool | None) -> None:
+            if not result:
+                return
+            try:
+                self.context.repository().update(tc_id, {"status": "deprecated"})
+            except (StorageError, ValueError) as error:
+                self.app.notify(str(error), severity="error")
+                return
+            self.refresh_data()
+            self.app.notify(f"{tc_id} deprecated.")
+
+        self.app.push_screen(
+            ConfirmationDialog(
+                f"Deprecate {tc_id}?",
+                "Set status to 'deprecated'. This action can be undone by editing.",
             ),
             done,
         )
