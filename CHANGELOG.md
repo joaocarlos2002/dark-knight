@@ -9,6 +9,10 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- Documentation (#54): an `examples/` folder (a requirements file, an API test, and a
+  first session end to end, all exercised by the test suite), `RELEASING.md`
+  with the release checks the workflow enforces, and a Security Policy section that
+  states how the application applies its security principles and its known limits.
 - TUI Test Suites and Test Plans pages: browse with search and filters, see
   members, estimates, last execution, and the plan's selection with reasons;
   create suites and plans, and add or remove cases, from forms that validate
