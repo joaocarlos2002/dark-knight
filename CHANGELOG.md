@@ -56,6 +56,9 @@ use the `vMAJOR.MINOR.PATCH` format.
 - `batman api run` now goes through the action guard: requests only reach the
   hosts a project allows, are rate-limited and audited, and a `DELETE` always
   needs approval; a request that is not allowed is never sent.
+- First-run welcome: opening `batman` with no project shows a Wayne Industries
+  welcome and walks through creating a project from a repository URL, then asks
+  before allowing reads from that server.
 - `batman gitlab ...` reads now go through the action guard: the token is only
   sent to hosts the project allows (also for `--url`), reads are rate-limited and
   audited, and a host that is not allowed never receives a request.

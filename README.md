@@ -138,6 +138,12 @@ Running `batman` with no arguments opens the workbench. `batman --help` lists
 the commands (`batman project create`, `batman requirements import`, and so
 on); `qa-workbench` and `python -m qa_workbench` are the same program.
 
+The first time you run it, with no project yet, the workbench welcomes you and
+asks for a project name and, if you have one, the URL of its GitLab repository.
+It creates the project, opens it, and asks whether it may read from that
+GitLab server (the token comes from `GITLAB_TOKEN`; nothing is sent until you
+say yes). With exactly one project, `batman` opens it directly next time.
+
 Install it as a standalone tool, so it is available in every terminal without
 touching your Python projects. It needs Python 3.12 or newer:
 
