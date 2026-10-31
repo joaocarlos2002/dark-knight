@@ -342,5 +342,27 @@ Screen.-short #footer-identity {
 Screen.-short #page-body {
     margin-top: 0;
 }
+
+/* HelpBar: contextual shortcuts at the bottom */
+#help-bar {
+    height: 1;
+    background: $industrial-black;
+    border-top: solid $steel-gray;
+    padding: 0 1;
+}
+
+#help-bar .help-item {
+    color: $ash-gray;
+    margin-right: 2;
+}
+
+#help-bar .help-key {
+    color: $dirty-white;
+    text-style: bold;
+}
+
+#help-bar .help-desc {
+    color: $ash-gray;
+}
 """
 )

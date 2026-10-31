@@ -19,6 +19,7 @@ from qa_workbench.tui import identity, navigation
 from qa_workbench.tui.commands import WorkbenchCommands
 from qa_workbench.tui.components.browser_preview import BrowserPreview
 from qa_workbench.tui.components.chrome import AppFooter, AppHeader
+from qa_workbench.tui.components.help_bar import HelpBar
 from qa_workbench.tui.keymap import Keymap
 from qa_workbench.tui.layout import ShellLayout, WidthClass, layout_for
 from qa_workbench.tui.pages import PAGES, Page, PageContext
@@ -98,6 +99,7 @@ class WorkbenchApp(App[None]):
         yield AppFooter(
             _status_bar_text(self._project, self._workbench_keymap), id="footer"
         )
+        yield HelpBar(self._workbench_keymap, id="help-bar")
 
     def on_mount(self) -> None:
         self.query_one("#browser-preview").display = False
@@ -300,6 +302,9 @@ class WorkbenchApp(App[None]):
         if page is not None:
             self.query_one("#page-body", Static).display = False
             page.refresh_data()
+            # Update HelpBar with page-specific bindings
+            help_bar = self.query_one("#help-bar", HelpBar)
+            help_bar.set_page_bindings(list(page.BINDINGS))
             return
         self.query_one("#page-body", Static).display = True
         if item.key == "browser-preview":
@@ -309,10 +314,16 @@ class WorkbenchApp(App[None]):
             panel = self.query_one("#browser-preview", BrowserPreview)
             panel.display = True
             panel.refresh_preview(force=True)
+            # Browser preview has no specific bindings
+            help_bar = self.query_one("#help-bar", HelpBar)
+            help_bar.set_page_bindings([])
             return
         self.query_one("#page-body", Static).update(
             f"{format_status(Status.PENDING)}  This module is not available yet."
         )
+        # No page bindings for unavailable modules
+        help_bar = self.query_one("#help-bar", HelpBar)
+        help_bar.set_page_bindings([])
 
     @staticmethod
     def _sidebar_options() -> list[Option]:
