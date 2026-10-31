@@ -54,7 +54,7 @@ def test_a_new_workbench_welcomes_and_offers_to_create_a_project(tmp_path) -> No
     async def scenario(app, pilot) -> None:
         assert isinstance(app.screen, ConfirmationDialog)
         text = str(app.screen.query_one("#dialog-title", Static).render())
-        assert "WAYNE INDUSTRIES" in text and "DARK KNIGHT QA" in text
+        assert text == "DARK KNIGHT QA"
 
     _run(tmp_path, scenario)
 
