@@ -170,6 +170,14 @@ class GitLabClient:
         response = self._send("POST", path, None, dict(body))
         return self._decode(path, response)
 
+    def upload_file(self, filename: str, content: bytes) -> Any:
+        """Upload a file to the project (multipart). GitLab answers with the
+        Markdown that embeds it. As for a POST, a network failure leaves the
+        outcome unknown."""
+        path = self.project_path("/uploads")
+        response = self._send("POST", path, None, None, {"file": (filename, content)})
+        return self._decode(path, response)
+
     def put_json(self, path: str, body: Mapping[str, Any]) -> Any:
         """PUT JSON. As for a POST, a network failure leaves the outcome unknown."""
         response = self._send("PUT", path, None, dict(body))
@@ -184,6 +192,7 @@ class GitLabClient:
         path: str,
         params: Mapping[str, str] | None,
         body: dict[str, Any] | None,
+        files: dict[str, tuple[str, bytes]] | None = None,
     ) -> GatewayResponse:
         token = self._token()
         request = GatewayRequest(
@@ -192,6 +201,7 @@ class GitLabClient:
             dict(params or {}),
             self._timeout,
             body,
+            files,
         )
         try:
             response = getattr(self._gateway, method.lower())(request)

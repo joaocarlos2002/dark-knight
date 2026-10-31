@@ -53,6 +53,8 @@ def bug_detail(repository: MarkdownRepository, record_id: str) -> str:
         f"Found by {meta['found_by']}   Environment {meta['environment']}",
     ]
     history = [h for h in meta.get("classification_history", []) if isinstance(h, dict)]
+    if meta.get("gitlab_issue_url"):
+        header.append(f"GitLab issue: {meta['gitlab_issue_url']}")
     text = _with_body(header, record)
     if history:
         text += "\n\nCLASSIFICATION HISTORY\n" + "\n".join(

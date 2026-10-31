@@ -6,6 +6,13 @@ from textual.binding import Binding
 
 from qa_workbench.bughunt.schema import CLASSIFICATIONS, SUSPECTED
 from qa_workbench.bughunt.service import BugError, reclassify, record_finding
+from qa_workbench.core.config import ConfigurationError
+from qa_workbench.integrations.errors import IntegrationError
+from qa_workbench.integrations.gitlab import cli as gitlab_cli
+from qa_workbench.projects.errors import ProjectError
+from qa_workbench.publishing.bugs import BugPublishError, open_publisher, publish_bug
+from qa_workbench.security.audit import AuditError
+from qa_workbench.security.guard import ApprovalRequired, SecurityError
 from qa_workbench.storage.errors import StorageError
 from qa_workbench.storage.evidence import EvidenceStore
 from qa_workbench.tui.browse import BrowseData
@@ -36,12 +43,13 @@ class BugHuntingPage(BrowserPage):
     columns = BUG_COLUMNS
     empty_message = "No findings yet."
     empty_hint = "Press N to record one. A defect needs evidence to be confirmed."
-    shortcuts_hint = "N new   C reclassify   E attach evidence"
+    shortcuts_hint = "N new   C reclassify   E attach evidence   U open in GitLab"
 
     BINDINGS = [
         Binding("n", "new_finding", "New"),
         Binding("c", "reclassify", "Reclassify"),
         Binding("e", "attach_evidence", "Evidence"),
+        Binding("u", "publish", "Open in GitLab"),
     ]
 
     def load(self) -> BrowseData:
@@ -49,6 +57,56 @@ class BugHuntingPage(BrowserPage):
 
     def describe(self, key: str) -> str:
         return bug_detail(self.context.repository(), key)
+
+    # -- open the issue in GitLab -------------------------------------------------
+
+    def action_publish(self) -> None:
+        bug_id = self.selected_key()
+        project = self.writable_project()
+        if project is None or bug_id is None:
+            return
+        self.app.notify(f"Opening {bug_id} in GitLab...", title="Bug")
+
+        def work() -> None:
+            try:
+                writer, guard = open_publisher(
+                    project.id,
+                    gitlab_cli.default_gateway(),
+                    data_dir=self.context.data_dir,
+                )
+                done = publish_bug(
+                    self.context.repository(), bug_id, guard=guard, writer=writer
+                )
+            except ApprovalRequired as error:
+                message, bad = (
+                    f"{error} Ask someone else to approve it on the Security page.",
+                    True,
+                )
+            except (
+                BugPublishError,
+                SecurityError,
+                AuditError,
+                IntegrationError,
+                ConfigurationError,
+                ProjectError,
+                StorageError,
+            ) as error:
+                message, bad = str(error), True
+            else:
+                verb = "already has" if done.already else "opened"
+                message, bad = f"{bug_id} {verb} an issue: {done.url}", False
+            self.app.call_from_thread(self._published, message, bad)
+
+        self.run_worker(work, thread=True, exclusive=True, name="publish-bug")
+
+    def _published(self, message: str, bad: bool) -> None:
+        self.refresh_data()
+        self.app.notify(
+            message,
+            title="Bug",
+            severity="warning" if bad else "information",
+            timeout=12,
+        )
 
     # -- a new finding -----------------------------------------------------------
 
