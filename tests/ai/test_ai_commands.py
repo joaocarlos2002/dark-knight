@@ -260,6 +260,9 @@ def test_status_reports_nvidia_key_presence_and_reachability(monkeypatch) -> Non
 
 
 def _claude(monkeypatch, runner: FakeRunner) -> FakeRunner:
+    # The provider looks for the `claude` program before it uses the runner; any
+    # existing file stands in for it, so these tests do not need Claude Code.
+    monkeypatch.setenv("CLAUDE_CODE_PATH", __file__)
     monkeypatch.setattr(cli, "default_runner", lambda: runner)
     return runner
 
