@@ -101,6 +101,7 @@ src/qa_workbench/
     opencode.py    OpenCode adapter (documented server API)
     http.py        JSON-over-HTTP port and HTTPX adapter
     cli.py         `batman ai ...` commands
+    alfred.py      Alfred: per-project settings, @mentions, ask, format
   integrations/
     ports.py       IssueSource, RepositorySource, PipelineSource
     models.py      Issue, Commit, MergeRequest, Pipeline, Job, states
@@ -172,6 +173,8 @@ src/qa_workbench/
     browse.py      Rows and detail text for requirements and cases (pure)
     browse_planning.py  The same for suites and test plans
     browse_pipelines.py The same for GitLab pipelines and jobs
+    browse_executions.py  The same for executions and their next states
+    browse_results.py   The same for defects, API runs, releases, security
     pages/         One Page per navigation key: Overview, Projects,
                    Requirements, Test Cases (BrowserPage is their base)
 tests/             Pytest suite mirroring the package layout
@@ -844,6 +847,14 @@ by the CLI in another terminal show up. Pages without a class still show
   `action => expected` separated by `;`); the form refuses an unknown priority,
   no steps, or a requirement id that does not exist, and stays open with what was
   typed until the case can be saved as a draft.
+- **Knowledge Base.** Full-text search over every record kind through
+  `RecordIndex` (SQLite FTS5), a disposable cache of the Markdown files: Enter
+  searches (every word as a prefix, ignoring case and accents), `F` narrows to one
+  record kind, and the detail shows the match snippet and the whole record. With
+  no index the page says so and `B` builds it; opening or reloading the page
+  syncs only the files that changed. A damaged index is reported as "Search is
+  unavailable" with the reason, never as an empty result, and damaged records are
+  counted as not indexed.
 - **Test suites.** Columns ID, type, status, case count, title. The detail
   lists the member cases with title and status, the total, the summed estimate
   (said to be partial when only some cases have one), the latest execution that
@@ -852,6 +863,23 @@ by the CLI in another terminal show up. Pages without a class still show
   the form), `A` adds cases to the selected suite and `R` removes them; adding a
   case that is already there, or one that does not exist, keeps the form open
   with the reason.
+- **AI Agent (Alfred).** A chat with the project's assistant. `AgentChat` is a
+  reusable transcript plus message box in which every speaker is named (YOU,
+  ALFRED, NOTICE), never only colored. A question runs in a worker thread, so the
+  TUI keeps responding and the box is disabled until the answer arrives. The
+  reply is the typed answer of the built-in agent: each statement is tagged FACT,
+  HYPOTHESIS, RECOMMENDATION, or INCONCLUSIVE, with its sources, and a "fact"
+  that cites a record the agent never saw is shown as a hypothesis. Writing
+  `@REQ-001` in the question attaches that record (fenced as untrusted data);
+  unknown ids are reported as not attached. When no engine is available the chat
+  shows a notice with the reason for each engine, not an invented answer. Alfred
+  only has read-only record tools.
+- **Alfred's settings** (`Ctrl+O`, saved per project in `ai/alfred.yaml`): engine
+  (`own`, `opencode`, `auto`), model, style (`balanced`, `concise`, `detailed`),
+  answer language, and the Ollama and OpenCode URLs. Style and language are added
+  to the system prompt *after* the fixed rules and state that they never override
+  them. A broken settings file is an error, not a silent return to defaults, and
+  an archived project's settings cannot be changed. `Ctrl+L` clears the chat.
 - **Test plans.** Columns ID, status, suites, selected cases, title. The detail
   shows scope, strategy, objectives, entry and exit criteria, the selected suites
   with their size, the selection (how many cases are included and excluded, the
@@ -872,6 +900,33 @@ by the CLI in another terminal show up. Pages without a class still show
   be concluded. A missing token, a rejected token, an unreachable server, or a
   project without a repository URL are shown as errors with their reason, never as
   an empty list.
+- **Executions.** Newest first, with the state shown as a symbol *and* its name
+  (created, planned, awaiting approval, running, passed, failed, blocked, ...). The
+  detail shows the case, type, executor, environment, version, plan, suite, and
+  duration; the steps with their marks (`[x]` passed, `[!]` failed, `[-]` blocked,
+  `[~]` skipped, `[>]` in progress) and what was observed; the observed result and
+  failure type; evidence and defects; and the states it can move to next. `N`
+  starts an execution from a test case (the case must exist and be active, except
+  for exploratory runs), `M` moves the selected one to its next state: the form
+  offers only the states the lifecycle allows, and the same checks as the CLI run
+  (a passed execution needs steps and evidence, a failure needs a failure type, an
+  approval-gated one needs an approver). A refusal keeps the form open with the
+  reason. A finalized execution says it is final, and steps are still recorded
+  with `batman executions` so each one is saved before and after it runs.
+- **Result pages.** Bug Hunting (`BUG`), API Testing (`API`), and Release
+  Analysis (`REL`) are list + detail pages over records the CLI saved: a header
+  from the metadata followed by the readable Markdown body written when the record
+  was saved (API requests and responses are the sanitized copies; a defect also
+  shows its classification history). They are read-only: results are created by
+  the commands that produce evidence.
+- **Security.** One list of approval requests (`APR-...`) and security-check runs
+  (`SEC-...`) with the audit log's health in the summary line (`Audit log intact:
+  N entries`, or the damage if the hash chain is broken, in which case the
+  approvals are not listed rather than trusted). `A` approves and `D` denies the
+  selected pending request through a form that asks for the person's name (and a
+  reason for a denial); the same rules as `batman security approve|deny` apply,
+  so the requester cannot decide their own request and a decided request cannot
+  be decided again.
 - **Read-only when archived.** On an archived project the lists work and `N`/`I`
   explain that it cannot be changed.
 - **Not here yet.** Executions and the integration pages are still

@@ -192,7 +192,9 @@ The local product documentation is intentionally kept in `docs/` for the
 current project workspace. Repository collaboration policies are public:
 
 - [Architecture](ARCHITECTURE.md)
+- [Examples](examples/README.md): sample files and a first session, step by step
 - [Contributing](CONTRIBUTING.md)
+- [Releasing](RELEASING.md)
 - [Code of Conduct](CODE_OF_CONDUCT.md)
 - [Security Policy](SECURITY.md)
 - [Support](SUPPORT.md)
