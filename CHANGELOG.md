@@ -9,6 +9,9 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- TUI Pipelines page: read the latest GitLab pipelines on demand through the
+  action guard, with their jobs by stage and failure reasons; every navigation
+  destination now has a page.
 - Documentation (#54): an `examples/` folder (a requirements file, an API test, and a
   first session end to end, all exercised by the test suite), `RELEASING.md`
   with the release checks the workflow enforces, and a Security Policy section that
