@@ -13,12 +13,13 @@ from pathlib import Path
 
 import yaml
 
-from qa_workbench.ai import ollama, opencode
+from qa_workbench.ai import nvidia, ollama, opencode
 from qa_workbench.ai.agent import AgentAnswer, OwnAgent, SingleShotAgent
 from qa_workbench.ai.cli import record_tools
 from qa_workbench.ai.errors import NoProviderAvailable, ProviderError
+from qa_workbench.ai.guarded import guarded_http
 from qa_workbench.ai.http import JsonHttp
-from qa_workbench.ai.selection import MODES, select_engine
+from qa_workbench.ai.selection import MODES, REMOTE, select_engine
 from qa_workbench.storage.atomic import write_text_atomic
 from qa_workbench.storage.errors import StorageError
 from qa_workbench.storage.repository import MarkdownRepository
@@ -45,6 +46,7 @@ class AlfredSettings:
     language: str = ""
     ollama_url: str = ollama.DEFAULT_URL
     opencode_url: str = opencode.DEFAULT_URL
+    nvidia_url: str = nvidia.DEFAULT_URL
 
     def __post_init__(self) -> None:
         problems = []
@@ -55,6 +57,7 @@ class AlfredSettings:
         for name, url in (
             ("ollama_url", self.ollama_url),
             ("opencode_url", self.opencode_url),
+            ("nvidia_url", self.nvidia_url),
         ):
             if not url.startswith(("http://", "https://")):
                 problems.append(f"{name} must start with http:// or https://")
@@ -100,6 +103,11 @@ class Reply:
     attached: tuple[str, ...]
     not_found: tuple[str, ...]
 
+    @property
+    def remote(self) -> bool:
+        """Whether the question and its context left this machine."""
+        return self.engine in REMOTE
+
 
 def attach_mentions(
     repository: MarkdownRepository, question: str
@@ -128,6 +136,9 @@ def ask_alfred(
         raise ValueError("Ask something.")
     context, missing = attach_mentions(repository, question)
     tools = record_tools(repository)
+    # Every engine request goes through the project's action guard: a host that
+    # is not authorized gets nothing, and each request is audited.
+    http = guarded_http(http, repository.root)
     style = settings.style_instruction
 
     def own():
@@ -142,9 +153,32 @@ def ask_alfred(
         )
         return provider, SingleShotAgent(provider, model=settings.model, style=style)
 
-    choice = select_engine(settings.engine, {"own": own, "opencode": external})
+    def hosted():
+        provider = nvidia.NvidiaProvider(
+            http, base_url=settings.nvidia_url, model=settings.model
+        )
+        return provider, SingleShotAgent(provider, model=settings.model, style=style)
+
+    choice = select_engine(
+        settings.engine, {"own": own, "opencode": external, "nvidia": hosted}
+    )
     answer = choice.engine.ask(question, context)
     return Reply(answer, choice.mode, tuple(context), tuple(missing))
+
+
+def list_models(
+    settings: AlfredSettings, repository: MarkdownRepository, http: JsonHttp
+) -> tuple[str, list[str]]:
+    """The models of the configured engine (``auto`` means the local ``own``)."""
+    http = guarded_http(http, repository.root)
+    engine = "own" if settings.engine == "auto" else settings.engine
+    if engine == "nvidia":
+        provider = nvidia.NvidiaProvider(http, base_url=settings.nvidia_url)
+    elif engine == "opencode":
+        provider = opencode.OpenCodeProvider(http, base_url=settings.opencode_url)
+    else:
+        provider = ollama.OllamaProvider(http, base_url=settings.ollama_url)
+    return engine, provider.list_models()
 
 
 def format_answer(reply: Reply) -> list[str]:
@@ -167,6 +201,7 @@ __all__ = [
     "ask_alfred",
     "attach_mentions",
     "format_answer",
+    "list_models",
     "load_settings",
     "save_settings",
 ]

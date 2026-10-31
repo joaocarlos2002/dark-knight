@@ -117,3 +117,137 @@ def test_ask_validates_engine_and_project(monkeypatch) -> None:
     )
     result, out = _run("ask", "q", "-p", "PROJ-404")
     assert result.exit_code == 1 and "PROJ-404" in out
+
+
+# -- the hosted NVIDIA engine ------------------------------------------------
+
+KEY = "nvapi-0123456789abcdefghij"
+HOST = "integrate.api.nvidia.com"
+MODELS = ok({"data": [{"id": "meta/llama-3.1-8b-instruct"}, {"id": "a/b"}]})
+
+
+def _nvidia_chat(content: str) -> dict:
+    return {"model": "a/b", "choices": [{"message": {"content": content}}]}
+
+
+def _project(allow: bool = True) -> None:
+    runner.invoke(app, ["project", "create", "Demo"])
+    if allow:
+        runner.invoke(
+            app,
+            ["security", "set", "-p", "PROJ-001", "--allow-host", HOST, "--by", "qa"],
+        )
+
+
+def _stored_text(tmp_path: Path) -> str:
+    return "\n".join(
+        f.read_text(encoding="utf-8", errors="ignore")
+        for f in tmp_path.rglob("*")
+        if f.is_file()
+    )
+
+
+def test_ask_nvidia_works_against_a_fake_server_and_says_it_is_remote(
+    monkeypatch, tmp_path
+) -> None:
+    monkeypatch.setenv("NVIDIA_API_KEY", KEY)
+    _project()
+    reply = answer({"kind": "recommendation", "text": "Run the smoke suite"})
+    http = _serve(
+        monkeypatch,
+        {
+            ("GET", "/models"): MODELS,
+            ("POST", "/chat/completions"): ok(_nvidia_chat(reply)),
+        },
+    )
+
+    result, out = _run(
+        "ask", "q", "-p", "PROJ-001", "--engine", "nvidia", "--model", "a/b"
+    )
+
+    assert result.exit_code == 0, out
+    assert "RECOMMENDATION" in out and "leave this machine" in out
+    assert http.calls[-1][2]["model"] == "a/b"
+    assert KEY not in out and KEY not in _stored_text(tmp_path)
+
+
+def test_ask_nvidia_with_a_host_that_is_not_allowed_sends_nothing(monkeypatch) -> None:
+    monkeypatch.setenv("NVIDIA_API_KEY", KEY)
+    _project(allow=False)
+    http = _serve(monkeypatch, {("GET", "/models"): MODELS})
+
+    result, out = _run(
+        "ask", "q", "-p", "PROJ-001", "--engine", "nvidia", "--model", "a/b"
+    )
+
+    assert result.exit_code == 1
+    assert "nothing was sent" in out and f"--allow-host {HOST}" in out
+    assert http.calls == [] and KEY not in out
+
+
+def test_ask_nvidia_failures_name_the_endpoint_and_never_the_key(monkeypatch) -> None:
+    monkeypatch.setenv("NVIDIA_API_KEY", KEY)
+    _project()
+    _serve(monkeypatch, {("GET", "/models"): ok({}, 401)})
+
+    result, out = _run(
+        "ask", "q", "-p", "PROJ-001", "--engine", "nvidia", "--model", "a/b"
+    )
+
+    assert result.exit_code == 1
+    assert "rejected the API key (HTTP 401)" in out and "/v1/models" in out
+    assert KEY not in out
+
+
+def test_auto_does_not_use_nvidia_even_when_it_is_the_only_engine_up(
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("NVIDIA_API_KEY", KEY)
+    _project()
+    http = _serve(
+        monkeypatch,
+        {
+            ("GET", "/api/version"): down(),
+            ("GET", "/global/health"): down(),
+            ("GET", "/models"): MODELS,
+        },
+    )
+
+    result, out = _run("ask", "q", "-p", "PROJ-001")
+
+    assert result.exit_code == 1 and "No AI engine is available" in out
+    assert not any(call[1].endswith("/models") for call in http.calls)
+
+
+def test_models_lists_what_the_key_can_use(monkeypatch) -> None:
+    monkeypatch.setenv("NVIDIA_API_KEY", KEY)
+    _project()
+    _serve(monkeypatch, {("GET", "/models"): MODELS})
+
+    result, out = _run("models", "-p", "PROJ-001")
+
+    assert result.exit_code == 0, out
+    assert "a/b" in out and "meta/llama-3.1-8b-instruct" in out
+    assert "Remote engine" in out
+
+
+def test_status_reports_nvidia_key_presence_and_reachability(monkeypatch) -> None:
+    monkeypatch.delenv("NVIDIA_API_KEY", raising=False)
+    _project()
+    http = _serve(
+        monkeypatch,
+        {
+            ("GET", "/api/version"): ok({"version": "0.5.1"}),
+            ("GET", "/global/health"): down(),
+            ("GET", "/models"): MODELS,
+        },
+    )
+
+    _, out = _run("status")
+    assert "not checked" in out and "API key missing" in out
+    assert not any(call[1].endswith("/models") for call in http.calls)
+
+    monkeypatch.setenv("NVIDIA_API_KEY", KEY)
+    _, out = _run("status", "-p", "PROJ-001")
+    assert "nvidia    available" in out and "API key present" in out
+    assert KEY not in out

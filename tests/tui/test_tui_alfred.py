@@ -10,8 +10,11 @@ from qa_workbench.ai.alfred import AlfredSettings, load_settings, save_settings
 from qa_workbench.ai.http import JsonResponse, TransportFailure
 from qa_workbench.browser.preview import PreviewChannel
 from qa_workbench.projects.repository import ProjectRepository
+from qa_workbench.security.settings import SecuritySettings
+from qa_workbench.security.settings import save_settings as save_security
 from qa_workbench.tui.app import WorkbenchApp
 from qa_workbench.tui.components.agent_chat import AgentChat
+from qa_workbench.tui.components.choice import ChoiceDialog
 from qa_workbench.tui.components.form import FormDialog
 from qa_workbench.workspace import repository_for
 
@@ -242,3 +245,82 @@ def test_the_chat_transcript_names_every_speaker() -> None:
 
     assert [s for s, _ in chat.lines] == ["YOU", "ALFRED", "NOTICE"]
     assert "YOU\n  question" in text and "ALFRED\n  answer" in text
+
+
+class HostedHttp:
+    """A tiny NVIDIA API: lists two models and answers a chat."""
+
+    def __init__(self) -> None:
+        self.urls: list[str] = []
+
+    def request(self, method, url, *, body=None, headers=None, timeout=30.0):
+        self.urls.append(url)
+        if url.endswith("/models"):
+            return JsonResponse(200, {"data": [{"id": "a/one"}, {"id": "b/two"}]}, {})
+        content = json.dumps({"statements": [{"kind": "inconclusive", "text": "Hm."}]})
+        return JsonResponse(200, {"choices": [{"message": {"content": content}}]}, {})
+
+    def stream_lines(self, *args, **kwargs):  # pragma: no cover - not used
+        raise AssertionError("Alfred does not stream")
+
+
+def _hosted(repo, monkeypatch, *, allow: bool = True) -> HostedHttp:
+    monkeypatch.setenv("NVIDIA_API_KEY", "nvapi-0123456789abcdefghij")
+    save_settings(repo.root, AlfredSettings(engine="nvidia", model="a/one"))
+    if allow:
+        save_security(
+            repo.root, SecuritySettings(allowed_hosts=("integrate.api.nvidia.com",))
+        )
+    http = HostedHttp()
+    monkeypatch.setattr(ai_cli, "default_http", lambda: http)
+    return http
+
+
+def test_the_model_picker_lists_the_models_and_saves_the_choice(
+    tmp_path, project, repo, monkeypatch
+) -> None:
+    _hosted(repo, monkeypatch)
+
+    async def scenario(app, pilot) -> None:
+        app.navigate("ai-agent")
+        await pilot.pause()
+        await pilot.press("ctrl+g")
+        await _until(pilot, lambda: isinstance(app.screen, ChoiceDialog))
+        assert "remote" in str(app.screen.query_one("#dialog-message").render()).lower()
+        await pilot.press("down", "enter")
+        await _until(pilot, lambda: load_settings(repo.root).model == "b/two")
+        assert "Model: b/two" in str(app.query_one("#alfred-summary", Static).render())
+
+    _run(tmp_path, scenario, project)
+
+
+def test_a_remote_answer_says_data_left_the_machine(
+    tmp_path, project, repo, monkeypatch
+) -> None:
+    http = _hosted(repo, monkeypatch)
+
+    async def scenario(app, pilot) -> None:
+        app.navigate("ai-agent")
+        await pilot.pause()
+        await _ask(app, pilot, "hello")
+        await _until(pilot, lambda: "engine: nvidia" in _spoken(app))
+        assert "remote: data left this machine" in _spoken(app)
+        assert any(url.endswith("/chat/completions") for url in http.urls)
+
+    _run(tmp_path, scenario, project)
+
+
+def test_a_host_that_is_not_allowed_is_a_notice_and_sends_nothing(
+    tmp_path, project, repo, monkeypatch
+) -> None:
+    http = _hosted(repo, monkeypatch, allow=False)
+
+    async def scenario(app, pilot) -> None:
+        app.navigate("ai-agent")
+        await pilot.pause()
+        await _ask(app, pilot, "hello")
+        await _until(pilot, lambda: "nothing was sent" in _spoken(app))
+        assert "--allow-host integrate.api.nvidia.com" in _spoken(app)
+        assert http.urls == []
+
+    _run(tmp_path, scenario, project)

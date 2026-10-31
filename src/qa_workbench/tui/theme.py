@@ -274,6 +274,35 @@ FormDialog Button {
     margin-left: 1;
 }
 
+ChoiceDialog {
+    align: center middle;
+}
+
+ChoiceDialog > Vertical {
+    width: 70;
+    max-width: 95%;
+    max-height: 80%;
+    height: auto;
+    padding: 1 2;
+    background: $dark-concrete;
+    border: solid $signal-red;
+}
+
+ChoiceDialog #dialog-title {
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+ChoiceDialog #dialog-message {
+    color: $ash-gray;
+    margin-bottom: 1;
+}
+
+ChoiceDialog OptionList {
+    height: auto;
+    max-height: 20;
+}
+
 #overview-metrics {
     height: auto;
     width: 100%;

@@ -15,6 +15,7 @@ from qa_workbench.browser.preview import PreviewChannel, PreviewController
 from qa_workbench.core.config import AppConfig, ConfigurationError
 from qa_workbench.projects.errors import ProjectError
 from qa_workbench.security.audit import AuditLog
+from qa_workbench.security.credentials import default_environment
 from qa_workbench.security.guard import ActionGuard, SecurityError
 from qa_workbench.security.settings import SecuritySettingsError, load_settings
 from qa_workbench.storage.errors import StorageError
@@ -90,8 +91,16 @@ def doctor_command(
     ] = False,
     yes: Annotated[bool, typer.Option("--yes", "-y", help="Do not ask first.")] = False,
 ) -> None:
-    """Check that the browser used for web tests is installed."""
-    if not report_setup(default_setup(), fix=fix, assume_yes=yes):
+    """Check what the workbench needs: the web-test browser and the AI engines."""
+    ready = report_setup(default_setup(), fix=fix, assume_yes=yes)
+    # Nothing is sent anywhere here: the remote engine is only checked for a key.
+    # `batman ai status --project ID` checks that it is reachable.
+    key = "present" if default_environment().get("NVIDIA_API_KEY") else "missing"
+    typer.echo(
+        f"NVIDIA API key (remote AI engine, optional): {key}. "
+        "`batman ai status` shows which engines are reachable."
+    )
+    if not ready:
         raise typer.Exit(1)
 
 
