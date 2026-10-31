@@ -298,3 +298,116 @@ def ask_command(
         _fail(str(error))
     _print(answer)
     typer.echo("AI output is analysis: it is not evidence, and nothing was changed.")
+
+
+@ai_app.command("populate")
+def populate_command(
+    project: ProjectOption,
+    by: Annotated[str, typer.Option("--by", help="Who is responsible for this run.")],
+    engine: Annotated[
+        str, typer.Option(help="own, opencode, nvidia or claude (remote), or auto.")
+    ] = "",
+    model: Annotated[str, typer.Option(help="Model name for the engine.")] = "",
+    limit: Annotated[
+        int, typer.Option(min=1, max=50, help="Requirements to ask about.")
+    ] = 5,
+    dry_run: Annotated[
+        bool, typer.Option("--dry-run", help="Only say what would be asked.")
+    ] = False,
+    remote_ok: Annotated[
+        bool,
+        typer.Option(
+            "--remote-ok",
+            help="Allow a remote engine: the requirement text leaves this machine.",
+        ),
+    ] = False,
+    wiki: Annotated[
+        bool, typer.Option("--wiki", help="Import the group wiki's requirements first.")
+    ] = False,
+    ollama_url: OllamaUrl = ollama.DEFAULT_URL,
+    opencode_url: OpenCodeUrl = opencode.DEFAULT_URL,
+    nvidia_url: NvidiaUrl = nvidia.DEFAULT_URL,
+    claude_path: ClaudePath = "",
+) -> None:
+    """Ask the AI for draft test cases for the requirements that have none. Every
+    case is a draft that waits for review (`batman review`); nothing is final."""
+    from qa_workbench.ai import populate as populate_ai
+    from qa_workbench.ai.alfred import (
+        AlfredSettings,
+        AlfredSettingsError,
+        choose_provider,
+        load_settings,
+    )
+
+    _http, repository = _guarded(project, writable=True)
+    chosen = engine or ""
+    if chosen and chosen not in MODES:
+        _fail(f"engine must be one of {', '.join(MODES)}; got {chosen!r}.")
+    try:
+        saved = load_settings(repository.root)
+    except AlfredSettingsError:
+        saved = AlfredSettings()
+    settings = AlfredSettings(
+        engine=chosen or saved.engine,
+        model=model or saved.model,
+        style=saved.style,
+        language=saved.language,
+        ollama_url=ollama_url,
+        opencode_url=opencode_url,
+        nvidia_url=nvidia_url,
+    )
+    if wiki:
+        _import_wiki_first(project, repository)
+    targets = populate_ai.pending_requirements(repository, limit)
+    if not targets:
+        typer.echo("Every requirement already has a test case. Nothing to ask.")
+        return
+    if dry_run:
+        typer.echo(f"Would ask about {len(targets)} requirement(s):")
+        for record in targets:
+            typer.echo(f"  {record.id}  {record.metadata['title']}")
+        return
+    try:
+        choice = choose_provider(settings, repository, default_http(), default_runner())
+        typer.echo(f"Engine: {choice.mode} ({choice.detail})")
+        if choice.mode in REMOTE and not remote_ok:
+            _fail(
+                f"{choice.mode} is a remote engine: the requirement text would leave "
+                "this machine. Run again with --remote-ok to allow it."
+            )
+        report = populate_ai.populate(
+            repository,
+            choice.provider,
+            model=settings.model,
+            limit=limit,
+            actor=by,
+            language=settings.language,
+            progress=typer.echo,
+        )
+    except (NoProviderAvailable, ProviderError, StorageError) as error:
+        _fail(str(error))
+    typer.echo(
+        f"{len(report.created)} draft case(s) created"
+        + (f" in {report.suite}" if report.suite else "")
+        + f", {len(report.failed)} requirement(s) not used."
+    )
+    typer.echo("They are drafts: review them with `batman review pending`.")
+    if report.failed:
+        raise typer.Exit(1)
+
+
+def _import_wiki_first(project: str, repository: MarkdownRepository) -> None:
+    from qa_workbench.integrations.errors import IntegrationError
+    from qa_workbench.integrations.gitlab.cli import wiki_for
+    from qa_workbench.requirements.wiki_import import import_wiki_pages
+
+    wiki, group, base_url = wiki_for(project, None, "GITLAB_TOKEN", None)
+    try:
+        pages = wiki.list_pages(with_content=True)
+        report = import_wiki_pages(repository, pages, base_url=base_url, group=group)
+    except (IntegrationError, StorageError) as error:
+        _fail(str(error))
+    typer.echo(
+        f"Wiki: {len(report.created)} created, {len(report.updated)} updated, "
+        f"{len(report.skipped)} unchanged."
+    )

@@ -313,6 +313,21 @@ pretending.
   error lists why for each one. `batman ai status` checks reachability without
   sending anything to a model; `batman ai ask QUESTION -p PROJ-001 --engine auto`
   asks one.
+- **AI drafts for the project (`ai/populate.py`).** `batman ai populate` (and `P`
+  on the Overview) asks the configured engine for test cases for the
+  requirements that have none (at most `--limit` per run; `--dry-run` only lists
+  them; `--wiki` imports the wiki's requirements first). The requirement text
+  is fenced as untrusted data, the reply must be the expected JSON (anything
+  else is reported for that requirement and the run goes on), and every case is
+  a **draft** with `origin: ai`, `generated_by`, and findings: one *fact* citing
+  the requirement the AI was given and one *hypothesis* for the rest. The run's
+  cases are grouped in a draft suite, nothing is final or published, and they
+  wait in the Review queue. A requirement that already has a case is never asked
+  about again, so running twice duplicates nothing. A remote engine is used only
+  with `--remote-ok` (CLI) or after the confirmation dialog (TUI), which says the
+  text leaves the machine; the run and every record it creates are audited. Not
+  done yet: drafting suites by theme and a test plan, and using GitLab issues
+  and repository files as sources.
 - **Built-in agent (`OwnAgent`).** Loops over `complete` and tool calls (at most
   `max_steps`), with read-only tools over the project's records (`get_record`,
   `list_records`). Tool output and context records are fenced as untrusted data.

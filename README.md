@@ -214,6 +214,14 @@ approve, `X` to reject, or `C` to ask for changes. The same steps exist as
 `batman review pending|submit|decide`. A record cannot be approved by whoever
 wrote it or generated it.
 
+Once the requirements are in, the AI can draft the test cases: press `P` on the
+Overview (it says how many requirements have none), or run `batman ai populate
+-p PROJ-001 --by YOURNAME` (add `--dry-run` to only see what it would ask, and
+`--wiki` to import the wiki first). Every case is a draft that waits on the
+Review page; nothing is final until a person approves it, and running it again
+does not duplicate. A remote engine needs `--remote-ok`, because the requirement
+text leaves your machine.
+
 To upgrade, run `uv tool upgrade dark-knight-qa` (or `pipx upgrade
 dark-knight-qa`). The first run creates its data folder on its own; where it
 lives and how to change it is described under Contributing below.

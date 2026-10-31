@@ -27,6 +27,10 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- The AI drafts test cases for requirements that have none: `batman ai populate`
+  and `P` on the Overview. Every case is a draft marked as AI-generated that cites
+  its requirement and waits in Review, they are grouped in a draft suite, a rerun
+  adds no duplicates, and a remote engine needs an explicit yes (#169).
 - A Review page in the TUI to read, submit, approve, reject, or ask changes on
   the records the AI generated, with its findings and sources, and the same
   rules as `batman review` (no self-approval, a reason for a rejection). The
