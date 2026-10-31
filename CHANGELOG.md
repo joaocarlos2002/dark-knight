@@ -9,6 +9,10 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- Alfred, the QA assistant, in the TUI: an AI Agent page with a reusable chat
+  component, `@ID` context attachment, typed answers (facts, hypotheses,
+  recommendations), and per-project settings for engine, model, style, and
+  language (`Ctrl+O`).
 - TUI Test Suites and Test Plans pages: browse with search and filters, see
   members, estimates, last execution, and the plan's selection with reasons;
   create suites and plans, and add or remove cases, from forms that validate

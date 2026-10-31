@@ -101,6 +101,7 @@ src/qa_workbench/
     opencode.py    OpenCode adapter (documented server API)
     http.py        JSON-over-HTTP port and HTTPX adapter
     cli.py         `batman ai ...` commands
+    alfred.py      Alfred: per-project settings, @mentions, ask, format
   integrations/
     ports.py       IssueSource, RepositorySource, PipelineSource
     models.py      Issue, Commit, MergeRequest, Pipeline, Job, states
@@ -857,6 +858,23 @@ by the CLI in another terminal show up. Pages without a class still show
   estimate, and the recorded reason for each inclusion), and risks. A plan with no
   selection says so and points to `batman plans recommend`. `N` creates a draft
   plan from a form that checks the suites exist.
+- **AI Agent (Alfred).** A chat with the project's assistant. `AgentChat` is a
+  reusable transcript plus message box in which every speaker is named (YOU,
+  ALFRED, NOTICE), never only colored. A question runs in a worker thread, so the
+  TUI keeps responding and the box is disabled until the answer arrives. The
+  reply is the typed answer of the built-in agent: each statement is tagged FACT,
+  HYPOTHESIS, RECOMMENDATION, or INCONCLUSIVE, with its sources, and a "fact"
+  that cites a record the agent never saw is shown as a hypothesis. Writing
+  `@REQ-001` in the question attaches that record (fenced as untrusted data);
+  unknown ids are reported as not attached. When no engine is available the chat
+  shows a notice with the reason for each engine, not an invented answer. Alfred
+  only has read-only record tools.
+- **Alfred's settings** (`Ctrl+O`, saved per project in `ai/alfred.yaml`): engine
+  (`own`, `opencode`, `auto`), model, style (`balanced`, `concise`, `detailed`),
+  answer language, and the Ollama and OpenCode URLs. Style and language are added
+  to the system prompt *after* the fixed rules and state that they never override
+  them. A broken settings file is an error, not a silent return to defaults, and
+  an archived project's settings cannot be changed. `Ctrl+L` clears the chat.
 - **Read-only when archived.** On an archived project the lists work and `N`/`I`
   explain that it cannot be changed.
 - **Not here yet.** Executions and the integration pages are still
