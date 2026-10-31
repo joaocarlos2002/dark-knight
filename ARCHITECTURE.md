@@ -378,6 +378,18 @@ code that uses them depends on the ports in `integrations/ports.py`
 `integrations/models.py`, so GitHub can be added later without touching it.
 Everything here is read-only; writing back is a separate, approved action.
 
+- **Group boards and issue links.** The boards are group-level: a board is a
+  filter label plus a column label, and a column mixes issues from several
+  projects. `integrations/gitlab/board.py` reads a column as the group's issues
+  that carry every label (`GET /groups/:id/issues`, labels ANDed), optionally
+  narrowed to one project, and leaves test cases (`type::testcase`) out unless
+  asked: `batman gitlab issues` does the same now (`--include-test-cases`). The
+  project of each issue comes from its full reference. An issue's links (related
+  issues, related merge requests, and the merge requests that close it) are read
+  from any project with `--url`. `batman gitlab board --labels A,B` and
+  `issue-links IID` are the commands; the Board page reads a column (`R`) and an
+  issue's links (`L`) in a worker and asks the guard first. Text from GitLab is
+  untrusted.
 - **GitLab test cases.** The team's test cases are issues of type `test_case` in a
   fixed Portuguese layout (`Objetivo`, `Pré-condições`, `Passos` as a table,
   `Resultado Esperado`, `Critérios/Cobertura`, and `Requisitos relacionados`
