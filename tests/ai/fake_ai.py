@@ -4,6 +4,7 @@ import json
 from collections.abc import Iterator
 from typing import Any
 
+from qa_workbench.ai.claude_code import ProcessResult
 from qa_workbench.ai.contract import (
     Availability,
     Capabilities,
@@ -12,6 +13,7 @@ from qa_workbench.ai.contract import (
     StreamEvent,
     ToolCall,
 )
+from qa_workbench.ai.errors import ProviderUnavailable
 from qa_workbench.ai.http import JsonResponse, StatusFailure, TransportFailure
 
 
@@ -97,3 +99,43 @@ def reply(text: str, *calls: ToolCall) -> CompletionResult:
 
 def answer(*statements: dict[str, Any]) -> str:
     return json.dumps({"statements": list(statements)})
+
+
+class FakeRunner:
+    """Stands in for the Claude Code process: nothing is started."""
+
+    def __init__(
+        self,
+        stdout: str = "",
+        *,
+        returncode: int = 0,
+        stderr: str = "",
+        version: str | None = "2.1.0 (Claude Code)",
+    ) -> None:
+        self.stdout = stdout
+        self.returncode = returncode
+        self.stderr = stderr
+        self.version = version
+        self.runs: list[tuple[list[str], str]] = []
+
+    def run(self, args, stdin, timeout, cancel=None):
+        self.runs.append((list(args), stdin))
+        return ProcessResult(self.returncode, self.stdout, self.stderr)
+
+    def probe(self, args):
+        if self.version is None:
+            raise ProviderUnavailable("claude", "cannot start Claude Code")
+        return ProcessResult(0, self.version + "\n", "")
+
+
+def claude_reply(text: str, **extra: Any) -> str:
+    """What `claude -p --output-format json` prints."""
+    return json.dumps(
+        {
+            "result": text,
+            "is_error": False,
+            "stop_reason": "end_turn",
+            "usage": {"input_tokens": 5, "output_tokens": 3},
+            **extra,
+        }
+    )

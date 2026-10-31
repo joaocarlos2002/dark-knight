@@ -79,7 +79,11 @@ This describes what the code does today, so reports can be checked against it.
   through the action guard: a host that is not in the project's allowed hosts gets
   nothing and the message says how to allow it, requests count against the rate
   limit, and the audit log records the action and the URL, never the body or any
-  header. Text is passed through secret redaction before it is sent. The API key
+  header. Text is passed through secret redaction before it is sent. The `claude`
+  engine (the Claude Code CLI, using the person's own login) follows the same
+  rules, with `api.anthropic.com` as the host the guard checks before the process
+  starts; it runs with every tool disabled, no saved session, no skills or MCP
+  servers, and an empty working directory, so it cannot touch local files. The API key
   (`NVIDIA_API_KEY`, or `batman config token set nvidia`) is never printed,
   logged, audited, or put in an error message, even if the server echoes it.
 

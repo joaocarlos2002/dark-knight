@@ -36,6 +36,7 @@ ENGINE_LABELS = {
     "own": "own - Ollama on this machine",
     "opencode": "opencode - OpenCode server",
     "nvidia": "nvidia - hosted, data leaves this machine",
+    "claude": "claude - Claude Code with your login, data leaves this machine",
 }
 STYLE_LABELS = {
     "balanced": "balanced",
@@ -288,10 +289,11 @@ class AlfredPage(Page):
         # The model call can take a long time: it runs in a thread so the TUI
         # keeps responding. Looked up here so tests can replace the HTTP client.
         http = ai_cli.default_http()
+        runner = ai_cli.default_runner()
 
         def work() -> None:
             try:
-                reply = ask_alfred(settings, repository, http, event.text)
+                reply = ask_alfred(settings, repository, http, event.text, runner)
             except ValueError as error:
                 self.app.call_from_thread(self._finish, "notice", str(error))
             except NoProviderAvailable as error:

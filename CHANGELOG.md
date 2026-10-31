@@ -17,6 +17,13 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- Claude as an AI engine through Claude Code, with no API key: `batman ai ask
+  --engine claude [--model sonnet|opus|haiku]`, or `claude` under Engine in
+  Alfred. It uses your own Claude login, is found automatically (PATH, the VS Code
+  extension, or `CLAUDE_CODE_PATH`), and runs with every tool disabled so it can
+  only answer. It is remote: `auto` never picks it, the UI says data leaves the
+  machine, secrets are redacted first, and the process starts only if
+  `api.anthropic.com` is allowed for the project. `batman ai status` shows it.
 - API tokens in the interface: Settings has an API tokens category to set and
   remove a token (typed hidden, never shown again), the first-run welcome offers to
   keep the GitLab token after the project is created, and `batman doctor` lists

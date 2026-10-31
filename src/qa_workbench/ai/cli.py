@@ -4,7 +4,7 @@ from typing import Annotated, NoReturn
 
 import typer
 
-from qa_workbench.ai import nvidia, ollama, opencode
+from qa_workbench.ai import claude_code, nvidia, ollama, opencode
 from qa_workbench.ai.agent import (
     AgentAnswer,
     OwnAgent,
@@ -14,7 +14,7 @@ from qa_workbench.ai.agent import (
 )
 from qa_workbench.ai.contract import Provider, ToolSpec
 from qa_workbench.ai.errors import NoProviderAvailable, ProviderError
-from qa_workbench.ai.guarded import guarded_http
+from qa_workbench.ai.guarded import guarded_http, guarded_runner
 from qa_workbench.ai.http import HttpxJson, JsonHttp
 from qa_workbench.ai.selection import MODES, REMOTE, select_engine
 from qa_workbench.core.config import ConfigurationError
@@ -40,6 +40,14 @@ OpenCodeUrl = Annotated[
 NvidiaUrl = Annotated[
     str, typer.Option("--nvidia-url", envvar="NVIDIA_BASE_URL", help="NVIDIA API.")
 ]
+ClaudePath = Annotated[
+    str,
+    typer.Option(
+        "--claude-path",
+        envvar=claude_code.PATH_VARIABLE,
+        help="The claude executable (found automatically when installed).",
+    ),
+]
 ProjectOption = Annotated[
     str, typer.Option("--project", "-p", help="Project id (its security settings).")
 ]
@@ -48,6 +56,11 @@ ProjectOption = Annotated[
 def default_http() -> JsonHttp:
     """The real HTTP client. Tests replace this so nothing touches the network."""
     return HttpxJson()
+
+
+def default_runner() -> claude_code.Runner:
+    """The real process runner. Tests replace this so nothing is started."""
+    return claude_code.SubprocessRunner()
 
 
 def _fail(message: str) -> NoReturn:
@@ -106,6 +119,8 @@ def _factories(
     nvidia_url: str,
     model: str,
     tools: ToolRegistry,
+    runner: claude_code.Runner | None = None,
+    claude_path: str = "",
 ):
     def own() -> tuple[Provider, OwnAgent]:
         provider = ollama.OllamaProvider(http, base_url=ollama_url, model=model)
@@ -119,7 +134,20 @@ def _factories(
         provider = nvidia.NvidiaProvider(http, base_url=nvidia_url, model=model)
         return provider, SingleShotAgent(provider, model=model)
 
-    return {"own": own, "opencode": external, "nvidia": hosted}
+    def claude() -> tuple[Provider, SingleShotAgent]:
+        provider = claude_code.ClaudeCodeProvider(
+            runner or default_runner(), model=model, executable=claude_path or None
+        )
+        return provider, SingleShotAgent(provider, model=model)
+
+    return {"own": own, "opencode": external, "nvidia": hosted, "claude": claude}
+
+
+def _guarded_runner(repository: MarkdownRepository) -> claude_code.Runner:
+    try:
+        return guarded_runner(default_runner(), repository.root, claude_code.HOST_URL)
+    except (AuditError, SecuritySettingsError) as error:
+        _fail(str(error))
 
 
 def _guarded(
@@ -146,6 +174,7 @@ def status_command(
     ollama_url: OllamaUrl = ollama.DEFAULT_URL,
     opencode_url: OpenCodeUrl = opencode.DEFAULT_URL,
     nvidia_url: NvidiaUrl = nvidia.DEFAULT_URL,
+    claude_path: ClaudePath = "",
 ) -> None:
     """Show which engines are reachable (nothing is sent to a model)."""
     http = default_http()
@@ -174,6 +203,12 @@ def status_command(
         any_up = any_up or availability.available
         mark = "available  " if availability.available else "unavailable"
         typer.echo(f"{hosted.name:<9} {mark} {availability.detail}; API key {key}")
+    claude = claude_code.ClaudeCodeProvider(
+        default_runner(), executable=claude_path or None
+    ).check_availability()
+    any_up = any_up or claude.available
+    mark = "available  " if claude.available else "unavailable"
+    typer.echo(f"{claude_code.NAME:<9} {mark} {claude.detail}")
     if not any_up:
         raise typer.Exit(1)
 
@@ -181,17 +216,26 @@ def status_command(
 @ai_app.command("models")
 def models_command(
     project: ProjectOption,
-    engine: Annotated[str, typer.Option(help="own, opencode, or nvidia.")] = "nvidia",
+    engine: Annotated[
+        str, typer.Option(help="own, opencode, nvidia, or claude.")
+    ] = "nvidia",
     ollama_url: OllamaUrl = ollama.DEFAULT_URL,
     opencode_url: OpenCodeUrl = opencode.DEFAULT_URL,
     nvidia_url: NvidiaUrl = nvidia.DEFAULT_URL,
+    claude_path: ClaudePath = "",
 ) -> None:
     """List the models an engine offers (pass one with `ask --model`)."""
-    if engine not in ("own", "opencode", "nvidia"):
-        _fail(f"engine must be own, opencode, or nvidia; got {engine!r}.")
+    if engine not in ("own", "opencode", "nvidia", "claude"):
+        _fail(f"engine must be own, opencode, nvidia, or claude; got {engine!r}.")
     http, repository = _guarded(project)
     factories = _factories(
-        http, ollama_url, opencode_url, nvidia_url, "", record_tools(repository)
+        http,
+        ollama_url,
+        opencode_url,
+        nvidia_url,
+        "",
+        record_tools(repository),
+        claude_path=claude_path,
     )
     try:
         provider, _ = factories[engine]()
@@ -199,7 +243,10 @@ def models_command(
     except ProviderError as error:
         _fail(str(error))
     if engine in REMOTE:
-        typer.echo(f"Remote engine: {nvidia.host_of(nvidia_url)}")
+        host = nvidia.host_of(
+            nvidia_url if engine == "nvidia" else claude_code.HOST_URL
+        )
+        typer.echo(f"Remote engine: {host}")
     for model in models:
         typer.echo(model)
 
@@ -216,19 +263,27 @@ def ask_command(
     question: Annotated[str, typer.Argument(help="What to ask.")],
     project: Annotated[str, typer.Option("--project", "-p", help="Project id.")],
     engine: Annotated[
-        str, typer.Option(help="own, opencode, nvidia (remote), or auto.")
+        str, typer.Option(help="own, opencode, nvidia or claude (remote), or auto.")
     ] = "auto",
     model: Annotated[str, typer.Option(help="Model name for the engine.")] = "",
     ollama_url: OllamaUrl = ollama.DEFAULT_URL,
     opencode_url: OpenCodeUrl = opencode.DEFAULT_URL,
     nvidia_url: NvidiaUrl = nvidia.DEFAULT_URL,
+    claude_path: ClaudePath = "",
 ) -> None:
     """Ask a question. The engine can read the project's records (read-only)."""
     if engine not in MODES:
         _fail(f"engine must be one of {', '.join(MODES)}; got {engine!r}.")
     http, repository = _guarded(project)
     factories = _factories(
-        http, ollama_url, opencode_url, nvidia_url, model, record_tools(repository)
+        http,
+        ollama_url,
+        opencode_url,
+        nvidia_url,
+        model,
+        record_tools(repository),
+        _guarded_runner(repository),
+        claude_path,
     )
     try:
         choice = select_engine(engine, factories)
