@@ -37,6 +37,11 @@ class HttpGateway(Protocol):
         the outcome is unknown."""
         ...
 
+    def put(self, request: GatewayRequest) -> GatewayResponse:
+        """Send a PUT with ``request.body`` as JSON. As for a POST, no response
+        means the outcome is unknown."""
+        ...
+
 
 class HttpxGateway:
     """Sends GET requests with HTTPX. Redirects are not followed, so a token is
@@ -69,8 +74,14 @@ class HttpxGateway:
         )
 
     def post(self, request: GatewayRequest) -> GatewayResponse:
+        return self._send_body("post", request)
+
+    def put(self, request: GatewayRequest) -> GatewayResponse:
+        return self._send_body("put", request)
+
+    def _send_body(self, method: str, request: GatewayRequest) -> GatewayResponse:
         try:
-            response = self._client.post(
+            response = getattr(self._client, method)(
                 request.url,
                 headers=request.headers,
                 json=request.body,

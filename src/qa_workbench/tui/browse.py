@@ -177,6 +177,8 @@ def case_detail(repository: MarkdownRepository, record_id: str) -> str:
         "Suites: " + (", ".join(as_list(meta.get("suites"))) or "-"),
         "Tags: " + (", ".join(as_list(meta.get("tags"))) or "-"),
     ]
+    if meta.get("gitlab_iid"):
+        lines.append(f"GitLab: #{meta['gitlab_iid']}  {meta.get('gitlab_url') or ''}")
     lines += section("PRECONDITIONS", as_list(meta.get("preconditions")))
     lines += ["", "STEPS", *(f"  {s}" for s in steps or ["  (no steps)"])]
     lines += ["", "EXPECTED RESULT", f"  {meta.get('expected_result') or '(none)'}"]

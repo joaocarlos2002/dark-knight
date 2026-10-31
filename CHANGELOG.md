@@ -27,6 +27,11 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- GitLab test cases: `batman gitlab test-cases` and `test-case` read them, and
+  `batman cases push` (or `G` in the TUI) creates or updates a `test_case` issue
+  in the team's standard layout, after a person approves the exact content. It
+  never duplicates (unchanged is skipped, same title is updated) and an update
+  rewrites only the changed sections (#165).
 - A Review page in the TUI to read, submit, approve, reject, or ask changes on
   the records the AI generated, with its findings and sources, and the same
   rules as `batman review` (no self-approval, a reason for a rejection). The
