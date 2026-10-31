@@ -9,6 +9,10 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- TUI Test Suites and Test Plans pages: browse with search and filters, see
+  members, estimates, last execution, and the plan's selection with reasons;
+  create suites and plans, and add or remove cases, from forms that validate
+  before saving.
 - TUI Requirements and Test Cases pages: searchable, filterable lists with the
   selected record's detail (coverage, acceptance criteria, steps), importing
   requirements from a file and writing a test case from forms that validate

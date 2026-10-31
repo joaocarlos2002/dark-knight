@@ -169,7 +169,8 @@ src/qa_workbench/
     status.py      Status names, symbols, and tones (pure)
     theme.py       Dark theme tokens and shell stylesheet
     data.py        View-models read from records (pure, no widgets)
-    browse.py      Rows and detail text for list + detail pages (pure)
+    browse.py      Rows and detail text for requirements and cases (pure)
+    browse_planning.py  The same for suites and test plans
     pages/         One Page per navigation key: Overview, Projects,
                    Requirements, Test Cases (BrowserPage is their base)
 tests/             Pytest suite mirroring the package layout
@@ -842,10 +843,25 @@ by the CLI in another terminal show up. Pages without a class still show
   `action => expected` separated by `;`); the form refuses an unknown priority,
   no steps, or a requirement id that does not exist, and stays open with what was
   typed until the case can be saved as a draft.
+- **Test suites.** Columns ID, type, status, case count, title. The detail
+  lists the member cases with title and status, the total, the summed estimate
+  (said to be partial when only some cases have one), the latest execution that
+  ran the suite or one of its cases, and a warning for members that no longer
+  exist. `N` creates a draft suite (the type and every case id are checked inside
+  the form), `A` adds cases to the selected suite and `R` removes them; adding a
+  case that is already there, or one that does not exist, keeps the form open
+  with the reason.
+- **Test plans.** Columns ID, status, suites, selected cases, title. The detail
+  shows scope, strategy, objectives, entry and exit criteria, the selected suites
+  with their size, the selection (how many cases are included and excluded, the
+  estimate, and the recorded reason for each inclusion), and risks. A plan with no
+  selection says so and points to `batman plans recommend`. `N` creates a draft
+  plan from a form that checks the suites exist.
 - **Read-only when archived.** On an archived project the lists work and `N`/`I`
   explain that it cannot be changed.
-- **Not here yet.** Test Plans, Test Suites, Executions, and the integration
-  pages are still placeholders; there is no edit or delete from the TUI yet.
+- **Not here yet.** Executions and the integration pages are still
+  placeholders. There is no edit or delete from the TUI yet, and the plan
+  selection (recommendation) and review decisions are still done with the CLI.
 
 ### Keyboard shortcuts
 
