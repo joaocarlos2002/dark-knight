@@ -27,6 +27,10 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- Findings and evidence in the TUI: record, reclassify, and attach evidence on
+  the Bug Hunting page, and an Evidence page to add files and verify their
+  hashes. Files are picked in a folder tree instead of typing a path, and a
+  defect is still refused without enough evidence (#175).
 - A Review page in the TUI to read, submit, approve, reject, or ask changes on
   the records the AI generated, with its findings and sources, and the same
   rules as `batman review` (no self-approval, a reason for a rejection). The

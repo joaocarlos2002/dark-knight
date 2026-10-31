@@ -968,6 +968,15 @@ by the CLI in another terminal show up. Pages without a class still show
   the same service and schema checks as `batman review`, so a record cannot be
   approved by its author or generator: the dialog shows the reason and keeps
   what was typed. The Overview shows how many records wait.
+- **Findings and evidence.** The Bug Hunting page records a finding (`N`; it
+  starts as `suspected`), reclassifies it (`C`: the classification is picked from
+  a list, then who and why, plus how many times it was tried and reproduced), and
+  attaches evidence (`E`). A confirmed defect (`reproduced`) still needs evidence,
+  steps, expected and observed results, and two reproductions: the service says
+  what is missing and the dialog keeps what was typed. The Evidence page adds a
+  file (`A`, which records its SHA-256) and verifies all of it (`V`), reporting
+  any file that no longer matches. Files are chosen with `FileDialog`, a folder
+  tree, so no path is typed.
 - **Alfred's settings** (`Ctrl+O`, saved per project in `ai/alfred.yaml`): engine
   (`own`, `opencode`, `nvidia`, `auto`), model, style (`balanced`, `concise`,
   `detailed`), answer language, and the Ollama, OpenCode, and NVIDIA URLs. They

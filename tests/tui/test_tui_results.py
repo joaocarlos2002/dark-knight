@@ -215,7 +215,7 @@ def test_the_result_pages_list_what_the_cli_saved(tmp_path, project, repo) -> No
 def test_empty_result_pages_say_how_to_fill_them(tmp_path, project) -> None:
     async def scenario(app, pilot) -> None:
         for page, command in (
-            ("bug-hunting", "batman bugs record"),
+            ("bug-hunting", "Press N to record"),
             ("api-testing", "batman api run"),
             ("release-analysis", "batman release analyze"),
             ("security", "batman security-tests run"),
