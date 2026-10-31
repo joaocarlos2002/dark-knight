@@ -202,3 +202,24 @@ def test_python_dash_m_runs_the_same_command() -> None:
 
     assert result.returncode == 0
     assert result.stdout.startswith("Dark Knight QA ")
+
+
+def test_a_single_project_is_opened_automatically(
+    launched: list[WorkbenchApp],
+) -> None:
+    runner.invoke(app, ["project", "create", "Only one"])
+
+    runner.invoke(app, ["--no-splash"])
+
+    assert launched[0].project is not None and launched[0].project.id == "PROJ-001"
+
+
+def test_with_several_projects_the_user_chooses(
+    launched: list[WorkbenchApp],
+) -> None:
+    runner.invoke(app, ["project", "create", "First"])
+    runner.invoke(app, ["project", "create", "Second"])
+
+    runner.invoke(app, ["--no-splash"])
+
+    assert launched[0].project is None
