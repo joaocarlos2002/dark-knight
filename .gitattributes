@@ -1,0 +1,3 @@
+# Both sides add entries to these; keep both instead of conflicting.
+CHANGELOG.md merge=union
+ARCHITECTURE.md merge=union

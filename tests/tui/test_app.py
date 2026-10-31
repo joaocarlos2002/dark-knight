@@ -90,9 +90,20 @@ def test_narrow_menu_closes_after_choosing_a_page() -> None:
     _run((60, 40), scenario)
 
 
+def _unbuilt_page() -> str:
+    """A destination that has no page yet, whichever pages exist today."""
+    from qa_workbench.tui import navigation
+    from qa_workbench.tui.pages import PAGES
+
+    special = {"browser-preview"}  # the app draws this one itself
+    return next(
+        i.key for i in navigation.all_items() if i.key not in {*PAGES, *special}
+    )
+
+
 def test_unavailable_module_is_not_reported_as_working() -> None:
     async def scenario(app: WorkbenchApp, pilot) -> None:
-        app.navigate("executions")
+        app.navigate(_unbuilt_page())
         body = str(app.query_one("#page-body", Static).render())
         assert "PENDING" in body
         assert "not available yet" in body

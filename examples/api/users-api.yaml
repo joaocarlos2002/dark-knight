@@ -1,0 +1,56 @@
+# An API test for `batman api run`. Credentials are never written here: the
+# `env` entries name environment variables that hold them when the test runs.
+#
+#   export API_TOKEN=...            (PowerShell: $env:API_TOKEN = "...")
+#   batman api run examples/api/users-api.yaml -p PROJ-001
+#
+# The host must be one your project may reach (`batman security set --allow-host`).
+name: Users API smoke
+base_url: https://staging.example.com
+timeout_seconds: 10
+steps:
+  - name: service is healthy
+    method: GET
+    url: /health
+    expect:
+      status: 200
+      max_ms: 800
+      json_equals:
+        "$.status": ok
+
+  - name: list users with a valid token
+    method: GET
+    url: /users
+    params:
+      page: "1"
+    auth:
+      type: bearer
+      env: API_TOKEN
+    expect:
+      status: 200
+      json_schema:
+        type: object
+        required: [items]
+        properties:
+          items:
+            type: array
+    extract:
+      first_user_id: "$.items[0].id"
+
+  - name: read one user (uses the id from the previous step)
+    method: GET
+    url: /users/{{first_user_id}}
+    auth:
+      type: bearer
+      env: API_TOKEN
+    expect:
+      status: 200
+      json_schema:
+        type: object
+        required: [id, name]
+
+  - name: anonymous access is refused
+    method: GET
+    url: /users
+    expect:
+      status: [401, 403]

@@ -12,6 +12,21 @@ use the `vMAJOR.MINOR.PATCH` format.
 - The Browser Agent now saves the console messages, page errors, and every
   network request of a run as sanitized `console.json` and `network.json`
   evidence, with failed requests flagged (#42).
+- TUI Pipelines page: read the latest GitLab pipelines on demand through the
+  action guard, with their jobs by stage and failure reasons; every navigation
+  destination now has a page.
+- Documentation (#54): an `examples/` folder (a requirements file, an API test, and a
+  first session end to end, all exercised by the test suite), `RELEASING.md`
+  with the release checks the workflow enforces, and a Security Policy section that
+  states how the application applies its security principles and its known limits.
+- TUI Executions page: follow executions with steps, evidence, and next states,
+  start one from a test case, and move it through its lifecycle with the same
+  validation as the CLI. Form fields can now carry a default value.
+- TUI Bug Hunting, API Testing, Release Analysis, and Security pages: browse the
+  saved results, and approve or deny pending approval requests from the
+  workbench with the audit log's integrity shown.
+- Pages register themselves from their own modules, and the docs merge with the
+  `union` strategy so parallel changes do not conflict.
 - TUI Test Suites and Test Plans pages: browse with search and filters, see
   members, estimates, last execution, and the plan's selection with reasons;
   create suites and plans, and add or remove cases, from forms that validate
@@ -31,9 +46,16 @@ use the `vMAJOR.MINOR.PATCH` format.
   environment unavailable, or inconclusive; a defect is never confirmed without
   steps, expected and observed results, intact evidence, and two reproductions,
   with `batman bugs record|reclassify|list|show` (REQ-032).
+- TUI Knowledge Base page: full-text search across requirements, cases, plans,
+  executions, defects, and the rest, with a kind filter, match snippets, and
+  building or syncing the rebuildable search index.
 - Release analysis from real commits, merge requests, and changed files: explainable
   risk areas, impacted cases, recommended suites, and a regression recommendation,
   saved as sealed `REL` records, with `batman release analyze|list|show` (REQ-032).
+- Alfred, the QA assistant, in the TUI: an AI Agent page with a reusable chat
+  component, `@ID` context attachment, typed answers (facts, hypotheses,
+  recommendations), and per-project settings for engine, model, style, and
+  language (`Ctrl+O`).
 - Authorized security checks: explicit, scoped, expiring, audited authorization;
   passive checks for headers, disclosure, cookies, CORS, HTTPS redirect, and
   unauthenticated access; confirmed findings kept apart from hypotheses; sanitized

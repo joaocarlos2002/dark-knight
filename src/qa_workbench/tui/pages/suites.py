@@ -14,6 +14,7 @@ from qa_workbench.tui.browse import BrowseData
 from qa_workbench.tui.browse_planning import SUITE_COLUMNS, suite_detail, suite_rows
 from qa_workbench.tui.components.form import FormDialog, FormField
 from qa_workbench.tui.pages.browser import BrowserPage
+from qa_workbench.tui.pages.registry import register
 
 NEW_SUITE_FIELDS = (
     FormField("title", "Title", "Smoke", required=True),
@@ -36,6 +37,7 @@ def validate_new_suite(values: dict[str, str]) -> str | None:
     return None
 
 
+@register("test-suites")
 class SuitesPage(BrowserPage):
     noun = "suite"
     columns = SUITE_COLUMNS
