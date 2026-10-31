@@ -9,6 +9,9 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- TUI Pipelines page: read the latest GitLab pipelines on demand through the
+  action guard, with their jobs by stage and failure reasons; every navigation
+  destination now has a page.
 - TUI Test Suites and Test Plans pages: browse with search and filters, see
   members, estimates, last execution, and the plan's selection with reasons;
   create suites and plans, and add or remove cases, from forms that validate

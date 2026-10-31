@@ -171,6 +171,7 @@ src/qa_workbench/
     data.py        View-models read from records (pure, no widgets)
     browse.py      Rows and detail text for requirements and cases (pure)
     browse_planning.py  The same for suites and test plans
+    browse_pipelines.py The same for GitLab pipelines and jobs
     pages/         One Page per navigation key: Overview, Projects,
                    Requirements, Test Cases (BrowserPage is their base)
 tests/             Pytest suite mirroring the package layout
@@ -857,6 +858,20 @@ by the CLI in another terminal show up. Pages without a class still show
   estimate, and the recorded reason for each inclusion), and risks. A plan with no
   selection says so and points to `batman plans recommend`. `N` creates a draft
   plan from a form that checks the suites exist.
+- **Pipelines.** The recent CI pipelines of the project's GitLab repository.
+  Nothing is fetched until the user presses `R`: the read goes through the action
+  guard (the GitLab host must be in the project's allowed hosts, otherwise the page
+  shows the pending approval request instead of reading), runs in a worker thread,
+  and keeps the result only in memory, because a pipeline is the server's current
+  word and not a record of the project. Selecting a pipeline loads its jobs in the
+  background and shows them by stage, with each job's failure reason, jobs that
+  are allowed to fail marked as such, and the failed jobs named with a pointer to
+  `batman gitlab log`. States use the specification's names (an unknown GitLab
+  status is shown as the server's own word), a reported success is labelled as the
+  server's word and not a test result, and an unfinished pipeline says nothing can
+  be concluded. A missing token, a rejected token, an unreachable server, or a
+  project without a repository URL are shown as errors with their reason, never as
+  an empty list.
 - **Read-only when archived.** On an archived project the lists work and `N`/`I`
   explain that it cannot be changed.
 - **Not here yet.** Executions and the integration pages are still
