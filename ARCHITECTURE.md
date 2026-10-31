@@ -845,6 +845,14 @@ by the CLI in another terminal show up. Pages without a class still show
   `action => expected` separated by `;`); the form refuses an unknown priority,
   no steps, or a requirement id that does not exist, and stays open with what was
   typed until the case can be saved as a draft.
+- **Knowledge Base.** Full-text search over every record kind through
+  `RecordIndex` (SQLite FTS5), a disposable cache of the Markdown files: Enter
+  searches (every word as a prefix, ignoring case and accents), `F` narrows to one
+  record kind, and the detail shows the match snippet and the whole record. With
+  no index the page says so and `B` builds it; opening or reloading the page
+  syncs only the files that changed. A damaged index is reported as "Search is
+  unavailable" with the reason, never as an empty result, and damaged records are
+  counted as not indexed.
 - **Test suites.** Columns ID, type, status, case count, title. The detail
   lists the member cases with title and status, the total, the summed estimate
   (said to be partial when only some cases have one), the latest execution that

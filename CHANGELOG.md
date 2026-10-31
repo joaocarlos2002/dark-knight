@@ -40,6 +40,9 @@ use the `vMAJOR.MINOR.PATCH` format.
   environment unavailable, or inconclusive; a defect is never confirmed without
   steps, expected and observed results, intact evidence, and two reproductions,
   with `batman bugs record|reclassify|list|show` (REQ-032).
+- TUI Knowledge Base page: full-text search across requirements, cases, plans,
+  executions, defects, and the rest, with a kind filter, match snippets, and
+  building or syncing the rebuildable search index.
 - Release analysis from real commits, merge requests, and changed files: explainable
   risk areas, impacted cases, recommended suites, and a regression recommendation,
   saved as sealed `REL` records, with `batman release analyze|list|show` (REQ-032).
