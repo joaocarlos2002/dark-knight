@@ -37,6 +37,7 @@ from qa_workbench.ai.errors import (
     ProviderUnavailable,
 )
 from qa_workbench.ai.http import JsonHttp, JsonResponse, TransportFailure
+from qa_workbench.security.credentials import CredentialError, default_environment
 
 DEFAULT_URL = "http://127.0.0.1:4096"
 NAME = "opencode"
@@ -55,12 +56,13 @@ class OpenCodeProvider:
         model: str = "",
         environment: Mapping[str, str] | None = None,
     ) -> None:
-        import os
-
         self._http = http
         self._base = base_url.rstrip("/")
         self._model = model
-        self._environment = os.environ if environment is None else environment
+        # The environment first, then the value kept with `batman config token`.
+        self._environment = (
+            default_environment() if environment is None else environment
+        )
 
     # -- availability --------------------------------------------------------
 
@@ -69,6 +71,8 @@ class OpenCodeProvider:
             response = self._http.request(
                 "GET", f"{self._base}/global/health", headers=self._auth(), timeout=5
             )
+        except ProviderUnavailable as error:
+            return Availability(False, str(error))
         except TransportFailure as error:
             return Availability(
                 False,
@@ -78,7 +82,8 @@ class OpenCodeProvider:
         if response.status in (401, 403):
             return Availability(
                 False,
-                "OpenCode rejected the credentials. Set OPENCODE_SERVER_PASSWORD "
+                "OpenCode rejected the credentials. Keep the password with "
+                "`batman config token set opencode` or set OPENCODE_SERVER_PASSWORD "
                 "(and OPENCODE_SERVER_USERNAME if you changed it).",
             )
         body = response.body
@@ -156,7 +161,10 @@ class OpenCodeProvider:
     # -- internals -----------------------------------------------------------
 
     def _auth(self) -> dict[str, str]:
-        password = self._environment.get("OPENCODE_SERVER_PASSWORD", "")
+        try:
+            password = self._environment.get("OPENCODE_SERVER_PASSWORD", "")
+        except CredentialError as error:
+            raise ProviderUnavailable(NAME, str(error)) from error
         if not password:
             return {}
         user = self._environment.get("OPENCODE_SERVER_USERNAME", "opencode")

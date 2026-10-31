@@ -20,7 +20,11 @@ from pathlib import Path
 
 FILE_NAME = "credentials.json"
 # Friendly names for the services the workbench knows about.
-SERVICES = {"gitlab": "GITLAB_TOKEN", "nvidia": "NVIDIA_API_KEY"}
+SERVICES = {
+    "gitlab": "GITLAB_TOKEN",
+    "nvidia": "NVIDIA_API_KEY",
+    "opencode": "OPENCODE_SERVER_PASSWORD",
+}
 _NAME = re.compile(r"^[A-Z][A-Z0-9_]{1,63}$")
 _MAX_LENGTH = 4096
 
