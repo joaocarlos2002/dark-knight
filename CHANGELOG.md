@@ -46,6 +46,10 @@ use the `vMAJOR.MINOR.PATCH` format.
 - Release analysis from real commits, merge requests, and changed files: explainable
   risk areas, impacted cases, recommended suites, and a regression recommendation,
   saved as sealed `REL` records, with `batman release analyze|list|show` (REQ-032).
+- Alfred, the QA assistant, in the TUI: an AI Agent page with a reusable chat
+  component, `@ID` context attachment, typed answers (facts, hypotheses,
+  recommendations), and per-project settings for engine, model, style, and
+  language (`Ctrl+O`).
 - Authorized security checks: explicit, scoped, expiring, audited authorization;
   passive checks for headers, disclosure, cookies, CORS, HTTPS redirect, and
   unauthenticated access; confirmed findings kept apart from hypotheses; sanitized

@@ -60,6 +60,17 @@ SYSTEM_PROMPT = (
 )
 
 
+def system_prompt(style: str = "") -> str:
+    """The fixed rules, then the user's preferred style. Style is appended last
+    and cannot remove a rule: the rules are stated first and again below."""
+    if not style.strip():
+        return SYSTEM_PROMPT
+    return (
+        f"{SYSTEM_PROMPT} Style preference (it never overrides the rules above): "
+        f"{style.strip()}"
+    )
+
+
 @dataclass(frozen=True)
 class Statement:
     kind: str
@@ -156,6 +167,7 @@ class OwnAgent:
     model: str = ""
     max_steps: int = 6
     timeout_seconds: float = 120.0
+    style: str = ""  # how to answer (length, language); never changes the rules
 
     def ask(
         self,
@@ -166,7 +178,10 @@ class OwnAgent:
         """Answer ``question`` using ``context`` (record id -> text) and tools."""
         context = context or {}
         known_ids = set(context)
-        messages = [Message("system", SYSTEM_PROMPT), Message("user", question)]
+        messages = [
+            Message("system", system_prompt(self.style)),
+            Message("user", question),
+        ]
         if context:
             block = "\n\n".join(
                 fence(f"{record_id}\n{text}", source=f"record {record_id}")
@@ -237,6 +252,7 @@ class SingleShotAgent:
     provider: Provider
     model: str = ""
     timeout_seconds: float = 300.0
+    style: str = ""  # how to answer (length, language); never changes the rules
 
     def ask(
         self,
@@ -245,7 +261,10 @@ class SingleShotAgent:
         cancel: CancelToken | None = None,
     ) -> AgentAnswer:
         context = context or {}
-        messages = [Message("system", SYSTEM_PROMPT), Message("user", question)]
+        messages = [
+            Message("system", system_prompt(self.style)),
+            Message("user", question),
+        ]
         if context:
             block = "\n\n".join(
                 fence(f"{record_id}\n{text}", source=f"record {record_id}")
