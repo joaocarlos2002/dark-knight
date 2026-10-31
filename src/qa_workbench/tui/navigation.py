@@ -50,6 +50,13 @@ SECTIONS: tuple[NavSection, ...] = (
             NavItem("knowledge-base", "Knowledge Base"),
         ),
     ),
+    NavSection(
+        "SYSTEM",
+        (
+            NavItem("reports", "Reports"),
+            NavItem("settings", "Settings"),
+        ),
+    ),
 )
 
 DEFAULT_KEY = "overview"

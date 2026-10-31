@@ -9,9 +9,20 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
-- The Browser Agent now saves the console messages, page errors, and every
-  network request of a run as sanitized `console.json` and `network.json`
-  evidence, with failed requests flagged (#42).
+- TUI Reports page (spec 4.16): browse saved execution and traceability reports,
+  list all evidence records with integrity status (intact/tampered), and inspect
+  evidence with the new `EvidenceViewer` component showing file metadata, SHA-256
+  verification result, problems, and content preview (text/JSON first 50 lines,
+  images via half-block rendering). `G` regenerates the execution report for a
+  selected saved report (#100).
+- TUI Settings page (spec 4.19): view and edit global shortcuts (config.toml),
+  per-project security settings (autonomy mode, allowed hosts, rate limits) with
+  audit log entry on change, and browser defaults. Security form validates before
+  saving; no secrets stored in files (#100).
+- `EvidenceViewer` component in `tui/components/`: displays an EVD record with
+  verification status, file details, and content preview.
+- `DataTable.Highlighted` message now includes `table_id` to support pages with
+  multiple tables.
 - TUI Pipelines page: read the latest GitLab pipelines on demand through the
   action guard, with their jobs by stage and failure reasons; every navigation
   destination now has a page.

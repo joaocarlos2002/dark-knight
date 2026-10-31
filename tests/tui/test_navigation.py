@@ -23,6 +23,7 @@ def test_sections_follow_the_visual_specification() -> None:
         "WORKSPACE",
         "OPERATIONS",
         "INTELLIGENCE",
+        "SYSTEM",
     ]
     assert [item.title for item in all_items()] == [
         "Projects",
@@ -40,4 +41,6 @@ def test_sections_follow_the_visual_specification() -> None:
         "Release Analysis",
         "Pipelines",
         "Knowledge Base",
+        "Reports",
+        "Settings",
     ]
