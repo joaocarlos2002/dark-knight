@@ -220,6 +220,10 @@ approve, `X` to reject, or `C` to ask for changes. The same steps exist as
 `batman review pending|submit|decide`. A record cannot be approved by whoever
 wrote it or generated it.
 
+Findings and evidence can be handled in the TUI too. On the Bug Hunting page,
+`N` records a finding, `E` attaches a file from a folder tree, and `C`
+reclassifies it (a confirmed defect needs evidence and two reproductions). The
+Evidence page adds files with `A` and checks their hashes with `V`.
 The team's boards span the whole group, so a column can be read across all of
 its projects: `batman gitlab board -p PROJ-001 --labels team::dev,workflow::QA`
 (a board's filter label and a column label; both are required). `batman gitlab

@@ -45,5 +45,6 @@ def test_sections_follow_the_visual_specification() -> None:
         "Repository",
         "Knowledge Base",
         "Reports",
+        "Evidence",
         "Settings",
     ]

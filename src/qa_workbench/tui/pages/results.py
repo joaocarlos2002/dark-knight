@@ -3,31 +3,14 @@
 from qa_workbench.tui.browse import BrowseData
 from qa_workbench.tui.browse_results import (
     API_COLUMNS,
-    BUG_COLUMNS,
     RELEASE_COLUMNS,
     api_detail,
     api_rows,
-    bug_detail,
-    bug_rows,
     release_detail,
     release_rows,
 )
 from qa_workbench.tui.pages.browser import BrowserPage
 from qa_workbench.tui.pages.registry import register
-
-
-@register("bug-hunting")
-class BugHuntingPage(BrowserPage):
-    noun = "finding"
-    columns = BUG_COLUMNS
-    empty_message = "No findings yet."
-    empty_hint = "Record one with `batman bugs record` (a defect needs evidence)."
-
-    def load(self) -> BrowseData:
-        return bug_rows(self.context.repository())
-
-    def describe(self, key: str) -> str:
-        return bug_detail(self.context.repository(), key)
 
 
 @register("api-testing")

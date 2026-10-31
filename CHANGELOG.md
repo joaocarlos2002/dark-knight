@@ -27,6 +27,10 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- Findings and evidence in the TUI: record, reclassify, and attach evidence on
+  the Bug Hunting page, and an Evidence page to add files and verify their
+  hashes. Files are picked in a folder tree instead of typing a path, and a
+  defect is still refused without enough evidence (#175).
 - Group-wide boards: `batman gitlab board --labels FILTER,COLUMN` reads a board
   column across every project of the group, `issue-links` shows an issue's
   related issues and merge requests, and a Board page does both in the TUI.
