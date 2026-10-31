@@ -146,6 +146,16 @@ class StoredEnvironment(Mapping[str, str]):
         return "stored" if variable in self._stored() else None
 
 
+def token_report(store: CredentialStore | None) -> list[tuple[str, str | None]]:
+    """Each known service's variable and where its token comes from
+    (``environment``, ``stored``, or ``None``). Never a value."""
+    environment = StoredEnvironment(store)
+    names = dict.fromkeys(
+        [*SERVICES.values(), *(store.names() if store is not None else [])]
+    )
+    return [(name, environment.source_of(name)) for name in names]
+
+
 def default_store() -> CredentialStore | None:
     """The store in the user's configuration directory, or ``None`` if there is
     no usable configuration (the environment still works)."""

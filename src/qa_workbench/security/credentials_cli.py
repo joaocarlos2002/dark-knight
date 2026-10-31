@@ -9,8 +9,8 @@ from qa_workbench.security.credentials import (
     SERVICES,
     CredentialError,
     CredentialStore,
-    StoredEnvironment,
     default_store,
+    token_report,
     variable_for,
 )
 
@@ -72,10 +72,7 @@ def show_command() -> None:
     """Show which tokens are set and where they come from, never their values."""
     store = _store()
     try:
-        environment = StoredEnvironment(store)
-        names = list(dict.fromkeys([*SERVICES.values(), *store.names()]))
-        for variable in names:
-            source = environment.source_of(variable)
+        for variable, source in token_report(store):
             state = f"set ({source})" if source else "not set"
             typer.echo(f"{variable:<24} {state}")
     except CredentialError as error:
