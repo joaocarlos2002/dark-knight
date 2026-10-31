@@ -1,20 +1,13 @@
 """The pages of the workbench, by navigation key."""
 
+import importlib
+import pkgutil
+
 from qa_workbench.tui.pages.base import Page, PageContext
-from qa_workbench.tui.pages.cases import TestCasesPage
-from qa_workbench.tui.pages.overview import OverviewPage
-from qa_workbench.tui.pages.plans import PlansPage
-from qa_workbench.tui.pages.projects import ProjectsPage
-from qa_workbench.tui.pages.requirements import RequirementsPage
-from qa_workbench.tui.pages.suites import SuitesPage
+from qa_workbench.tui.pages.registry import PAGES, register
 
-PAGES: dict[str, type[Page]] = {
-    "overview": OverviewPage,
-    "projects": ProjectsPage,
-    "requirements": RequirementsPage,
-    "test-cases": TestCasesPage,
-    "test-plans": PlansPage,
-    "test-suites": SuitesPage,
-}
+# Importing a module registers its page.
+for _module in pkgutil.iter_modules(__path__):
+    importlib.import_module(f"{__name__}.{_module.name}")
 
-__all__ = ["PAGES", "Page", "PageContext"]
+__all__ = ["PAGES", "Page", "PageContext", "register"]

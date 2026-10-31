@@ -171,6 +171,8 @@ src/qa_workbench/
     data.py        View-models read from records (pure, no widgets)
     browse.py      Rows and detail text for requirements and cases (pure)
     browse_planning.py  The same for suites and test plans
+    browse_executions.py  The same for executions and their next states
+    browse_results.py   The same for defects, API runs, releases, security
     pages/         One Page per navigation key: Overview, Projects,
                    Requirements, Test Cases (BrowserPage is their base)
 tests/             Pytest suite mirroring the package layout
@@ -857,6 +859,33 @@ by the CLI in another terminal show up. Pages without a class still show
   estimate, and the recorded reason for each inclusion), and risks. A plan with no
   selection says so and points to `batman plans recommend`. `N` creates a draft
   plan from a form that checks the suites exist.
+- **Executions.** Newest first, with the state shown as a symbol *and* its name
+  (created, planned, awaiting approval, running, passed, failed, blocked, ...). The
+  detail shows the case, type, executor, environment, version, plan, suite, and
+  duration; the steps with their marks (`[x]` passed, `[!]` failed, `[-]` blocked,
+  `[~]` skipped, `[>]` in progress) and what was observed; the observed result and
+  failure type; evidence and defects; and the states it can move to next. `N`
+  starts an execution from a test case (the case must exist and be active, except
+  for exploratory runs), `M` moves the selected one to its next state: the form
+  offers only the states the lifecycle allows, and the same checks as the CLI run
+  (a passed execution needs steps and evidence, a failure needs a failure type, an
+  approval-gated one needs an approver). A refusal keeps the form open with the
+  reason. A finalized execution says it is final, and steps are still recorded
+  with `batman executions` so each one is saved before and after it runs.
+- **Result pages.** Bug Hunting (`BUG`), API Testing (`API`), and Release
+  Analysis (`REL`) are list + detail pages over records the CLI saved: a header
+  from the metadata followed by the readable Markdown body written when the record
+  was saved (API requests and responses are the sanitized copies; a defect also
+  shows its classification history). They are read-only: results are created by
+  the commands that produce evidence.
+- **Security.** One list of approval requests (`APR-...`) and security-check runs
+  (`SEC-...`) with the audit log's health in the summary line (`Audit log intact:
+  N entries`, or the damage if the hash chain is broken, in which case the
+  approvals are not listed rather than trusted). `A` approves and `D` denies the
+  selected pending request through a form that asks for the person's name (and a
+  reason for a denial); the same rules as `batman security approve|deny` apply,
+  so the requester cannot decide their own request and a decided request cannot
+  be decided again.
 - **Read-only when archived.** On an archived project the lists work and `N`/`I`
   explain that it cannot be changed.
 - **Not here yet.** Executions and the integration pages are still

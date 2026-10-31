@@ -13,6 +13,14 @@ use the `vMAJOR.MINOR.PATCH` format.
   first session end to end, all exercised by the test suite), `RELEASING.md`
   with the release checks the workflow enforces, and a Security Policy section that
   states how the application applies its security principles and its known limits.
+- TUI Executions page: follow executions with steps, evidence, and next states,
+  start one from a test case, and move it through its lifecycle with the same
+  validation as the CLI. Form fields can now carry a default value.
+- TUI Bug Hunting, API Testing, Release Analysis, and Security pages: browse the
+  saved results, and approve or deny pending approval requests from the
+  workbench with the audit log's integrity shown.
+- Pages register themselves from their own modules, and the docs merge with the
+  `union` strategy so parallel changes do not conflict.
 - TUI Test Suites and Test Plans pages: browse with search and filters, see
   members, estimates, last execution, and the plan's selection with reasons;
   create suites and plans, and add or remove cases, from forms that validate

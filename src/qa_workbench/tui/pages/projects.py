@@ -14,6 +14,7 @@ from qa_workbench.tui.components.form import FormDialog, FormField
 from qa_workbench.tui.components.table import DataTable
 from qa_workbench.tui.data import project_rows
 from qa_workbench.tui.pages.base import Page
+from qa_workbench.tui.pages.registry import register
 
 NEW_PROJECT_FIELDS = (
     FormField("name", "Name", "Checkout service", required=True),
@@ -36,6 +37,7 @@ def validate_new_project(values: dict[str, str]) -> str | None:
     return None
 
 
+@register("projects")
 class ProjectsPage(Page):
     BINDINGS = [
         Binding("n", "new_project", "New"),
