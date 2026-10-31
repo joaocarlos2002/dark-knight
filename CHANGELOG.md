@@ -9,6 +9,9 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- Authorized browser navigation: every navigation goes through the action guard,
+  a project's allowed hosts are enforced inside Chromium (including redirects and
+  subresources), and without a project only local addresses open (#41, #44).
 - Bug hunting: `BUG` records classified as reproduced, suspected, false positive,
   environment unavailable, or inconclusive; a defect is never confirmed without
   steps, expected and observed results, intact evidence, and two reproductions,

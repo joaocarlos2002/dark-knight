@@ -33,7 +33,9 @@ class PlaywrightDriver:
             ) from error
         playwright = sync_playwright().start()
         try:
-            browser = playwright.chromium.launch(headless=options.headless)
+            browser = playwright.chromium.launch(
+                headless=options.headless, args=_network_args(options.allowed_hosts)
+            )
         except Error as error:
             playwright.stop()
             raise BrowserSetupError(
@@ -46,9 +48,50 @@ class PlaywrightDriver:
         context = browser.new_context(**context_options)
         if options.trace:
             context.tracing.start(screenshots=True, snapshots=True)
+        if options.allow_request is not None:
+            _block_unauthorized(context, options.allow_request, observations)
         page = context.new_page()
         _observe(page, observations)
         return PlaywrightSession(playwright, browser, context, page, options)
+
+
+_LOCAL_SCHEMES = ("data:", "blob:", "about:")
+
+
+def _network_args(allowed_hosts: tuple[str, ...] | None) -> list[str]:
+    """Chromium flags that make every host outside ``allowed_hosts`` unresolvable.
+
+    A leading-dot entry (``.example.com``) allows its subdomains.
+    """
+    if allowed_hosts is None:
+        return []
+    excluded = [
+        f"EXCLUDE *{host}" if host.startswith(".") else f"EXCLUDE {host}"
+        for host in allowed_hosts
+    ]
+    return ["--host-resolver-rules=" + ", ".join(["MAP * ~NOTFOUND", *excluded])]
+
+
+def _block_unauthorized(context: Any, allow: Any, observations: Observations) -> None:
+    """Abort every request the filter refuses (pages, scripts, images, redirects)."""
+
+    def handler(route: Any) -> None:
+        request = route.request
+        if request.url.startswith(_LOCAL_SCHEMES) or allow(request.url):
+            route.continue_()
+            return
+        observations.network.append(
+            NetworkEntry(
+                request.method,
+                redact_url(request.url),
+                None,
+                request.resource_type,
+                failure="blocked: host not authorized",
+            )
+        )
+        route.abort("blockedbyclient")
+
+    context.route("**/*", handler)
 
 
 def _first_line(error: BaseException) -> str:
