@@ -169,7 +169,9 @@ src/qa_workbench/
     status.py      Status names, symbols, and tones (pure)
     theme.py       Dark theme tokens and shell stylesheet
     data.py        View-models read from records (pure, no widgets)
-    pages/         One Page per navigation key: Overview, Projects
+    browse.py      Rows and detail text for list + detail pages (pure)
+    pages/         One Page per navigation key: Overview, Projects,
+                   Requirements, Test Cases (BrowserPage is their base)
 tests/             Pytest suite mirroring the package layout
 ```
 
@@ -821,8 +823,29 @@ by the CLI in another terminal show up. Pages without a class still show
   several, or none, the user chooses from Projects.
 - **Reusable.** `FormDialog` collects labelled fields, marks required ones, and
   keeps the dialog open with the error shown inline.
-- **Not here yet.** Requirements, Test Cases, Test Plans, Test Suites,
-  Executions, and the integration pages are still placeholders.
+- **List + detail pages.** `BrowserPage` is the base for pages that browse
+  records: a search box (`Ctrl+K` goes to the search of the *visible* page; every
+  word must match the id, title, status, priority, or tags), a status filter
+  cycled with `F`, a table, and the selected record's detail below it, which follows
+  the cursor. Damaged records are counted under the list instead of being hidden.
+  `tui/browse.py` builds the rows and detail text without widgets.
+- **Requirements.** Columns ID, priority, status, cases, title; the cases column
+  says `N case(s)` or `NOT COVERED`, from the same coverage rule as
+  `batman requirements coverage` (there is no coverage percentage because
+  criteria are not tracked per case). Detail shows source, author, tags,
+  acceptance criteria, related cases by title, cases that are named but missing,
+  reviews, and the description. `I` imports a `.md` or `.txt` file through a form
+  and reports how many were imported, skipped, and rejected.
+- **Test cases.** Columns ID, priority, status, type, title; detail shows the
+  objective, requirements, suites, tags, preconditions, numbered steps with what
+  to observe, and the expected result. `N` opens a form (steps are written as
+  `action => expected` separated by `;`); the form refuses an unknown priority,
+  no steps, or a requirement id that does not exist, and stays open with what was
+  typed until the case can be saved as a draft.
+- **Read-only when archived.** On an archived project the lists work and `N`/`I`
+  explain that it cannot be changed.
+- **Not here yet.** Test Plans, Test Suites, Executions, and the integration
+  pages are still placeholders; there is no edit or delete from the TUI yet.
 
 ### Keyboard shortcuts
 

@@ -9,6 +9,10 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- TUI Requirements and Test Cases pages: searchable, filterable lists with the
+  selected record's detail (coverage, acceptance criteria, steps), importing
+  requirements from a file and writing a test case from forms that validate
+  before saving.
 - TUI pages: Overview with the project's real numbers and recent executions, and
   Projects to choose, create, and archive projects from the workbench; `Ctrl+R`
   reloads the page from disk, and `batman` opens the only project automatically.

@@ -37,6 +37,7 @@ class FormDialog(ModalScreen["dict[str, str] | None"]):
         *,
         submit_label: str = "Save",
         validate: Validator | None = None,
+        commit: Validator | None = None,
     ) -> None:
         if not title.strip() or not fields:
             raise ValueError("FormDialog needs a title and at least one field.")
@@ -48,6 +49,9 @@ class FormDialog(ModalScreen["dict[str, str] | None"]):
         self._fields = tuple(fields)
         self._submit_label = submit_label
         self._validate = validate
+        # Does the work on submit. A returned message keeps the dialog open with
+        # what was typed; ``None`` means it worked and the dialog closes.
+        self._commit = commit
 
     def compose(self) -> ComposeResult:
         with Vertical():
@@ -79,6 +83,8 @@ class FormDialog(ModalScreen["dict[str, str] | None"]):
     def _submit(self) -> None:
         values = self.values()
         error = self.error_for(values)
+        if not error and self._commit is not None:
+            error = self._commit(values)
         if error:
             self.query_one("#form-error", Static).update(error)
             return
