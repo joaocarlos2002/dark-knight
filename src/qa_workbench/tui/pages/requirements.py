@@ -17,6 +17,7 @@ from qa_workbench.tui.browse import (
 )
 from qa_workbench.tui.components.form import FormDialog, FormField
 from qa_workbench.tui.pages.browser import BrowserPage
+from qa_workbench.tui.pages.registry import register
 
 IMPORT_FIELDS = (
     FormField(
@@ -27,6 +28,7 @@ IMPORT_FIELDS = (
 )
 
 
+@register("requirements")
 class RequirementsPage(BrowserPage):
     noun = "requirement"
     columns = REQUIREMENT_COLUMNS

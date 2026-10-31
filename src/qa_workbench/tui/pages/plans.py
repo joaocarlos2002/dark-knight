@@ -8,6 +8,7 @@ from qa_workbench.tui.browse import BrowseData
 from qa_workbench.tui.browse_planning import PLAN_COLUMNS, plan_detail, plan_rows
 from qa_workbench.tui.components.form import FormDialog, FormField
 from qa_workbench.tui.pages.browser import BrowserPage
+from qa_workbench.tui.pages.registry import register
 
 NEW_PLAN_FIELDS = (
     FormField("title", "Title", "Release 1.5 campaign", required=True),
@@ -40,6 +41,7 @@ def draft_from(values: dict[str, str]) -> PlanDraft:
     )
 
 
+@register("test-plans")
 class PlansPage(BrowserPage):
     noun = "plan"
     columns = PLAN_COLUMNS
