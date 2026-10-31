@@ -12,6 +12,11 @@ use the `vMAJOR.MINOR.PATCH` format.
 - TUI Knowledge Base page: full-text search across requirements, cases, plans,
   executions, defects, and the rest, with a kind filter, match snippets, and
   building or syncing the rebuildable search index.
+- TUI Bug Hunting, API Testing, Release Analysis, and Security pages: browse the
+  saved results, and approve or deny pending approval requests from the
+  workbench with the audit log's integrity shown.
+- Pages register themselves from their own modules, and the docs merge with the
+  `union` strategy so parallel changes do not conflict.
 - TUI Test Suites and Test Plans pages: browse with search and filters, see
   members, estimates, last execution, and the plan's selection with reasons;
   create suites and plans, and add or remove cases, from forms that validate
