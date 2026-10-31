@@ -40,6 +40,7 @@ _DEFAULTS: tuple[Shortcut, ...] = (
     Shortcut(
         "toggle_browser_pause", "f6", "Pause or resume the running browser", "Pause"
     ),
+    Shortcut("refresh", "ctrl+r", "Reload the current page from disk", "Refresh"),
     Shortcut("go_back", "escape", "Close a dialog or go back one level", "Back"),
     Shortcut("help", "question_mark", "Show the keyboard shortcuts", "Help"),
     Shortcut("quit", "ctrl+q", "Quit the workbench", "Quit"),

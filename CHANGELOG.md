@@ -9,6 +9,10 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- TUI pages: Overview with the project's real numbers and recent executions, and
+  Projects to choose, create, and archive projects from the workbench; `Ctrl+R`
+  reloads the page from disk, and `batman` opens the only project automatically.
+- A form dialog component with inline validation.
 - Authorized browser navigation: every navigation goes through the action guard,
   a project's allowed hosts are enforced inside Chromium (including redirects and
   subresources), and without a project only local addresses open (#41, #44).

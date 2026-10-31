@@ -233,6 +233,67 @@ ConfirmationDialog Button {
     margin-left: 1;
 }
 
+FormDialog {
+    align: center middle;
+}
+
+FormDialog > Vertical {
+    width: 70;
+    max-width: 95%;
+    height: auto;
+    padding: 1 2;
+    background: $dark-concrete;
+    border: solid $signal-red;
+}
+
+FormDialog #dialog-title {
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+FormDialog .form-label {
+    color: $ash-gray;
+    margin-top: 1;
+}
+
+FormDialog #form-error {
+    color: $alert;
+    height: auto;
+    margin-top: 1;
+}
+
+FormDialog Horizontal {
+    height: auto;
+    align-horizontal: right;
+    margin-top: 1;
+}
+
+FormDialog Button {
+    margin-left: 1;
+}
+
+#overview-metrics {
+    height: auto;
+    width: 100%;
+    margin: 1 0;
+}
+
+#overview-metrics .metric-panel {
+    width: 1fr;
+    min-width: 10;
+    padding: 0 1;
+}
+
+.section-title {
+    text-style: bold;
+    color: $dirty-white;
+    margin-top: 1;
+}
+
+.page-hint {
+    color: $ash-gray;
+}
+
 /* Primary actions use Wayne Red; destructive ones use the alert color. */
 Button {
     background: $dark-concrete;

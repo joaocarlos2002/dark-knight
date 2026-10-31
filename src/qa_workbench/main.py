@@ -131,11 +131,12 @@ def _open_workbench(
     try:
         config = config if config is not None else AppConfig.load()
         keymap = Keymap.from_overrides(config.shortcuts)
-        opened = (
-            ProjectRepository(config.data_dir).open(project)
-            if project is not None
-            else None
-        )
+        projects = ProjectRepository(config.data_dir)
+        opened = projects.open(project) if project is not None else None
+        if opened is None:
+            # With exactly one active project there is nothing to choose.
+            active = projects.list_projects().projects
+            opened = active[0] if len(active) == 1 else None
     except (ConfigurationError, KeymapError, ProjectError) as error:
         typer.echo(f"Error: {error}", err=True)
         raise typer.Exit(1) from error
@@ -143,7 +144,9 @@ def _open_workbench(
         if is_interactive():
             ensure_edits(config)
         play_startup_splash(config)
-    WorkbenchApp(opened, keymap, preview_channel(config)).run()
+    WorkbenchApp(
+        opened, keymap, preview_channel(config), data_dir=config.data_dir
+    ).run()
 
 
 @app.command()

@@ -1,5 +1,7 @@
 """The record kinds of a project and how to open its repository."""
 
+from pathlib import Path
+
 from qa_workbench.api.records import API_SCHEMA
 from qa_workbench.bughunt.schema import BUG_SCHEMA
 from qa_workbench.core.config import AppConfig
@@ -7,6 +9,7 @@ from qa_workbench.executions.schema import EXECUTION_SCHEMA
 from qa_workbench.plans.schema import REVIEW_POLICY as PLAN_REVIEW
 from qa_workbench.plans.schema import TEST_PLAN_SCHEMA
 from qa_workbench.projects.errors import ProjectStateError
+from qa_workbench.projects.models import Project
 from qa_workbench.projects.repository import ProjectRepository
 from qa_workbench.publishing.schema import COMMENT_SCHEMA
 from qa_workbench.release.records import RELEASE_SCHEMA
@@ -51,10 +54,15 @@ def open_repository(project_id: str, *, writable: bool = True) -> MarkdownReposi
     ``ProjectStateError`` when writing to an archived one.
     """
     config = AppConfig.load()
-    projects = ProjectRepository(config.data_dir)
-    project = projects.open(project_id)
+    project = ProjectRepository(config.data_dir).open(project_id)
     if writable and project.archived:
         raise ProjectStateError(
             f"Project {project.id} is archived and cannot be changed."
         )
-    return MarkdownRepository(projects.root / project.id, all_schemas())
+    return repository_for(config.data_dir, project)
+
+
+def repository_for(data_dir: Path, project: Project) -> MarkdownRepository:
+    """The record repository of an already opened project."""
+    root = ProjectRepository(data_dir).root
+    return MarkdownRepository(root / project.id, all_schemas())

@@ -23,6 +23,7 @@ SECTIONS: tuple[NavSection, ...] = (
     NavSection(
         "WORKSPACE",
         (
+            NavItem("projects", "Projects"),
             NavItem("overview", "Overview"),
             NavItem("requirements", "Requirements"),
             NavItem("test-cases", "Test Cases"),
