@@ -9,6 +9,9 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- TUI Executions page: follow executions with steps, evidence, and next states,
+  start one from a test case, and move it through its lifecycle with the same
+  validation as the CLI. Form fields can now carry a default value.
 - TUI Test Suites and Test Plans pages: browse with search and filters, see
   members, estimates, last execution, and the plan's selection with reasons;
   create suites and plans, and add or remove cases, from forms that validate
