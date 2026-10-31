@@ -174,6 +174,17 @@ The password of a protected OpenCode server is kept the same way:
 `batman config token set opencode` (the user name stays `opencode` unless
 `OPENCODE_SERVER_USERNAME` says otherwise).
 
+A hosted model is available through the NVIDIA API Catalog. It is remote, so it
+is opt-in: keep the key with `batman config token set nvidia` (or set
+`NVIDIA_API_KEY`), allow the host for the project with
+`batman security set -p PROJ-001 --allow-host integrate.api.nvidia.com --by NAME`,
+then `batman ai models -p PROJ-001` lists the models the key can use and
+`batman ai ask "..." -p PROJ-001 --engine nvidia --model MODEL` asks one. In
+Alfred, `Ctrl+G` picks the model. `auto` never uses it, `batman ai status -p
+PROJ-001` shows whether it is reachable, and `batman doctor` shows whether a key
+is present. Questions and the records they mention leave your machine; secrets
+are redacted first and nothing is sent to a host you did not allow.
+
 To upgrade, run `uv tool upgrade dark-knight-qa` (or `pipx upgrade
 dark-knight-qa`). The first run creates its data folder on its own; where it
 lives and how to change it is described under Contributing below.

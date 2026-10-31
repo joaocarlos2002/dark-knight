@@ -9,6 +9,15 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- A hosted AI engine: `batman ai ask --engine nvidia --model MODEL` uses the NVIDIA
+  API Catalog (OpenAI-compatible, configurable URL). `batman ai models` lists the
+  models the key can use and Alfred's `Ctrl+G` picks one. It is remote, so `auto`
+  never chooses it, the UI says data left the machine, secrets are redacted first,
+  and the key (`NVIDIA_API_KEY` or `batman config token set nvidia`) is never
+  printed, logged, or audited. All AI engine requests now go through the action
+  guard and the audit log: a host that is not allowed gets nothing and the message
+  says how to allow it. `batman ai status -p ID` and `batman doctor` show
+  reachability and key presence (#159).
 - `batman config token set|show|remove`: keep API tokens in the application
   instead of exporting them in every terminal. Stored outside any project, owner-only
   where the platform allows, never printed or logged; the environment variable

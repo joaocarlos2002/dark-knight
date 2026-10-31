@@ -96,9 +96,11 @@ src/qa_workbench/
     contract.py    Provider contract, messages, tools, CancelToken
     errors.py      ProviderError hierarchy
     agent.py       OwnAgent, SingleShotAgent, evidence rule, approval gate
-    selection.py   own / opencode / auto
+    selection.py   own / opencode / nvidia / auto (remote engines never auto)
     ollama.py      Ollama adapter
     opencode.py    OpenCode adapter (documented server API)
+    nvidia.py      hosted NVIDIA API Catalog adapter (OpenAI-compatible)
+    guarded.py     JsonHttp behind the action guard and the audit log
     http.py        JSON-over-HTTP port and HTTPX adapter
     cli.py         `batman ai ...` commands
     alfred.py      Alfred: per-project settings, @mentions, ask, format
@@ -304,7 +306,8 @@ QA code never depends on a specific model. `ai/contract.py` defines one
 pretending.
 
 - **Engines and selection.** `own` is the built-in agent on a local runtime
-  (Ollama), `opencode` is OpenCode, `auto` tries `own` then `opencode`. A
+  (Ollama), `opencode` is OpenCode, `nvidia` is the hosted NVIDIA API (remote),
+  `auto` tries `own` then `opencode` and never a remote engine. A
   specific choice never falls back to another engine; when none is available the
   error lists why for each one. `batman ai status` checks reachability without
   sending anything to a model; `batman ai ask QUESTION -p PROJ-001 --engine auto`
@@ -326,6 +329,20 @@ pretending.
   `/api/chat` with NDJSON streaming, `format` for structured output, `tools`).
   A stream that ends before its final message is an error, not a partial answer.
   `OLLAMA_HOST` or `--ollama-url` selects the server.
+- **NVIDIA adapter and the guard.** `ai/nvidia.py` speaks the OpenAI-compatible
+  API of the NVIDIA API Catalog (`GET /models`, `POST /chat/completions`) under a
+  configurable base URL (`--nvidia-url`, `NVIDIA_BASE_URL`, default
+  `https://integrate.api.nvidia.com/v1`; written against the documentation of
+  October 2026). It offers no tool calls or structured output, so it runs behind
+  `SingleShotAgent` with the same answer format and evidence rule. Messages go
+  through `redact_secrets`; the key comes from `NVIDIA_API_KEY` or the stored
+  credentials and never appears in an error (401, 429, 404 for a bad model, other
+  statuses and timeouts name the URL and status only). Every engine request goes
+  through `ai/guarded.py`: `GuardedJsonHttp` asks the `ActionGuard` before
+  sending, so a host outside the allowed hosts is never contacted, the per-host
+  rate limit applies, and the audit log gets the action and URL (loopback servers
+  are in scope but still audited). `batman ai models` and the Alfred model picker
+  list the engine's models.
 - **OpenCode adapter.** Isolated in `ai/opencode.py`, using only the documented
   `opencode serve` API (`/global/health`, `POST /session`,
   `POST /session/:id/message`, `/session/:id/abort`, `/config/providers`) with
@@ -899,8 +916,10 @@ by the CLI in another terminal show up. Pages without a class still show
   shows a notice with the reason for each engine, not an invented answer. Alfred
   only has read-only record tools.
 - **Alfred's settings** (`Ctrl+O`, saved per project in `ai/alfred.yaml`): engine
-  (`own`, `opencode`, `auto`), model, style (`balanced`, `concise`, `detailed`),
-  answer language, and the Ollama and OpenCode URLs. Style and language are added
+  (`own`, `opencode`, `nvidia`, `auto`), model, style (`balanced`, `concise`,
+  `detailed`), answer language, and the Ollama, OpenCode, and NVIDIA URLs.
+  `Ctrl+G` lists the engine's models in a `ChoiceDialog` and saves the choice; an
+  answer from a remote engine is labelled as such. Style and language are added
   to the system prompt *after* the fixed rules and state that they never override
   them. A broken settings file is an error, not a silent return to defaults, and
   an archived project's settings cannot be changed. `Ctrl+L` clears the chat.
