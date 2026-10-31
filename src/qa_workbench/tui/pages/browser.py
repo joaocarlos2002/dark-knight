@@ -157,6 +157,33 @@ class BrowserPage(Page):
 
     # -- helpers for subclasses ---------------------------------------------
 
+    def run_job(self, title: str, job) -> None:
+        """Run ``job`` in a worker thread so the TUI stays responsive, then reload
+        the page and say how it went. ``job`` returns an object with ``summary``
+        and ``ok`` (or text), or raises an error whose message says what failed."""
+        self.app.notify(f"{title}...", title=title)
+
+        def work() -> None:
+            try:
+                result = job()
+            except Exception as error:  # a failed run is shown, never a crash
+                self.app.call_from_thread(self._job_done, title, str(error), True)
+                return
+            text = getattr(result, "summary", None) or str(result)
+            bad = getattr(result, "ok", True) is False
+            self.app.call_from_thread(self._job_done, title, text, bad)
+
+        self.run_worker(work, thread=True, exclusive=True, name=title)
+
+    def _job_done(self, title: str, message: str, bad: bool) -> None:
+        self.refresh_data()
+        self.app.notify(
+            message,
+            title=title,
+            severity="warning" if bad else "information",
+            timeout=12,
+        )
+
     def writable_project(self) -> Project | None:
         """The open project if it can be changed; otherwise say why and return None."""
         project = self.context.project

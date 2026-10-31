@@ -31,6 +31,24 @@ use the `vMAJOR.MINOR.PATCH` format.
   logs and artifacts on Pipelines; and drafting (`C`) and publishing (`P`) of
   issue comments through a Comments page, with the same approval, evidence, and
   audit rules as `batman comments` (#176).
+- Start runs from the TUI: API tests (`R`, definition chosen in a folder tree),
+  release analysis (`R`), and security checks (`U` authorize, `T` run, `K`
+  revoke, with the authorization always shown). They run in the background with
+  the same guard and audit as the commands. Browser runs still use
+  `batman browser run` (#174).
+- Findings and evidence in the TUI: record, reclassify, and attach evidence on
+  the Bug Hunting page, and an Evidence page to add files and verify their
+  hashes. Files are picked in a folder tree instead of typing a path, and a
+  defect is still refused without enough evidence (#175).
+- Group-wide boards: `batman gitlab board --labels FILTER,COLUMN` reads a board
+  column across every project of the group, `issue-links` shows an issue's
+  related issues and merge requests, and a Board page does both in the TUI.
+  Test cases are kept out of issue lists unless `--include-test-cases` (#166).
+- GitLab test cases: `batman gitlab test-cases` and `test-case` read them, and
+  `batman cases push` (or `G` in the TUI) creates or updates a `test_case` issue
+  in the team's standard layout, after a person approves the exact content. It
+  never duplicates (unchanged is skipped, same title is updated) and an update
+  rewrites only the changed sections (#165).
 - A Review page in the TUI to read, submit, approve, reject, or ask changes on
   the records the AI generated, with its findings and sources, and the same
   rules as `batman review` (no self-approval, a reason for a rejection). The

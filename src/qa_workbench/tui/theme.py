@@ -251,6 +251,33 @@ ChoiceDialog {
     align: center middle;
 }
 
+FileDialog {
+    align: center middle;
+}
+
+FileDialog > Vertical {
+    width: 80;
+    max-width: 95%;
+    height: 80%;
+    padding: 1 2;
+    background: $dark-concrete;
+    border: solid $signal-red;
+}
+
+FileDialog #dialog-title {
+    text-style: bold;
+}
+
+FileDialog #dialog-message {
+    color: $ash-gray;
+    margin-bottom: 1;
+}
+
+FileDialog DirectoryTree {
+    height: 1fr;
+    background: $dark-concrete;
+}
+
 ChoiceDialog > Vertical {
     width: 70;
     max-width: 95%;

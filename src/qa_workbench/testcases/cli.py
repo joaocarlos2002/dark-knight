@@ -5,10 +5,18 @@ from typing import Annotated, NoReturn
 import typer
 
 from qa_workbench.core.config import ConfigurationError
+from qa_workbench.integrations.errors import IntegrationError
+from qa_workbench.integrations.gitlab import cli as gitlab_cli
+from qa_workbench.integrations.gitlab.connect import open_writer
+from qa_workbench.integrations.gitlab.test_cases import GitLabTestCases
 from qa_workbench.projects.errors import ProjectError
+from qa_workbench.security.audit import AuditError
+from qa_workbench.security.guard import SecurityError
+from qa_workbench.security.settings import SecuritySettingsError
 from qa_workbench.storage.errors import StorageError
 from qa_workbench.storage.repository import MarkdownRepository
 from qa_workbench.testcases.builder import Step, TestCaseDraft, create_test_case
+from qa_workbench.testcases.gitlab_push import PushError, push_case
 from qa_workbench.workspace import open_repository
 
 cases_app = typer.Typer(
@@ -117,3 +125,46 @@ def show_command(
     except StorageError as error:
         _fail(str(error))
     typer.echo(record.body.rstrip())
+
+
+@cases_app.command("push")
+def push_command(
+    case_id: Annotated[str, typer.Argument(help="Test case id, such as TC-001.")],
+    project: ProjectOption,
+    by: Annotated[str, typer.Option("--by", help="Who is responsible for the push.")],
+    url: Annotated[
+        str | None,
+        typer.Option("--url", help="GitLab project URL. Defaults to the repository."),
+    ] = None,
+    token_env: Annotated[
+        str, typer.Option("--token-env", help="Variable that holds the token.")
+    ] = "GITLAB_TOKEN",
+) -> None:
+    """Create or update the GitLab test case. It needs a person's approval of this
+    exact content; run it again after `batman security approve`. An unchanged case
+    is not sent again, and an existing case with the same title is updated."""
+    repository = _open(project, writable=True)
+    try:
+        client, guard = open_writer(
+            project, gitlab_cli.default_gateway(), url=url, token_env=token_env
+        )
+        result = push_case(
+            repository,
+            case_id,
+            guard=guard,
+            remote=GitLabTestCases(client),
+            actor=by,
+        )
+    except (
+        PushError,
+        SecurityError,
+        IntegrationError,
+        AuditError,
+        SecuritySettingsError,
+        ConfigurationError,
+        ProjectError,
+        StorageError,
+    ) as error:
+        _fail(str(error))
+    where = f"#{result.iid} {result.url}".strip()
+    typer.echo(f"{case_id}: {result.action} {where}")
