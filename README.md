@@ -231,6 +231,12 @@ issue-links 7 -p PROJ-001` lists an issue's related issues and merge requests
 (add `--url` for an issue of another project). The Board page in the menu does
 the same. Test cases are left out of these lists unless you ask for them.
 
+Runs can start from the TUI as well: `R` on API Testing (pick a YAML definition
+from the folder tree), `R` on Release Analysis, and on Security `U` to authorize
+the checks (scope and expiry are always shown), `T` to run them, and `K` to
+revoke. They obey the same rules as the commands: hosts must be allowed, and
+security checks need an authorization.
+
 To upgrade, run `uv tool upgrade dark-knight-qa` (or `pipx upgrade
 dark-knight-qa`). The first run creates its data folder on its own; where it
 lives and how to change it is described under Contributing below.

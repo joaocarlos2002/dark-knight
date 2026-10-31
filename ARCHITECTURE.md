@@ -1007,6 +1007,16 @@ by the CLI in another terminal show up. Pages without a class still show
   file (`A`, which records its SHA-256) and verifies all of it (`V`), reporting
   any file that no longer matches. Files are chosen with `FileDialog`, a folder
   tree, so no path is typed.
+- **Runs from the pages.** `tui/runs.py` starts an API test (`R` on API Testing,
+  the definition chosen in a `FileDialog`), a release analysis (`R` on Release
+  Analysis, with an optional ref, date, and number of commits), and the security
+  checks (`U` authorize, `T` run, `K` revoke on Security) with the same services
+  the commands call, behind the same action guard and audit log. A refusal (host
+  not allowed, no authorization) is shown with its reason and nothing is sent.
+  Runs happen in a worker (`BrowserPage.run_job`), so the TUI stays responsive,
+  and the page reloads when they end. The Security page always shows the current
+  authorization, its scope, and its expiry. Browser runs are still started with
+  `batman browser run`.
 - **Alfred's settings** (`Ctrl+O`, saved per project in `ai/alfred.yaml`): engine
   (`own`, `opencode`, `nvidia`, `auto`), model, style (`balanced`, `concise`,
   `detailed`), answer language, and the Ollama, OpenCode, and NVIDIA URLs. They

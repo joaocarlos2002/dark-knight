@@ -216,9 +216,9 @@ def test_empty_result_pages_say_how_to_fill_them(tmp_path, project) -> None:
     async def scenario(app, pilot) -> None:
         for page, command in (
             ("bug-hunting", "Press N to record"),
-            ("api-testing", "batman api run"),
-            ("release-analysis", "batman release analyze"),
-            ("security", "batman security-tests run"),
+            ("api-testing", "Press R to choose"),
+            ("release-analysis", "Press R to read"),
+            ("security", "T runs them"),
         ):
             app.navigate(page)
             await pilot.pause()
