@@ -378,6 +378,17 @@ code that uses them depends on the ports in `integrations/ports.py`
 `integrations/models.py`, so GitHub can be added later without touching it.
 Everything here is read-only; writing back is a separate, approved action.
 
+- **Repository reading.** `integrations/gitlab/files.py` (`GitLabFiles`) reads
+  branches (newest change first), the tree under a path (folders first), one
+  file, and a code search with the matching line. A file over 256 KB, a file
+  that is not UTF-8 text, and one with NUL bytes are refused with the reason
+  (`FileRefused`), never truncated silently; secrets in file text and in matches
+  are masked with `redact_secrets`. A missing path or ref is an explicit 404.
+  `batman gitlab branches|tree|file|code` are the commands, `--ref` picks a
+  branch, tag, or commit, and `--url` reads another repository of the same
+  server. The TUI Repository page (`R` read, `O` open, `U` up, `B` branch) reads
+  in a worker and asks the guard first.
+
 | Command | Reads |
 |---|---|
 | `gitlab issues`, `gitlab issue IID` | open issues by label; one issue with description, labels, and comments |

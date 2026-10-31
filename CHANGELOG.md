@@ -17,6 +17,10 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- Read a GitLab repository: `batman gitlab branches`, `tree`, `file`, and `code`
+  (code search with path and line), plus a Repository page in the TUI. Files
+  over 256 KB and binary files are refused with a reason, secrets are masked,
+  file text is marked as untrusted, and every read goes through the guard (#168).
 - Claude as an AI engine through Claude Code, with no API key: `batman ai ask
   --engine claude [--model sonnet|opus|haiku]`, or `claude` under Engine in
   Alfred. It uses your own Claude login, is found automatically (PATH, the VS Code
