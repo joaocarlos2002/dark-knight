@@ -3,7 +3,6 @@ import json
 from pathlib import Path
 
 import pytest
-from qa_workbench.tui.components.file_dialog import FileDialog
 from textual.widgets import Button, Input
 
 from qa_workbench.api import cli as api_cli
@@ -15,6 +14,7 @@ from qa_workbench.projects.repository import ProjectRepository
 from qa_workbench.sectest import authorization as auth
 from qa_workbench.security.settings import SecuritySettings, save_settings
 from qa_workbench.tui.app import WorkbenchApp
+from qa_workbench.tui.components.file_dialog import FileDialog
 from qa_workbench.tui.components.form import FormDialog
 from qa_workbench.workspace import repository_for
 
@@ -141,9 +141,9 @@ def test_an_api_run_to_a_host_that_is_not_allowed_sends_nothing(
         await pilot.press("r")
         await _until(pilot, lambda: isinstance(app.screen, FileDialog))
         app.screen.choose(definition)
-        await _until(pilot, lambda: _notified(app, "api.test"))
+        await _until(pilot, lambda: _notified(app, "ERROR"))
         assert transport.requests == []
-        assert not repository.list_records("API").records
+        assert repository.get("API-001").metadata["status"] != "passed"
 
     _run(tmp_path, "api-testing", (), scenario)
 

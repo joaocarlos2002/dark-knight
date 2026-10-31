@@ -214,6 +214,17 @@ approve, `X` to reject, or `C` to ask for changes. The same steps exist as
 `batman review pending|submit|decide`. A record cannot be approved by whoever
 wrote it or generated it.
 
+Findings and evidence can be handled in the TUI too. On the Bug Hunting page,
+`N` records a finding, `E` attaches a file from a folder tree, and `C`
+reclassifies it (a confirmed defect needs evidence and two reproductions). The
+Evidence page adds files with `A` and checks their hashes with `V`.
+
+Runs can start from the TUI as well: `R` on API Testing (pick a YAML definition
+from the folder tree), `R` on Release Analysis, and on Security `U` to authorize
+the checks (scope and expiry are always shown), `T` to run them, and `K` to
+revoke. They obey the same rules as the commands: hosts must be allowed, and
+security checks need an authorization.
+
 To upgrade, run `uv tool upgrade dark-knight-qa` (or `pipx upgrade
 dark-knight-qa`). The first run creates its data folder on its own; where it
 lives and how to change it is described under Contributing below.

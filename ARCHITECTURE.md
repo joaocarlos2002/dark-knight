@@ -968,6 +968,25 @@ by the CLI in another terminal show up. Pages without a class still show
   the same service and schema checks as `batman review`, so a record cannot be
   approved by its author or generator: the dialog shows the reason and keeps
   what was typed. The Overview shows how many records wait.
+- **Findings and evidence.** The Bug Hunting page records a finding (`N`; it
+  starts as `suspected`), reclassifies it (`C`: the classification is picked from
+  a list, then who and why, plus how many times it was tried and reproduced), and
+  attaches evidence (`E`). A confirmed defect (`reproduced`) still needs evidence,
+  steps, expected and observed results, and two reproductions: the service says
+  what is missing and the dialog keeps what was typed. The Evidence page adds a
+  file (`A`, which records its SHA-256) and verifies all of it (`V`), reporting
+  any file that no longer matches. Files are chosen with `FileDialog`, a folder
+  tree, so no path is typed.
+- **Runs from the pages.** `tui/runs.py` starts an API test (`R` on API Testing,
+  the definition chosen in a `FileDialog`), a release analysis (`R` on Release
+  Analysis, with an optional ref, date, and number of commits), and the security
+  checks (`U` authorize, `T` run, `K` revoke on Security) with the same services
+  the commands call, behind the same action guard and audit log. A refusal (host
+  not allowed, no authorization) is shown with its reason and nothing is sent.
+  Runs happen in a worker (`BrowserPage.run_job`), so the TUI stays responsive,
+  and the page reloads when they end. The Security page always shows the current
+  authorization, its scope, and its expiry. Browser runs are still started with
+  `batman browser run`.
 - **Alfred's settings** (`Ctrl+O`, saved per project in `ai/alfred.yaml`): engine
   (`own`, `opencode`, `nvidia`, `auto`), model, style (`balanced`, `concise`,
   `detailed`), answer language, and the Ollama, OpenCode, and NVIDIA URLs. They

@@ -27,6 +27,15 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- Start runs from the TUI: API tests (`R`, definition chosen in a folder tree),
+  release analysis (`R`), and security checks (`U` authorize, `T` run, `K`
+  revoke, with the authorization always shown). They run in the background with
+  the same guard and audit as the commands. Browser runs still use
+  `batman browser run` (#174).
+- Findings and evidence in the TUI: record, reclassify, and attach evidence on
+  the Bug Hunting page, and an Evidence page to add files and verify their
+  hashes. Files are picked in a folder tree instead of typing a path, and a
+  defect is still refused without enough evidence (#175).
 - A Review page in the TUI to read, submit, approve, reject, or ask changes on
   the records the AI generated, with its findings and sources, and the same
   rules as `batman review` (no self-approval, a reason for a rejection). The
