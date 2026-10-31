@@ -9,6 +9,9 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- TUI Executions page: follow executions with steps, evidence, and next states,
+  start one from a test case, and move it through its lifecycle with the same
+  validation as the CLI. Form fields can now carry a default value.
 - TUI Bug Hunting, API Testing, Release Analysis, and Security pages: browse the
   saved results, and approve or deny pending approval requests from the
   workbench with the audit log's integrity shown.
