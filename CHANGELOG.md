@@ -27,6 +27,10 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- Open a bug in GitLab from a reproduced finding: `batman bugs publish` and `U` on
+  Bug Hunting create one plain issue and upload the evidence to the same project,
+  only after someone else approves that exact action; a repeat reports the
+  existing issue instead of creating another (#167).
 - The AI drafts test cases for requirements that have none: `batman ai populate`
   and `P` on the Overview. Every case is a draft marked as AI-generated that cites
   its requirement and waits in Review, they are grouped in a draft suite, a rerun

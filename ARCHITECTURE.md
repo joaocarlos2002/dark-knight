@@ -1013,6 +1013,18 @@ by the CLI in another terminal show up. Pages without a class still show
   the same service and schema checks as `batman review`, so a record cannot be
   approved by its author or generator: the dialog shows the reason and keeps
   what was typed. The Overview shows how many records wait.
+- **Bugs in GitLab (`publishing/bugs.py`).** `batman bugs publish` (and `U` on
+  Bug Hunting) opens an issue from a finding that is `reproduced` and has intact
+  evidence. The text is checked for secrets and hosts that are not allowed, and
+  the guard request (category `external_comment`, requester = the finding's
+  author) names the finding, the SHA-256 of the issue text, and each file to be
+  uploaded, noting that uploads cannot be deleted from the workbench. After the
+  approval, which is single-use, the evidence is uploaded to the same project as
+  the issue (so the embedded images resolve) and one plain issue is created. The
+  uploads are recorded on the finding as they happen, then the issue's `iid` and
+  URL; a repeat reports the existing issue. If the connection breaks the finding
+  is marked `outcome_unknown` and publishing again needs `--checked-issue`, plus a
+  new approval. Both steps are audited.
 - **GitLab and comments in the TUI.** The GitLab page reads issues, merge
   requests, or commits on demand (`R`, the kind chosen from a list) in a worker
   after the guard allows the host; selecting one loads its detail, with GitLab

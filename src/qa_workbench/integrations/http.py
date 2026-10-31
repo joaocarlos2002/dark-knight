@@ -24,6 +24,8 @@ class GatewayRequest:
     params: dict[str, str] = field(default_factory=dict)
     timeout_seconds: float = 30.0
     body: dict[str, Any] | None = None
+    # A file to upload as multipart form data: field name -> (file name, content).
+    files: dict[str, tuple[str, bytes]] | None = None
 
 
 class HttpGateway(Protocol):
@@ -84,7 +86,8 @@ class HttpxGateway:
             response = getattr(self._client, method)(
                 request.url,
                 headers=request.headers,
-                json=request.body,
+                json=request.body if request.files is None else None,
+                files=request.files,
                 timeout=request.timeout_seconds,
             )
         except self._httpx.TimeoutException as error:

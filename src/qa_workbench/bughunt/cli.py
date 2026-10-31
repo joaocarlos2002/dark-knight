@@ -7,7 +7,13 @@ import typer
 from qa_workbench.bughunt.schema import CLASSIFICATIONS, SUSPECTED
 from qa_workbench.bughunt.service import BugError, reclassify, record_finding
 from qa_workbench.core.config import ConfigurationError
+from qa_workbench.integrations.errors import IntegrationError
+from qa_workbench.integrations.gitlab import cli as gitlab_cli
+from qa_workbench.integrations.gitlab.client import DEFAULT_TOKEN_ENV
 from qa_workbench.projects.errors import ProjectError
+from qa_workbench.publishing.bugs import BugPublishError, open_publisher, publish_bug
+from qa_workbench.security.audit import AuditError
+from qa_workbench.security.guard import SecurityError
 from qa_workbench.storage.errors import StorageError
 from qa_workbench.workspace import open_repository
 
@@ -107,6 +113,60 @@ def reclassify_command(
     except (BugError, ConfigurationError, ProjectError, StorageError) as error:
         _fail(str(error))
     typer.echo(f"{record.id} is now {record.metadata['status']}.")
+
+
+@bugs_app.command("publish")
+def publish_command(
+    bug_id: Annotated[str, typer.Argument(help="Finding id, such as BUG-001.")],
+    project: ProjectOption,
+    url: Annotated[
+        str | None,
+        typer.Option("--url", help="GitLab project URL. Defaults to the repository."),
+    ] = None,
+    token_env: Annotated[
+        str, typer.Option("--token-env", help="Variable that holds the token.")
+    ] = DEFAULT_TOKEN_ENV,
+    checked_issue: Annotated[
+        bool,
+        typer.Option(
+            "--checked-issue",
+            help="After an unknown outcome: I checked and the issue is not there.",
+        ),
+    ] = False,
+) -> None:
+    """Open a GitLab issue from a reproduced finding and upload its evidence.
+
+    Needs another person's approval of this exact action. Without it a request is
+    created and nothing is sent; run the command again once it is approved. An
+    uploaded file cannot be deleted from the workbench. A finding that already
+    has an issue reports it and creates no second one.
+    """
+    try:
+        repository = open_repository(project, writable=True)
+        writer, guard = open_publisher(
+            project, gitlab_cli.default_gateway(), url=url, token_env=token_env
+        )
+        published = publish_bug(
+            repository,
+            bug_id,
+            guard=guard,
+            writer=writer,
+            checked_issue_for_unknown_outcome=checked_issue,
+        )
+    except (
+        BugPublishError,
+        SecurityError,
+        AuditError,
+        IntegrationError,
+        ConfigurationError,
+        ProjectError,
+        StorageError,
+    ) as error:
+        _fail(str(error))
+    if published.already:
+        typer.echo(f"{bug_id} already has an issue: {published.url}")
+    else:
+        typer.echo(f"Opened issue #{published.iid} for {bug_id}: {published.url}")
 
 
 @bugs_app.command("list")

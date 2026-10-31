@@ -59,7 +59,8 @@ This describes what the code does today, so reports can be checked against it.
   project allows (without a project, only local addresses), and the same scope
   and a per-host rate limit apply to API tests, GitLab reads, and security
   checks. Deleting through an API test always waits for a person.
-- **Writes need a person.** Publishing an issue comment, and every other action
+- **Writes need a person.** Publishing an issue comment, opening an issue from a
+  finding (with its evidence uploads, which the workbench cannot delete), and every other action
   the policy marks as sensitive, creates an approval request that a person must
   decide. An approval covers exactly one action, is single-use, expires after an
   hour, and cannot be given by whoever asked.

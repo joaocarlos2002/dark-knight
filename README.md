@@ -249,6 +249,15 @@ an issue, `C` drafts a comment that cites evidence, and the Comments page
 publishes it (`P`) only after someone else approves that exact text on the
 Security page. On Pipelines, `L` shows a job log and `A` its artifacts.
 
+A reproduced finding can become a GitLab issue: `batman bugs publish BUG-001 -p
+PROJ-001`, or `U` on the Bug Hunting page. It opens one plain issue with the
+steps, the expected and observed results, and the evidence uploaded to the same
+project. Someone other than the finding's author must approve that exact action
+on the Security page (the request lists the files that will be uploaded, and says
+they cannot be deleted from here); then run the command again. A finding that is
+not reproduced with evidence is refused, and a finding that already has an issue
+reports it instead of creating a second one.
+
 To upgrade, run `uv tool upgrade dark-knight-qa` (or `pipx upgrade
 dark-knight-qa`). The first run creates its data folder on its own; where it
 lives and how to change it is described under Contributing below.
