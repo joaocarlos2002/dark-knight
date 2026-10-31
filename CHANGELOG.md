@@ -12,7 +12,8 @@ use the `vMAJOR.MINOR.PATCH` format.
 - `batman config token set|show|remove`: keep API tokens in the application
   instead of exporting them in every terminal. Stored outside any project, owner-only
   where the platform allows, never printed or logged; the environment variable
-  still wins. GitLab reads and API tests use them.
+  still wins. GitLab reads, API tests, and the OpenCode engine (its server
+  password: `batman config token set opencode`) use them.
 - CI now runs the tests on Windows and macOS and installs the built wheel into a
   clean environment on all three platforms, smoke-testing the installed commands
   and every TUI page.

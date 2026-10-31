@@ -170,6 +170,9 @@ API tokens (GitLab, AI providers) do not have to be exported in every terminal:
 your configuration folder, `batman config token show` lists which ones are set
 (never their values), and `batman config token remove gitlab` deletes it. An
 environment variable of the same name (`GITLAB_TOKEN`) still takes precedence.
+The password of a protected OpenCode server is kept the same way:
+`batman config token set opencode` (the user name stays `opencode` unless
+`OPENCODE_SERVER_USERNAME` says otherwise).
 
 To upgrade, run `uv tool upgrade dark-knight-qa` (or `pipx upgrade
 dark-knight-qa`). The first run creates its data folder on its own; where it

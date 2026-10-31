@@ -152,3 +152,30 @@ def test_models_are_listed_as_provider_slash_model() -> None:
     )
 
     assert provider.list_models() == ["anthropic/m1", "anthropic/m2"]
+
+
+def test_a_password_kept_with_the_config_command_is_used(monkeypatch, tmp_path) -> None:
+    from qa_workbench.security.credentials import CredentialStore
+
+    monkeypatch.setenv("DARK_KNIGHT_CONFIG_DIR", str(tmp_path))
+    monkeypatch.delenv("OPENCODE_SERVER_PASSWORD", raising=False)
+    CredentialStore(tmp_path).set("opencode", "stored-pw-123456")
+    http = FakeHttp({("GET", "/global/health"): ok({"healthy": True, "version": "1"})})
+
+    OpenCodeProvider(http, base_url=URL).check_availability()
+
+    assert http.calls[0][3]["Authorization"].startswith("Basic ")
+
+
+def test_a_damaged_credentials_file_is_reported_not_ignored(
+    monkeypatch, tmp_path
+) -> None:
+    monkeypatch.setenv("DARK_KNIGHT_CONFIG_DIR", str(tmp_path))
+    monkeypatch.delenv("OPENCODE_SERVER_PASSWORD", raising=False)
+    (tmp_path / "credentials.json").write_text("{broken", encoding="utf-8")
+    http = FakeHttp({("GET", "/global/health"): ok({"healthy": True})})
+
+    availability = OpenCodeProvider(http, base_url=URL).check_availability()
+
+    assert not availability.available and "credentials file" in availability.detail
+    assert http.calls == []
