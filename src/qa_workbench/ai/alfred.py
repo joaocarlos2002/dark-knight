@@ -189,6 +189,52 @@ def ask_alfred(
     return Reply(answer, choice.mode, tuple(context), tuple(missing))
 
 
+def choose_provider(
+    settings: AlfredSettings,
+    repository: MarkdownRepository,
+    http: JsonHttp,
+    runner: claude_code.Runner | None = None,
+    engine: str | None = None,
+):
+    """The engine chosen in ``settings`` (or ``engine``), as an ``EngineChoice``.
+    ``auto`` never picks a remote engine. Every request goes through the guard."""
+    http = guarded_http(http, repository.root)
+
+    def own():
+        provider = ollama.OllamaProvider(
+            http, base_url=settings.ollama_url, model=settings.model
+        )
+        return provider, provider
+
+    def external():
+        provider = opencode.OpenCodeProvider(
+            http, base_url=settings.opencode_url, model=settings.model
+        )
+        return provider, provider
+
+    def hosted():
+        provider = nvidia.NvidiaProvider(
+            http, base_url=settings.nvidia_url, model=settings.model
+        )
+        return provider, provider
+
+    def claude():
+        provider = claude_code.ClaudeCodeProvider(
+            guarded_runner(
+                runner or claude_code.SubprocessRunner(),
+                repository.root,
+                claude_code.HOST_URL,
+            ),
+            model=settings.model,
+        )
+        return provider, provider
+
+    return select_engine(
+        engine or settings.engine,
+        {"own": own, "opencode": external, "nvidia": hosted, "claude": claude},
+    )
+
+
 def list_models(
     settings: AlfredSettings, repository: MarkdownRepository, http: JsonHttp
 ) -> tuple[str, list[str]]:
@@ -227,6 +273,7 @@ __all__ = [
     "ask_alfred",
     "attach_mentions",
     "format_answer",
+    "choose_provider",
     "list_models",
     "load_settings",
     "save_settings",

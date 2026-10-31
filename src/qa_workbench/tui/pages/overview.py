@@ -1,11 +1,25 @@
 """Overview: the state of the project's quality, from its records (spec 4.1)."""
 
+import getpass
+
 from textual.app import ComposeResult
+from textual.binding import Binding
 from textual.containers import Horizontal
 from textual.widgets import Static
 
+from qa_workbench.ai import cli as ai_cli
+from qa_workbench.ai.alfred import (
+    AlfredSettings,
+    AlfredSettingsError,
+    choose_provider,
+)
+from qa_workbench.ai.alfred import load_settings as load_alfred_settings
+from qa_workbench.ai.errors import NoProviderAvailable, ProviderError
+from qa_workbench.ai.populate import pending_requirements, populate
+from qa_workbench.ai.selection import REMOTE
 from qa_workbench.storage.errors import StorageError
 from qa_workbench.tui.browse_review import pending_count
+from qa_workbench.tui.components.dialog import ConfirmationDialog
 from qa_workbench.tui.components.metric import MetricPanel
 from qa_workbench.tui.components.states import EmptyState
 from qa_workbench.tui.components.table import DataTable
@@ -30,8 +44,86 @@ def identity_text(data: OverviewData) -> str:
     )
 
 
+POPULATE_LIMIT = 5
+
+
 @register("overview")
 class OverviewPage(Page):
+    BINDINGS = [Binding("p", "populate", "AI drafts")]
+
+    def action_populate(self) -> None:
+        """Ask the AI for draft test cases for requirements that have none."""
+        project = self.context.project
+        if project is None or project.archived:
+            self.app.notify("Open a project that can be changed first.")
+            return
+        repository = self.context.repository()
+        try:
+            settings = load_alfred_settings(repository.root)
+        except AlfredSettingsError:
+            settings = AlfredSettings()
+        targets = pending_requirements(repository, POPULATE_LIMIT)
+        if not targets:
+            self.app.notify("Every requirement already has a test case.")
+            return
+        remote = settings.engine in REMOTE
+        ids = ", ".join(r.id for r in targets)
+        message = (
+            f"The AI ({settings.engine}) will read {len(targets)} requirement(s): "
+            f"{ids}, and write draft test cases for them.\n\n"
+            "They arrive in Review as drafts. Nothing is final, and nothing is "
+            "published."
+        )
+        if remote:
+            message += (
+                "\n\nThis engine is remote: the requirement text leaves this machine."
+            )
+
+        def confirmed(go: bool | None) -> None:
+            if go:
+                self._populate(settings)
+
+        self.app.push_screen(
+            ConfirmationDialog("AI drafts", message, confirm_label="Start"), confirmed
+        )
+
+    def _populate(self, settings: AlfredSettings) -> None:
+        repository = self.context.repository()
+        http = ai_cli.default_http()
+        runner = ai_cli.default_runner()
+        self.app.notify("Asking the AI for drafts...", title="AI drafts")
+
+        def work() -> None:
+            try:
+                choice = choose_provider(settings, repository, http, runner)
+                report = populate(
+                    repository,
+                    choice.provider,
+                    model=settings.model,
+                    limit=POPULATE_LIMIT,
+                    actor=getpass.getuser(),
+                    language=settings.language,
+                )
+            except (NoProviderAvailable, ProviderError, StorageError, OSError) as error:
+                self.app.call_from_thread(self._populated, str(error), True)
+                return
+            text = (
+                f"{len(report.created)} draft case(s) created, "
+                f"{len(report.failed)} requirement(s) not used. Review them in Review."
+            )
+            self.app.call_from_thread(self._populated, text, bool(report.failed))
+
+        self.run_worker(work, thread=True, exclusive=True, name="ai-populate")
+
+    def _populated(self, text: str, bad: bool) -> None:
+        self.refresh_data()
+        self.app.notify(
+            text,
+            title="AI drafts",
+            severity="warning" if bad else "information",
+            timeout=12,
+        )
+
     def compose(self) -> ComposeResult:
         yield Static("", id="overview-identity", markup=False)
         yield Static("", id="overview-review", markup=False)
@@ -79,11 +171,18 @@ class OverviewPage(Page):
     def _show(self, data: OverviewData) -> None:
         self.query_one("#overview-identity", Static).update(identity_text(data))
         waiting = pending_count(self.context.repository())
-        self.query_one("#overview-review", Static).update(
-            f"{waiting} AI record(s) waiting for your review. Open Review in the menu."
-            if waiting
-            else ""
-        )
+        notes = []
+        if waiting:
+            notes.append(
+                f"{waiting} AI record(s) waiting for your review (see Review)."
+            )
+        uncovered = len(pending_requirements(self.context.repository(), 50))
+        if uncovered:
+            notes.append(
+                f"{uncovered} requirement(s) have no test case. Press P to let the AI "
+                "draft them."
+            )
+        self.query_one("#overview-review", Static).update("\n".join(notes))
         self.query_one("#metric-cases", MetricPanel).set_value(data.test_cases)
         for key in ("passed", "failed", "blocked"):
             self.query_one(f"#metric-{key}", MetricPanel).set_value(data.results[key])
