@@ -168,6 +168,8 @@ src/qa_workbench/
     navigation.py  Sidebar sections and destinations (pure data)
     status.py      Status names, symbols, and tones (pure)
     theme.py       Dark theme tokens and shell stylesheet
+    data.py        View-models read from records (pure, no widgets)
+    pages/         One Page per navigation key: Overview, Projects
 tests/             Pytest suite mirroring the package layout
 ```
 
@@ -790,6 +792,38 @@ fully keyboard-driven. Every status is shown as a symbol and a name (for
 example `✓ PASSED`), never by color alone. Modules that are not implemented
 yet say so explicitly instead of showing placeholder data.
 
+### TUI pages
+
+The workbench shell hosts real pages. `tui/pages/` has one class per navigation
+key (`PAGES`); every page is a `Page` built from a `PageContext` (the data
+folder and the open project) and redrawn by `refresh_data()`, which reads the
+project's records from disk. `Ctrl+R` reloads the visible page, so changes made
+by the CLI in another terminal show up. Pages without a class still show
+"This module is not available yet" instead of placeholder data.
+
+- **Data stays out of widgets.** `tui/data.py` turns records into plain
+  view-models (`build_overview`, `project_rows`) and is tested without Textual.
+  Every number comes from persisted records; a damaged record is counted and
+  listed on the page, never dropped, and a value that cannot be computed is
+  `n/a`, never zero.
+- **Projects.** Lists active and archived projects (a damaged project is shown
+  as a problem line, not hidden). `Enter` opens the selected project and shows
+  its overview, `N` opens a form to create one (name, repository, environment and
+  URL; the dialog validates before anything is written and stays open on an
+  error), `X` archives the selected one after a confirmation. Opening a project
+  updates the header, the status line, and the context panel.
+- **Overview.** Project identification, the test case count, executions by
+  result (passed, failed, blocked) and in progress, and the most recent
+  executions with case title, result, and duration. With no project open it says
+  so and points to Projects. Pipelines show an empty state because pipeline
+  records are not stored yet.
+- **Startup.** With exactly one active project `batman` opens on it; with
+  several, or none, the user chooses from Projects.
+- **Reusable.** `FormDialog` collects labelled fields, marks required ones, and
+  keeps the dialog open with the error shown inline.
+- **Not here yet.** Requirements, Test Cases, Test Plans, Test Suites,
+  Executions, and the integration pages are still placeholders.
+
 ### Keyboard shortcuts
 
 Shortcuts are defined once, in `tui/keymap.py`, and used by the bindings, the
@@ -805,6 +839,7 @@ status bar, the help text, and the command palette.
 | `Ctrl+B` | Show or hide the browser preview |
 | `F5` | Ask the running browser for its next mode |
 | `F6` | Pause or resume the running browser |
+| `Ctrl+R` | Reload the current page from disk |
 | `?` | List the shortcuts |
 | `Ctrl+Q` | Quit |
 
