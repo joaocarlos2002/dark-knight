@@ -976,6 +976,16 @@ by the CLI in another terminal show up. Pages without a class still show
   unknown ids are reported as not attached. When no engine is available the chat
   shows a notice with the reason for each engine, not an invented answer. Alfred
   only has read-only record tools.
+- **Review.** The Review page lists the AI-generated records waiting for a
+  person (drafts and records in review, from `ReviewService.pending`) with what
+  the AI said: each finding as a fact, hypothesis, recommendation, or
+  inconclusive, and the source it cites or `[no source]`. `S` submits a draft,
+  and `A`, `X`, and `C` approve, reject, or ask for changes through a dialog
+  with the reviewer's name (defaulting to the current user) and a comment that
+  is required for a rejection or a change request. The decision goes through
+  the same service and schema checks as `batman review`, so a record cannot be
+  approved by its author or generator: the dialog shows the reason and keeps
+  what was typed. The Overview shows how many records wait.
 - **Alfred's settings** (`Ctrl+O`, saved per project in `ai/alfred.yaml`): engine
   (`own`, `opencode`, `nvidia`, `auto`), model, style (`balanced`, `concise`,
   `detailed`), answer language, and the Ollama, OpenCode, and NVIDIA URLs. They

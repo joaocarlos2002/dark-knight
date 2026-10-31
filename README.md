@@ -214,6 +214,11 @@ page). Someone else approves it once (`batman security approve APR-... --by
 NAME`) and you run the push again. Pushing again changes nothing unless the case
 changed, and then only the changed sections are rewritten. `batman gitlab
 test-cases [LABEL]` lists what GitLab already has.
+What the AI creates is only a draft. The Review page in the menu lists it with
+the AI's statements and their sources; press `S` to submit a draft, then `A` to
+approve, `X` to reject, or `C` to ask for changes. The same steps exist as
+`batman review pending|submit|decide`. A record cannot be approved by whoever
+wrote it or generated it.
 
 To upgrade, run `uv tool upgrade dark-knight-qa` (or `pipx upgrade
 dark-knight-qa`). The first run creates its data folder on its own; where it

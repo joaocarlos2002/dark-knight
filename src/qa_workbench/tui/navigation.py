@@ -45,6 +45,7 @@ SECTIONS: tuple[NavSection, ...] = (
         "INTELLIGENCE",
         (
             NavItem("ai-agent", "AI Agent"),
+            NavItem("review", "Review"),
             NavItem("release-analysis", "Release Analysis"),
             NavItem("pipelines", "Pipelines"),
             NavItem("repository", "Repository"),

@@ -38,6 +38,7 @@ def test_sections_follow_the_visual_specification() -> None:
         "API Testing",
         "Security",
         "AI Agent",
+        "Review",
         "Release Analysis",
         "Pipelines",
         "Repository",
