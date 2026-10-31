@@ -844,6 +844,14 @@ by the CLI in another terminal show up. Pages without a class still show
   `action => expected` separated by `;`); the form refuses an unknown priority,
   no steps, or a requirement id that does not exist, and stays open with what was
   typed until the case can be saved as a draft.
+- **Knowledge Base.** Full-text search over every record kind through
+  `RecordIndex` (SQLite FTS5), a disposable cache of the Markdown files: Enter
+  searches (every word as a prefix, ignoring case and accents), `F` narrows to one
+  record kind, and the detail shows the match snippet and the whole record. With
+  no index the page says so and `B` builds it; opening or reloading the page
+  syncs only the files that changed. A damaged index is reported as "Search is
+  unavailable" with the reason, never as an empty result, and damaged records are
+  counted as not indexed.
 - **Test suites.** Columns ID, type, status, case count, title. The detail
   lists the member cases with title and status, the total, the summed estimate
   (said to be partial when only some cases have one), the latest execution that
@@ -858,14 +866,6 @@ by the CLI in another terminal show up. Pages without a class still show
   estimate, and the recorded reason for each inclusion), and risks. A plan with no
   selection says so and points to `batman plans recommend`. `N` creates a draft
   plan from a form that checks the suites exist.
-- **Knowledge Base.** Full-text search over every record kind through
-  `RecordIndex` (SQLite FTS5), a disposable cache of the Markdown files: Enter
-  searches (every word as a prefix, ignoring case and accents), `F` narrows to one
-  record kind, and the detail shows the match snippet and the whole record. With
-  no index the page says so and `B` builds it; opening or reloading the page
-  syncs only the files that changed. A damaged index is reported as "Search is
-  unavailable" with the reason, never as an empty result, and damaged records are
-  counted as not indexed.
 - **Result pages.** Bug Hunting (`BUG`), API Testing (`API`), and Release
   Analysis (`REL`) are list + detail pages over records the CLI saved: a header
   from the metadata followed by the readable Markdown body written when the record
