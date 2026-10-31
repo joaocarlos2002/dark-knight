@@ -220,6 +220,12 @@ use the `vMAJOR.MINOR.PATCH` format.
   (REQ-004, REQ-005, NFR-006, NFR-007), with the three-area layout from 100
   columns.
 
+### Fixed
+
+- Alfred no longer fails with "no final answer after 6 steps" when a small model keeps
+  calling tools: on the last step the tools are withheld and the model is told to
+  answer, and the prompt says to answer greetings and general questions directly.
+
 ## [0.2.0] - 2026-10-30
 
 ### Added
