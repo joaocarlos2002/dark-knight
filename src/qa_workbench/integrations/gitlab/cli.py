@@ -13,6 +13,7 @@ from qa_workbench.integrations.gitlab.client import (
     GitLabClient,
 )
 from qa_workbench.integrations.gitlab.connect import open_client, open_wiki
+from qa_workbench.integrations.gitlab.files import GitLabFiles
 from qa_workbench.integrations.gitlab.issues import GitLabIssues
 from qa_workbench.integrations.gitlab.pipelines import GitLabPipelines
 from qa_workbench.integrations.gitlab.repository import GitLabRepository
@@ -340,3 +341,75 @@ def artifact_command(
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_bytes(data)
     typer.echo(f"Saved {len(data)} bytes to {out}")
+
+
+@gitlab_app.command("branches")
+def branches_command(
+    project: ProjectOption,
+    url: UrlOption = None,
+    token_env: TokenEnvOption = DEFAULT_TOKEN_ENV,
+    limit: LimitOption = 30,
+) -> None:
+    """List branches, the most recently changed first."""
+    source = GitLabFiles(_client(project, url, token_env))
+    found = _run(lambda: source.list_branches(limit=limit))
+    for branch in found:
+        marks = ("default " if branch.default else "") + (
+            "protected" if branch.protected else ""
+        )
+        typer.echo(
+            f"{branch.name:<40} {branch.last_commit:<8} "
+            f"{branch.last_commit_date[:10]}  {marks.strip()}"
+        )
+    if not found:
+        typer.echo("No branches.")
+
+
+@gitlab_app.command("tree")
+def tree_command(
+    project: ProjectOption,
+    path: Annotated[str, typer.Argument(help="A folder; empty for the root.")] = "",
+    ref: Annotated[str | None, typer.Option(help="Branch, tag, or commit.")] = None,
+    url: UrlOption = None,
+    token_env: TokenEnvOption = DEFAULT_TOKEN_ENV,
+    limit: LimitOption = 200,
+) -> None:
+    """List the files and folders directly under a path."""
+    source = GitLabFiles(_client(project, url, token_env))
+    entries = _run(lambda: source.list_tree(path, ref, limit=limit))
+    for entry in entries:
+        typer.echo(entry.path + ("/" if entry.kind == "dir" else ""))
+    if not entries:
+        typer.echo("Nothing is there.")
+
+
+@gitlab_app.command("file")
+def file_command(
+    path: Annotated[str, typer.Argument(help="File path in the repository.")],
+    project: ProjectOption,
+    ref: Annotated[str | None, typer.Option(help="Branch, tag, or commit.")] = None,
+    url: UrlOption = None,
+    token_env: TokenEnvOption = DEFAULT_TOKEN_ENV,
+) -> None:
+    """Show a text file, with secrets masked, marked as untrusted data."""
+    source = GitLabFiles(_client(project, url, token_env))
+    found = _run(lambda: source.get_file(path, ref))
+    typer.echo(fence(found.text, source=f"GitLab file {found.path} at {found.ref}"))
+
+
+@gitlab_app.command("code")
+def code_command(
+    query: Annotated[str, typer.Argument(help="Text to look for.")],
+    project: ProjectOption,
+    ref: Annotated[str | None, typer.Option(help="Branch, tag, or commit.")] = None,
+    url: UrlOption = None,
+    token_env: TokenEnvOption = DEFAULT_TOKEN_ENV,
+    limit: LimitOption = 30,
+) -> None:
+    """Find code by content: each match with its path and line (secrets masked)."""
+    source = GitLabFiles(_client(project, url, token_env))
+    found = _run(lambda: source.search_code(query, ref, limit=limit))
+    for match in found:
+        typer.echo(f"{match.path}:{match.line}: {match.text}")
+    if not found:
+        typer.echo("No matches.")

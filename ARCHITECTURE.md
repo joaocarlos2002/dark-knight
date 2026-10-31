@@ -391,6 +391,16 @@ Everything here is read-only; writing back is a separate, approved action.
   `batman gitlab wiki [QUERY]`, `gitlab wiki-page SLUG`, and `batman
   requirements import-wiki` are the commands; `W` on the Requirements page
   imports in a worker. Wiki text is fenced as untrusted data.
+- **Repository reading.** `integrations/gitlab/files.py` (`GitLabFiles`) reads
+  branches (newest change first), the tree under a path (folders first), one
+  file, and a code search with the matching line. A file over 256 KB, a file
+  that is not UTF-8 text, and one with NUL bytes are refused with the reason
+  (`FileRefused`), never truncated silently; secrets in file text and in matches
+  are masked with `redact_secrets`. A missing path or ref is an explicit 404.
+  `batman gitlab branches|tree|file|code` are the commands, `--ref` picks a
+  branch, tag, or commit, and `--url` reads another repository of the same
+  server. The TUI Repository page (`R` read, `O` open, `U` up, `B` branch) reads
+  in a worker and asks the guard first.
 
 | Command | Reads |
 |---|---|
@@ -840,17 +850,19 @@ A project is a folder under the data directory:
 
 ### TUI shell
 
-`qa-workbench tui` opens `WorkbenchApp`, which composes a corporate header,
-persistent navigation, main content, a contextual panel, and a footer.
+`qa-workbench tui` opens `WorkbenchApp`, which composes a one-line header,
+persistent navigation, main content, a shortcut line, and a footer; a context
+panel opens on demand.
 Decisions live in pure modules (`layout`, `navigation`, `status`, `identity`);
 widgets only render them, so business rules stay out of presentation code.
 
-- **Identity:** the header and footer carry the Wayne Industries / Dark Knight
-  QA identity as text (`tui/identity.py`). No logos or protected symbols are
-  used. The secondary header row and the footer identity line are hidden on
-  short terminals so the chrome never crowds the work area.
-- **Navigation:** three categories, `WORKSPACE`, `OPERATIONS`, and
-  `INTELLIGENCE`, with uppercase labels. The selected item is highlighted in
+- **Chrome:** the header is one line, the product name on the left and the open
+  project on the right (`tui/identity.py` holds only the product name). The
+  footer is one line with the project and the global shortcuts, and the line
+  above it shows the shortcuts of the current page. Nothing repeats between
+  them, and there is no corporate branding or tagline in the interface.
+- **Navigation:** four groups, `WORKSPACE`, `OPERATIONS`, `INTELLIGENCE`, and
+  `SYSTEM`, with uppercase labels and a blank line between groups. The selected item is highlighted in
   Wayne Red and the focused area is outlined in Signal Red.
 - **Theme:** every color is a named token in `tui/theme.py`; the stylesheet
   never repeats a hex value. Tests check the contrast of text and functional
@@ -861,7 +873,7 @@ widgets only render them, so business rules stay out of presentation code.
 
 | Terminal | Navigation | Content | Context |
 |---|---|---|---|
-| Wide (100+ columns) | sidebar | center | side panel |
+| Wide (100+ columns) | sidebar | center | on demand, `F2` |
 | Medium (80-99) | sidebar | center | drawer, `F2` |
 | Narrow (under 80) | menu, `F1` | single column | drawer, `F2` |
 | Short (under 24 rows) | unchanged | tighter spacing | unchanged |

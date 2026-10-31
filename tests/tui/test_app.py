@@ -29,10 +29,12 @@ def _visible(app: WorkbenchApp) -> dict[str, bool]:
     return {name: app.query_one(query).display for name, query in _REGIONS.items()}
 
 
-def test_wide_terminal_shows_all_regions() -> None:
+def test_wide_terminal_shows_menu_and_content_with_context_on_demand() -> None:
     async def scenario(app: WorkbenchApp, pilot) -> None:
-        assert _visible(app) == {"sidebar": True, "main": True, "context": True}
+        assert _visible(app) == {"sidebar": True, "main": True, "context": False}
         assert "-wide" in app.screen.classes
+        await pilot.press("f2")
+        assert app.query_one("#context").display
 
     _run((140, 40), scenario)
 
@@ -108,10 +110,11 @@ def test_unavailable_module_is_not_reported_as_working(
     _run((140, 40), scenario)
 
 
-def test_status_bar_names_state_without_relying_on_color() -> None:
+def test_footer_is_one_line_with_the_project_and_the_shortcuts() -> None:
     async def scenario(app: WorkbenchApp, pilot) -> None:
-        footer = str(app.query_one("#footer-identity", Static).render())
-        assert "SYSTEM STATUS: ● OPERATIONAL" in footer
+        footer = str(app.query_one("#status-bar", Static).render())
+        assert footer.startswith("No project") and "Palette" in footer
+        assert app.query_one("#footer").size.height == 1
 
     _run((140, 40), scenario)
 
@@ -223,6 +226,7 @@ def test_escape_closes_the_menu_on_narrow_terminals() -> None:
 
 def test_escape_leaves_a_wide_layout_untouched() -> None:
     async def scenario(app: WorkbenchApp, pilot) -> None:
+        await pilot.press("f2")
         await pilot.press("escape")
         assert _visible(app) == {"sidebar": True, "main": True, "context": True}
 
@@ -246,6 +250,8 @@ def test_custom_shortcut_replaces_the_default() -> None:
         async with app.run_test(size=(140, 40)) as pilot:
             await pilot.pause()
             await pilot.press("f2")
+            assert not app.query_one("#context").display  # F2 is no longer bound
+            await pilot.press("f3")
             assert app.query_one("#context").display
             await pilot.press("f3")
             assert not app.query_one("#context").display
@@ -265,35 +271,32 @@ def test_status_bar_shows_the_effective_shortcuts() -> None:
     asyncio.run(runner())
 
 
-def test_a_100_column_terminal_shows_all_three_areas() -> None:
+def test_a_100_column_terminal_shows_menu_and_content() -> None:
     async def scenario(app: WorkbenchApp, pilot) -> None:
-        assert _visible(app) == {"sidebar": True, "main": True, "context": True}
+        assert _visible(app) == {"sidebar": True, "main": True, "context": False}
 
     _run((100, 40), scenario)
 
 
-def test_header_and_footer_carry_the_wayne_industries_identity() -> None:
+def test_the_header_names_only_the_product() -> None:
     async def scenario(app: WorkbenchApp, pilot) -> None:
-        def text(query: str) -> str:
-            return str(app.query_one(query, Static).render())
-
-        assert text("#header-company") == "WAYNE INDUSTRIES"
-        assert text("#header-division") == "ADVANCED TECHNOLOGY DIVISION"
-        assert text("#header-location") == "INTERNAL SYSTEM / GOTHAM CITY"
-        assert text("#brand") == "DARK KNIGHT QA\nQUALITY INTELLIGENCE SYSTEM"
-        footer = text("#footer-identity")
-        assert "WAYNE INDUSTRIES / INTERNAL SOFTWARE" in footer
-        assert "AUTHORIZED ACCESS ONLY" in footer
+        assert (
+            str(app.query_one("#header-product", Static).render()) == "DARK KNIGHT QA"
+        )
+        assert app.query_one("#header").size.height == 1
+        assert not app.query("#header-company, #header-division, #header-location")
+        assert not app.query("#brand, #footer-identity")
+        shown = app.export_screenshot().upper()
+        for word in ("WAYNE", "GOTHAM", "AUTHORIZED ACCESS", "DIVISION"):
+            assert word not in shown
 
     _run((140, 40), scenario)
 
 
-def test_secondary_identity_lines_are_hidden_on_short_terminals() -> None:
+def test_header_and_footer_stay_visible_on_short_terminals() -> None:
     async def scenario(app: WorkbenchApp, pilot) -> None:
         assert "-short" in app.screen.classes
-        assert not app.query_one("#header-row-2").display
-        assert not app.query_one("#footer-identity").display
-        assert app.query_one("#header-company").display
+        assert app.query_one("#header-product").display
         assert app.query_one("#status-bar").display
 
     _run((140, 20), scenario)

@@ -203,6 +203,11 @@ imports them as draft requirements (or press `W` on the Requirements page). The
 group defaults to the project's group; pass `--group` to choose another. Run it
 again to pick up changes: pages that changed go back to draft for review.
 
+The code of the repository can be read without leaving the tool:
+`batman gitlab branches|tree|file|code ... -p PROJ-001` (add `--ref` for a
+branch, `--url` for another repository), or the Repository page in the menu.
+Large and binary files are refused, and secrets in code are masked.
+
 To upgrade, run `uv tool upgrade dark-knight-qa` (or `pipx upgrade
 dark-knight-qa`). The first run creates its data folder on its own; where it
 lives and how to change it is described under Contributing below.

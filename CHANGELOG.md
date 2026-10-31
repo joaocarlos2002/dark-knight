@@ -15,6 +15,16 @@ use the `vMAJOR.MINOR.PATCH` format.
   server addresses are still typed. A question without a model now says to press
   `Ctrl+G`.
 
+### Changed
+
+- The TUI shell was simplified. The header is one line (product on the left,
+  project on the right); the Wayne Industries / Gotham City branding, the
+  tagline, and the corporate footer line are gone; the footer is one line, and the
+  shortcuts of the current page show on their own line (the bar used to have no
+  room and never appeared). The menu groups are separated by a blank line, list
+  pages give the table and the detail their own space, and the context panel opens
+  on demand with `F2` instead of taking space on wide terminals.
+
 ### Added
 
 - Requirements from the GitLab group wiki: `batman gitlab wiki` and `wiki-page`
@@ -22,6 +32,10 @@ use the `vMAJOR.MINOR.PATCH` format.
   imports each page as a draft requirement with its source, URL, and hash, and
   business rules (`RN-...`) are recorded. Importing again skips unchanged pages
   and updates a changed one in place, back to draft (#164).
+- Read a GitLab repository: `batman gitlab branches`, `tree`, `file`, and `code`
+  (code search with path and line), plus a Repository page in the TUI. Files
+  over 256 KB and binary files are refused with a reason, secrets are masked,
+  file text is marked as untrusted, and every read goes through the guard (#168).
 - Claude as an AI engine through Claude Code, with no API key: `batman ai ask
   --engine claude [--model sonnet|opus|haiku]`, or `claude` under Engine in
   Alfred. It uses your own Claude login, is found automatically (PATH, the VS Code

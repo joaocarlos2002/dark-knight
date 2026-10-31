@@ -40,6 +40,7 @@ def test_sections_follow_the_visual_specification() -> None:
         "AI Agent",
         "Release Analysis",
         "Pipelines",
+        "Repository",
         "Knowledge Base",
         "Reports",
         "Settings",
