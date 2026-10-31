@@ -208,6 +208,12 @@ The code of the repository can be read without leaving the tool:
 branch, `--url` for another repository), or the Repository page in the menu.
 Large and binary files are refused, and secrets in code are masked.
 
+Test cases can go to GitLab as `test_case` issues in the team's standard layout:
+`batman cases push TC-001 -p PROJ-001 --by YOURNAME` (or `G` on the Test Cases
+page). Someone else approves it once (`batman security approve APR-... --by
+NAME`) and you run the push again. Pushing again changes nothing unless the case
+changed, and then only the changed sections are rewritten. `batman gitlab
+test-cases [LABEL]` lists what GitLab already has.
 What the AI creates is only a draft. The Review page in the menu lists it with
 the AI's statements and their sources; press `S` to submit a draft, then `A` to
 approve, `X` to reject, or `C` to ask for changes. The same steps exist as
@@ -218,6 +224,12 @@ Findings and evidence can be handled in the TUI too. On the Bug Hunting page,
 `N` records a finding, `E` attaches a file from a folder tree, and `C`
 reclassifies it (a confirmed defect needs evidence and two reproductions). The
 Evidence page adds files with `A` and checks their hashes with `V`.
+The team's boards span the whole group, so a column can be read across all of
+its projects: `batman gitlab board -p PROJ-001 --labels team::dev,workflow::QA`
+(a board's filter label and a column label; both are required). `batman gitlab
+issue-links 7 -p PROJ-001` lists an issue's related issues and merge requests
+(add `--url` for an issue of another project). The Board page in the menu does
+the same. Test cases are left out of these lists unless you ask for them.
 
 To upgrade, run `uv tool upgrade dark-knight-qa` (or `pipx upgrade
 dark-knight-qa`). The first run creates its data folder on its own; where it
