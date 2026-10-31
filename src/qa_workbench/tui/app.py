@@ -1,5 +1,6 @@
 """Textual application shell: navigation, content, context, and status bar."""
 
+from os import environ
 from pathlib import Path
 
 from textual.app import App, ComposeResult
@@ -11,13 +12,24 @@ from textual.widgets.option_list import Option
 from qa_workbench.browser.errors import BrowserError
 from qa_workbench.browser.ports import BrowserMode
 from qa_workbench.browser.preview import PreviewChannel
-from qa_workbench.core.config import AppConfig
+from qa_workbench.core.config import AppConfig, ConfigurationError
+from qa_workbench.i18n import (
+    ENVIRONMENT_VARIABLE,
+    LANGUAGES,
+    UnknownLanguageError,
+    language,
+    normalize,
+    set_language,
+    store_language,
+    tr,
+)
 from qa_workbench.projects.errors import ProjectError
 from qa_workbench.projects.models import Project
 from qa_workbench.projects.repository import ProjectRepository
 from qa_workbench.tui import identity, navigation, onboarding
 from qa_workbench.tui.commands import WorkbenchCommands
 from qa_workbench.tui.components.browser_preview import BrowserPreview
+from qa_workbench.tui.components.choice import ChoiceDialog
 from qa_workbench.tui.components.chrome import AppFooter, AppHeader
 from qa_workbench.tui.components.help_bar import HelpBar
 from qa_workbench.tui.keymap import Keymap
@@ -27,27 +39,34 @@ from qa_workbench.tui.palette import PaletteEntry, destination_key, palette_entr
 from qa_workbench.tui.status import Status, format_status
 from qa_workbench.tui.theme import SHELL_CSS
 
+BROWSER_HINT = "Follow the browser Playwright is driving. Ctrl+B shows or hides it."
+UNAVAILABLE = "This module is not available yet."
+
 
 def _status_bar_text(project: Project | None, keymap: Keymap) -> str:
-    label = project.id if project else identity.NO_PROJECT_FOOTER
+    label = project.id if project else tr(identity.NO_PROJECT_FOOTER)
     return f"{label} │ {keymap.help_bar()}"
 
 
 def _header_project_text(project: Project | None) -> str:
     if project is None:
-        return identity.NO_PROJECT_HEADER
+        return tr(identity.NO_PROJECT_HEADER)
     return f"{project.id} / {project.name.upper()}"
 
 
 def _context_text(project: Project | None) -> str:
+    heading = tr("CONTEXT")
     if project is None:
-        return "CONTEXT\n\nProject  none\nEnvironment  -\nRepository  -"
+        return (
+            f"{heading}\n\n{tr('Project')}  {tr('none')}\n"
+            f"{tr('Environment')}  -\n{tr('Repository')}  -"
+        )
     environments = ", ".join(e.name for e in project.environments) or "-"
     return (
-        "CONTEXT\n\n"
-        f"Project  {project.name}\n"
-        f"Environment  {environments}\n"
-        f"Repository  {project.repository or '-'}"
+        f"{heading}\n\n"
+        f"{tr('Project')}  {project.name}\n"
+        f"{tr('Environment')}  {environments}\n"
+        f"{tr('Repository')}  {project.repository or '-'}"
     )
 
 
@@ -177,7 +196,7 @@ class WorkbenchApp(App[None]):
         page = self._page_for(self._current.key)
         if page is not None:
             page.refresh_data()
-            self.notify("Reloaded.", timeout=2)
+            self.notify(tr("Reloaded."), timeout=2)
 
     def _page_for(self, key: str) -> Page | None:
         matches = self.query(f"#page-{key}")
@@ -246,8 +265,66 @@ class WorkbenchApp(App[None]):
 
     def action_help(self) -> None:
         self.notify(
-            self._workbench_keymap.help_text(), title="Keyboard shortcuts", timeout=15
+            self._workbench_keymap.help_text(),
+            title=tr("Keyboard shortcuts"),
+            timeout=15,
         )
+
+    def action_language(self) -> None:
+        """Pick the interface language from a list; it applies at once."""
+        names = [name for _code, name in LANGUAGES]
+        now = dict(LANGUAGES)[language()]
+
+        def chosen(name: str | None) -> None:
+            if name is not None:
+                code = next(c for c, n in LANGUAGES if n == name)
+                self.set_language(code)
+
+        self.push_screen(
+            ChoiceDialog(
+                tr("Interface language"),
+                names,
+                current=now,
+                note=tr("It applies at once and is remembered for the next runs."),
+            ),
+            chosen,
+        )
+
+    def set_language(self, code: str) -> None:
+        """Switch the language now, keeping the open project and page."""
+        try:
+            code = set_language(code)
+        except UnknownLanguageError as error:
+            self.notify(str(error), severity="error")
+            return
+        try:
+            store_language(AppConfig.load().config_dir, code)
+            note = ""
+        except (OSError, ConfigurationError):
+            note = tr("It could not be remembered for the next runs.")
+        self._retranslate()
+        override = environ.get(ENVIRONMENT_VARIABLE)
+        if override and normalize(override) != code:
+            note = tr(
+                "{variable} is set, so it wins on the next run.",
+                variable=ENVIRONMENT_VARIABLE,
+            )
+        self.notify(f"{dict(LANGUAGES)[code]}. {note}".strip(), title=tr("Language"))
+
+    def _retranslate(self) -> None:
+        """Redraw the shell and the open page in the current language."""
+        sidebar = self.query_one("#sidebar", OptionList)
+        sidebar.clear_options()
+        sidebar.add_options(self._sidebar_options())
+        self.query_one("#header", AppHeader).set_project_label(
+            _header_project_text(self._project)
+        )
+        self.query_one("#footer", AppFooter).set_status_line(
+            _status_bar_text(self._project, self._workbench_keymap)
+        )
+        self.query_one("#context", Static).update(_context_text(self._project))
+        self._show_page(self._current)
+        sidebar.highlighted = sidebar.get_option_index(self._current.key)
 
     def action_focus_search(self) -> None:
         # Only the visible page counts: hidden pages stay mounted.
@@ -302,7 +379,7 @@ class WorkbenchApp(App[None]):
         self.query_one("#main").display = not (narrow and self._sidebar_visible)
 
     def _show_page(self, item: navigation.NavItem) -> None:
-        self.query_one("#page-title", Static).update(item.title.upper())
+        self.query_one("#page-title", Static).update(tr(item.title).upper())
         page = self._page_for(item.key)
         for other in self.query_one("#page-content").query(Page):
             other.display = other is page
@@ -315,9 +392,7 @@ class WorkbenchApp(App[None]):
             return
         self.query_one("#page-body", Static).display = True
         if item.key == "browser-preview":
-            self.query_one("#page-body", Static).update(
-                "Follow the browser Playwright is driving. Ctrl+B shows or hides it."
-            )
+            self.query_one("#page-body", Static).update(tr(BROWSER_HINT))
             panel = self.query_one("#browser-preview", BrowserPreview)
             panel.display = True
             panel.refresh_preview(force=True)
@@ -326,7 +401,7 @@ class WorkbenchApp(App[None]):
             help_bar.set_page_bindings([])
             return
         self.query_one("#page-body", Static).update(
-            f"{format_status(Status.PENDING)}  This module is not available yet."
+            f"{format_status(Status.PENDING)}  {tr(UNAVAILABLE)}"
         )
         # No page bindings for unavailable modules
         help_bar = self.query_one("#help-bar", HelpBar)
@@ -337,11 +412,11 @@ class WorkbenchApp(App[None]):
         options: list[Option] = []
         for index, section in enumerate(navigation.SECTIONS):
             # A blank line above each group keeps the groups apart.
-            heading = section.title.upper()
+            heading = tr(section.title).upper()
             options.append(
                 Option(heading if index == 0 else f"\n{heading}", disabled=True)
             )
             options.extend(
-                Option(item.title.upper(), id=item.key) for item in section.items
+                Option(tr(item.title).upper(), id=item.key) for item in section.items
             )
         return options

@@ -9,6 +9,7 @@ from textual.containers import Horizontal, Vertical
 from textual.widgets import Button, RadioButton, RadioSet, Static
 
 from qa_workbench.core.config import AppConfig
+from qa_workbench.i18n import LANGUAGES, language, tr
 from qa_workbench.security.credentials import (
     SERVICES,
     CredentialError,
@@ -129,6 +130,7 @@ class SettingsPage(Page):
     def _render_general(self) -> str:
         """Render the general settings as a form."""
         lines = [
+            tr("Language: {name}  (F4 changes it)", name=dict(LANGUAGES)[language()]),
             f"Default project: {self._config.data_dir}",
             f"Log level: {self._config.log_level}",
             f"Log file: {self._config.log_file or '-'}",

@@ -27,6 +27,12 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- Interface language setting with Brazilian Portuguese: `F4` picks it from a list
+  and applies it at once without losing the open project, `batman config language
+  set|show|list`, and `DARK_KNIGHT_LANGUAGE`. The shell (menu, header, footer,
+  context panel, shortcuts, command palette) is translated; pages and the command
+  line are still English and will follow, and an untranslated text always shows in
+  English (part of #157).
 - Open a bug in GitLab from a reproduced finding: `batman bugs publish` and `U` on
   Bug Hunting create one plain issue and upload the evidence to the same project,
   only after someone else approves that exact action; a repeat reports the

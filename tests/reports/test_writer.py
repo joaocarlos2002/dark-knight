@@ -1,5 +1,4 @@
 from conftest import make_case, make_requirement
-
 from qa_workbench.executions.recovery import record_correction
 from qa_workbench.reports.writer import (
     is_execution_report_stale,

@@ -1013,6 +1013,17 @@ by the CLI in another terminal show up. Pages without a class still show
   the same service and schema checks as `batman review`, so a record cannot be
   approved by its author or generator: the dialog shows the reason and keeps
   what was typed. The Overview shows how many records wait.
+- **Interface language (`i18n/`).** English is the source language: `tr("Save")`
+  returns the English text and, in `pt-BR`, its entry in `i18n/pt_br.py` (keyed by
+  the English text, so a missing entry shows English, never a key). `{name}` fields
+  are filled after translating. The language comes from `DARK_KNIGHT_LANGUAGE`,
+  then the choice kept in the configuration folder (`batman config language set`,
+  `F4`), then English; an unknown one is a clear error. Record content, ids, the
+  product name, and text written by an AI or an external system never go through
+  `tr`. Tests fail when a `tr("...")` text has no `pt-BR` entry, when an entry is
+  unused, when its `{fields}` differ from the source, or when a menu item or
+  shortcut is untranslated. Translated so far: the shell (menu, header, footer,
+  context, shortcuts, palette, language picker); pages and the CLI are next.
 - **Bugs in GitLab (`publishing/bugs.py`).** `batman bugs publish` (and `U` on
   Bug Hunting) opens an issue from a finding that is `reproduced` and has intact
   evidence. The text is checked for secrets and hosts that are not allowed, and
