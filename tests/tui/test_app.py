@@ -92,6 +92,7 @@ def test_narrow_menu_closes_after_choosing_a_page() -> None:
 
 def test_unavailable_module_is_not_reported_as_working() -> None:
     async def scenario(app: WorkbenchApp, pilot) -> None:
+        app.navigate("requirements")
         body = str(app.query_one("#page-body", Static).render())
         assert "PENDING" in body
         assert "not available yet" in body

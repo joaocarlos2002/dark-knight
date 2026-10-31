@@ -1,5 +1,7 @@
 """Textual application shell: navigation, content, context, and status bar."""
 
+from pathlib import Path
+
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.events import Resize
@@ -10,13 +12,16 @@ from qa_workbench.browser.errors import BrowserError
 from qa_workbench.browser.ports import BrowserMode
 from qa_workbench.browser.preview import PreviewChannel
 from qa_workbench.core.config import AppConfig
+from qa_workbench.projects.errors import ProjectError
 from qa_workbench.projects.models import Project
+from qa_workbench.projects.repository import ProjectRepository
 from qa_workbench.tui import identity, navigation
 from qa_workbench.tui.commands import WorkbenchCommands
 from qa_workbench.tui.components.browser_preview import BrowserPreview
 from qa_workbench.tui.components.chrome import AppFooter, AppHeader
 from qa_workbench.tui.keymap import Keymap
 from qa_workbench.tui.layout import ShellLayout, WidthClass, layout_for
+from qa_workbench.tui.pages import PAGES, Page, PageContext
 from qa_workbench.tui.palette import PaletteEntry, destination_key, palette_entries
 from qa_workbench.tui.status import Status, format_status
 from qa_workbench.tui.theme import SHELL_CSS
@@ -57,6 +62,7 @@ class WorkbenchApp(App[None]):
         project: Project | None = None,
         keymap: Keymap | None = None,
         preview_channel: PreviewChannel | None = None,
+        data_dir: Path | None = None,
     ) -> None:
         self._workbench_keymap = keymap or Keymap.default()
         # Read by Textual while it builds its default bindings.
@@ -66,6 +72,7 @@ class WorkbenchApp(App[None]):
             if shortcut.action != "command_palette":
                 self.bind(shortcut.key, shortcut.action, description=shortcut.label)
         self._project = project
+        self._data_dir = data_dir or AppConfig.load().data_dir
         self._preview_channel = preview_channel or PreviewChannel(
             AppConfig.load().data_dir / "browser-preview"
         )
@@ -83,6 +90,9 @@ class WorkbenchApp(App[None]):
             with Vertical(id="main"):
                 yield Static(id="page-title")
                 yield Static(id="page-body")
+                with Vertical(id="page-content"):
+                    for key, page_class in PAGES.items():
+                        yield page_class(self._page_context(), id=f"page-{key}")
                 yield BrowserPreview(self._preview_channel, id="browser-preview")
             yield Static(_context_text(self._project), id="context")
         yield AppFooter(
@@ -93,7 +103,9 @@ class WorkbenchApp(App[None]):
         self.query_one("#browser-preview").display = False
         self._show_page(self._current)
         self._apply_layout(self.size.width, self.size.height)
-        self.query_one("#sidebar", OptionList).focus()
+        sidebar = self.query_one("#sidebar", OptionList)
+        sidebar.highlighted = sidebar.get_option_index(self._current.key)
+        sidebar.focus()
 
     def on_resize(self, event: Resize) -> None:
         self._apply_layout(event.size.width, event.size.height)
@@ -109,9 +121,58 @@ class WorkbenchApp(App[None]):
         self._show_page(self._current)
         sidebar = self.query_one("#sidebar", OptionList)
         sidebar.highlighted = sidebar.get_option_index(key)
+        page = self._page_for(key)
+        if page is not None:
+            page.focus_primary()
         if self._is_narrow():
             self._sidebar_visible = False
             self._refresh_regions()
+
+    def _page_context(self) -> PageContext:
+        return PageContext(self._data_dir, self._project)
+
+    @property
+    def project(self) -> Project | None:
+        return self._project
+
+    def open_project(self, project_id: str) -> None:
+        """Make a project the current one and show its overview."""
+        try:
+            project = ProjectRepository(self._data_dir).open(project_id)
+        except ProjectError as error:
+            self.notify(str(error), severity="error", title="Project not opened")
+            return
+        self._set_project(project)
+        self.navigate("overview")
+        self.notify(f"{project.id} {project.name} is open.")
+
+    def project_archived(self, project_id: str) -> None:
+        """The page archived a project: refresh it if it is the open one."""
+        if self._project is not None and self._project.id == project_id:
+            self._set_project(ProjectRepository(self._data_dir).open(project_id))
+
+    def _set_project(self, project: Project | None) -> None:
+        self._project = project
+        self.query_one("#header", AppHeader).set_project_label(
+            _header_project_text(project)
+        )
+        self.query_one("#footer", AppFooter).set_status_line(
+            _status_bar_text(project, self._workbench_keymap)
+        )
+        self.query_one("#context", Static).update(_context_text(project))
+        for page in self.query_one("#page-content").query(Page):
+            page.context = self._page_context()
+
+    def action_refresh(self) -> None:
+        """Reload the visible page from disk."""
+        page = self._page_for(self._current.key)
+        if page is not None:
+            page.refresh_data()
+            self.notify("Reloaded.", timeout=2)
+
+    def _page_for(self, key: str) -> Page | None:
+        matches = self.query(f"#page-{key}")
+        return matches.first(Page) if matches else None
 
     def palette_entries(self) -> list[PaletteEntry]:
         return palette_entries(self._workbench_keymap)
@@ -231,6 +292,14 @@ class WorkbenchApp(App[None]):
 
     def _show_page(self, item: navigation.NavItem) -> None:
         self.query_one("#page-title", Static).update(item.title.upper())
+        page = self._page_for(item.key)
+        for other in self.query_one("#page-content").query(Page):
+            other.display = other is page
+        if page is not None:
+            self.query_one("#page-body", Static).display = False
+            page.refresh_data()
+            return
+        self.query_one("#page-body", Static).display = True
         if item.key == "browser-preview":
             self.query_one("#page-body", Static).update(
                 "Follow the browser Playwright is driving. Ctrl+B shows or hides it."
