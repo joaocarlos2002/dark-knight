@@ -126,7 +126,9 @@ def requirement_detail(repository: MarkdownRepository, record_id: str) -> str:
                 if isinstance(r, dict)
             ],
         )
-    lines += ["", record.body.strip()]
+    # The criteria are shown above, so the body's own copy of them is dropped.
+    description = record.body.split("## Acceptance criteria")[0].strip()
+    lines += ["", description]
     return "\n".join(lines)
 
 

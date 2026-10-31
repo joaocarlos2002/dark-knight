@@ -79,6 +79,24 @@ def test_requirement_detail_lists_criteria_cases_and_missing_ones(repo) -> None:
     assert "The system must allow it." in text
 
 
+def test_the_description_does_not_repeat_the_criteria(repo) -> None:
+    requirement = repo.create(
+        "REQ",
+        {
+            "title": "Pay",
+            "status": "draft",
+            "source": "s.md",
+            "origin": "manual",
+            "acceptance_criteria": ["Receipt is emailed"],
+        },
+        "# Pay\n\nA description.\n\n## Acceptance criteria\n\n- Receipt is emailed\n",
+    )
+
+    text = requirement_detail(repo, requirement.id)
+
+    assert text.count("Receipt is emailed") == 1 and "A description." in text
+
+
 def test_a_requirement_without_cases_or_criteria_says_so(repo) -> None:
     requirement = _requirement(repo)
 
