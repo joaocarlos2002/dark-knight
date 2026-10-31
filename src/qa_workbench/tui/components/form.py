@@ -16,6 +16,7 @@ class FormField:
     label: str
     placeholder: str = ""
     required: bool = False
+    default: str = ""  # typed in already; a placeholder is only a hint
 
 
 Validator = Callable[[dict[str, str]], str | None]
@@ -59,7 +60,11 @@ class FormDialog(ModalScreen["dict[str, str] | None"]):
             for field in self._fields:
                 suffix = " *" if field.required else ""
                 yield Static(f"{field.label}{suffix}", classes="form-label")
-                yield Input(placeholder=field.placeholder, id=f"field-{field.key}")
+                yield Input(
+                    value=field.default,
+                    placeholder=field.placeholder,
+                    id=f"field-{field.key}",
+                )
             yield Static("", id="form-error")
             with Horizontal():
                 yield Button("Cancel", id="cancel")
