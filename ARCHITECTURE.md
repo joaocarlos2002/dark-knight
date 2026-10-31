@@ -921,8 +921,12 @@ by the CLI in another terminal show up. Pages without a class still show
   only has read-only record tools.
 - **Alfred's settings** (`Ctrl+O`, saved per project in `ai/alfred.yaml`): engine
   (`own`, `opencode`, `nvidia`, `auto`), model, style (`balanced`, `concise`,
-  `detailed`), answer language, and the Ollama, OpenCode, and NVIDIA URLs.
-  `Ctrl+G` lists the engine's models in a `ChoiceDialog` and saves the choice; an
+  `detailed`), answer language, and the Ollama, OpenCode, and NVIDIA URLs. They
+  are picked, not typed: `Ctrl+O` opens a menu and each entry opens a list (the
+  language list is `LANGUAGES` in `ai/alfred.py`); only the server addresses are a
+  form. `Ctrl+G` lists the engine's models in a `ChoiceDialog` and saves the choice
+  (the menu's Model entry does the same); without a model the notice says to press
+  `Ctrl+G`. An
   answer from a remote engine is labelled as such. Style and language are added
   to the system prompt *after* the fixed rules and state that they never override
   them. A broken settings file is an error, not a silent return to defaults, and

@@ -8,7 +8,7 @@ from textual.widgets import Static
 
 from qa_workbench.ai import cli as ai_cli
 from qa_workbench.ai.alfred import (
-    STYLES,
+    LANGUAGES,
     AlfredSettings,
     AlfredSettingsError,
     ask_alfred,
@@ -18,7 +18,7 @@ from qa_workbench.ai.alfred import (
     save_settings,
 )
 from qa_workbench.ai.errors import NoProviderAvailable, ProviderError
-from qa_workbench.ai.selection import MODES, REMOTE
+from qa_workbench.ai.selection import REMOTE
 from qa_workbench.storage.errors import StorageError
 from qa_workbench.tui.components.agent_chat import AgentChat
 from qa_workbench.tui.components.choice import ChoiceDialog
@@ -31,24 +31,23 @@ TOOLS = "Tools (read only): ✓ get_record   ✓ list_records"
 REMINDER = "Alfred analyses; it is not evidence. Facts need a record it really saw."
 
 
-def settings_fields(current: AlfredSettings) -> tuple[FormField, ...]:
+ENGINE_LABELS = {
+    "auto": "auto - local engines first",
+    "own": "own - Ollama on this machine",
+    "opencode": "opencode - OpenCode server",
+    "nvidia": "nvidia - hosted, data leaves this machine",
+}
+STYLE_LABELS = {
+    "balanced": "balanced",
+    "concise": "concise - at most five short statements",
+    "detailed": "detailed - explain the reasoning",
+}
+MENU_ITEMS = ("Engine", "Model", "Style", "Answer language", "Server addresses")
+
+
+def server_fields(current: AlfredSettings) -> tuple[FormField, ...]:
+    """The only settings that are typed: where each engine is."""
     return (
-        FormField(
-            "engine",
-            f"Engine ({', '.join(MODES)})",
-            required=True,
-            default=current.engine,
-        ),
-        FormField(
-            "model", "Model", "llama3.2   or   provider/model", default=current.model
-        ),
-        FormField(
-            "style",
-            f"Style ({', '.join(STYLES)})",
-            required=True,
-            default=current.style,
-        ),
-        FormField("language", "Answer language", "English", default=current.language),
         FormField(
             "ollama_url", "Ollama URL", required=True, default=current.ollama_url
         ),
@@ -109,15 +108,85 @@ class AlfredPage(Page):
         if project.archived:
             self.app.notify(f"{project.id} is archived and cannot be changed.")
             return
-        root = self.context.repository().root
+        current = self._current_or_default()
+        language = next(
+            (label for label, value in LANGUAGES if value == current.language),
+            current.language,
+        )
+        entries = [
+            f"Engine: {current.engine}",
+            f"Model: {current.model or '(none yet)'}",
+            f"Style: {current.style}",
+            f"Answer language: {language or LANGUAGES[0][0]}",
+            "Server addresses...",
+        ]
+
+        def chosen(entry: str | None) -> None:
+            if entry is None:
+                return
+            index = entries.index(entry)
+            if index == 0:
+                self._pick_setting(
+                    "Engine", "engine", [(v, k) for k, v in ENGINE_LABELS.items()]
+                )
+            elif index == 1:
+                self.action_pick_model()
+            elif index == 2:
+                self._pick_setting(
+                    "Style", "style", [(v, k) for k, v in STYLE_LABELS.items()]
+                )
+            elif index == 3:
+                self._pick_setting("Answer language", "language", list(LANGUAGES))
+            else:
+                self._edit_servers()
+
+        self.app.push_screen(
+            ChoiceDialog(
+                "Alfred settings",
+                entries,
+                note="Choose what to change. Nothing here needs typing.",
+            ),
+            chosen,
+        )
+
+    def _current_or_default(self) -> AlfredSettings:
         try:
-            current = load_settings(root)
+            return self._settings()
         except AlfredSettingsError:
-            current = AlfredSettings()  # a broken file is replaced by what is saved
+            return AlfredSettings()  # a broken file is replaced by what is saved
+
+    def _pick_setting(
+        self, title: str, field: str, options: list[tuple[str, str]]
+    ) -> None:
+        """Pick one value from a list; (label, value) pairs. Back to the menu after."""
+        current = self._current_or_default()
+        labels = [label for label, _ in options]
+        now = next((lb for lb, v in options if v == getattr(current, field)), "")
+
+        def chosen(label: str | None) -> None:
+            if label is not None:
+                value = dict(options)[label]
+                try:
+                    save_settings(
+                        self.context.repository().root,
+                        replace(current, **{field: value}),
+                    )
+                except (AlfredSettingsError, OSError) as error:
+                    self.app.notify(str(error), severity="error")
+                else:
+                    self.refresh_data()
+                    self.app.notify(f"{title} set to {label.split(' - ')[0]}.")
+            self.action_configure()
+
+        self.app.push_screen(ChoiceDialog(title, labels, current=now), chosen)
+
+    def _edit_servers(self) -> None:
+        root = self.context.repository().root
+        current = self._current_or_default()
 
         def commit(values: dict[str, str]) -> str | None:
             try:
-                save_settings(root, AlfredSettings(**values))
+                save_settings(root, replace(current, **values))
             except (AlfredSettingsError, OSError) as error:
                 return str(error)
             return None
@@ -125,12 +194,13 @@ class AlfredPage(Page):
         def done(values: dict[str, str] | None) -> None:
             if values is not None:
                 self.refresh_data()
-                self.app.notify("Alfred's settings were saved.")
+                self.app.notify("The server addresses were saved.")
+            self.action_configure()
 
         self.app.push_screen(
             FormDialog(
-                "Alfred settings",
-                settings_fields(current),
+                "Server addresses",
+                server_fields(current),
                 submit_label="Save",
                 commit=commit,
             ),
@@ -227,7 +297,14 @@ class AlfredPage(Page):
             except NoProviderAvailable as error:
                 self.app.call_from_thread(self._finish, "notice", str(error))
             except (ProviderError, StorageError, OSError) as error:
-                self.app.call_from_thread(self._finish, "notice", f"Failed: {error}")
+                hint = (
+                    " Press Ctrl+G to choose one."
+                    if "no model is configured" in str(error)
+                    else ""
+                )
+                self.app.call_from_thread(
+                    self._finish, "notice", f"Failed: {error}{hint}"
+                )
             else:
                 lines = format_answer(reply)
                 if reply.attached:
