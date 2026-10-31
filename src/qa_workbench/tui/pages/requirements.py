@@ -4,10 +4,19 @@ from pathlib import Path
 
 from textual.binding import Binding
 
+from qa_workbench.core.config import ConfigurationError
+from qa_workbench.integrations.errors import IntegrationError
+from qa_workbench.integrations.gitlab import cli as gitlab_cli
+from qa_workbench.integrations.gitlab.connect import open_client, open_wiki
+from qa_workbench.integrations.gitlab.wiki import DEFAULT_PREFIX
+from qa_workbench.projects.errors import ProjectError
 from qa_workbench.requirements.importer import (
     RequirementImportError,
     import_requirements,
 )
+from qa_workbench.requirements.wiki_import import import_wiki_pages
+from qa_workbench.security.audit import AuditError
+from qa_workbench.security.settings import SecuritySettingsError
 from qa_workbench.storage.errors import StorageError
 from qa_workbench.tui.browse import (
     REQUIREMENT_COLUMNS,
@@ -28,6 +37,11 @@ IMPORT_FIELDS = (
     FormField("version", "Source version", "v1.2"),
 )
 
+WIKI_FIELDS = (
+    FormField("prefix", "Pages that start with", default=DEFAULT_PREFIX),
+    FormField("group", "Group (empty: the project's group)", "nees/primeira-infancia"),
+)
+
 EDIT_REQ_FIELDS = (
     FormField("title", "Title", required=True),
     FormField("priority", "Priority (high, medium, low)", "medium"),
@@ -43,10 +57,11 @@ class RequirementsPage(BrowserPage):
     columns = REQUIREMENT_COLUMNS
     empty_message = "No requirements yet."
     empty_hint = "Press I to import them from a Markdown or text file."
-    shortcuts_hint = "I import   E edit   D archive"
+    shortcuts_hint = "I import   W wiki   E edit   D archive"
 
     BINDINGS = [
         Binding("i", "import_requirements", "Import"),
+        Binding("w", "import_wiki", "Wiki"),
         Binding("e", "edit_requirement", "Edit"),
         Binding("d", "archive_requirement", "Archive"),
     ]
@@ -95,6 +110,68 @@ class RequirementsPage(BrowserPage):
                 commit=commit,
             ),
             done,
+        )
+
+    def action_import_wiki(self) -> None:
+        """Read the group wiki and import its requirement pages (in a worker)."""
+        project = self.writable_project()
+        if project is None:
+            return
+
+        def done(values: dict[str, str] | None) -> None:
+            if values is None:
+                return
+            self.app.notify("Reading the wiki...", title="Wiki import")
+            self.run_worker(
+                lambda: self._import_wiki(project.id, values),
+                thread=True,
+                exclusive=True,
+                name="wiki-import",
+            )
+
+        self.app.push_screen(
+            FormDialog("GitLab wiki", WIKI_FIELDS, submit_label="Import"),
+            done,
+        )
+
+    def _import_wiki(self, project_id: str, values: dict[str, str]) -> None:
+        try:
+            client = open_client(
+                project_id,
+                gitlab_cli.default_gateway(),
+                data_dir=self.context.data_dir,
+            )
+            wiki, group = open_wiki(client, values["group"] or None)
+            prefix = values["prefix"] or DEFAULT_PREFIX
+            pages = wiki.list_pages(prefix, with_content=True)
+            report = import_wiki_pages(
+                self.context.repository(), pages, base_url=client.base_url, group=group
+            )
+        except (
+            IntegrationError,
+            ProjectError,
+            ConfigurationError,
+            AuditError,
+            SecuritySettingsError,
+            StorageError,
+            OSError,
+        ) as error:
+            self.app.call_from_thread(self._wiki_failed, str(error))
+            return
+        lines = [
+            f"{len(report.created)} created, {len(report.updated)} updated, "
+            f"{len(report.skipped)} unchanged, {len(report.issues)} problem(s)."
+        ]
+        lines += [f"{i.location}: {i.message}" for i in report.issues[:3]]
+        self.app.call_from_thread(self._wiki_done, "\n".join(lines))
+
+    def _wiki_done(self, summary: str) -> None:
+        self.refresh_data()
+        self.app.notify(summary, title="Wiki import finished", timeout=10)
+
+    def _wiki_failed(self, message: str) -> None:
+        self.app.notify(
+            message, severity="error", title="Wiki import failed", timeout=10
         )
 
     def action_edit_requirement(self) -> None:

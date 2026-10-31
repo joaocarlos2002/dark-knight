@@ -137,6 +137,11 @@ class GitLabClient:
     def base_url(self) -> str:
         return self._connection.base_url
 
+    @property
+    def project_name(self) -> str:
+        """The project's path, such as ``group/sub/app``."""
+        return self._connection.project_path
+
     def project_path(self, suffix: str) -> str:
         return f"/projects/{self._project}{suffix}"
 

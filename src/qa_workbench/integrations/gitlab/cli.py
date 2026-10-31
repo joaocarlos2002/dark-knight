@@ -5,27 +5,24 @@ from typing import Annotated, NoReturn
 
 import typer
 
-from qa_workbench.core.config import AppConfig, ConfigurationError
+from qa_workbench.core.config import ConfigurationError
 from qa_workbench.core.secrets import redact_secrets
 from qa_workbench.integrations.errors import IntegrationError
 from qa_workbench.integrations.gitlab.client import (
     DEFAULT_TOKEN_ENV,
     GitLabClient,
-    GitLabConnection,
 )
+from qa_workbench.integrations.gitlab.connect import open_client, open_wiki
 from qa_workbench.integrations.gitlab.files import GitLabFiles
 from qa_workbench.integrations.gitlab.issues import GitLabIssues
 from qa_workbench.integrations.gitlab.pipelines import GitLabPipelines
 from qa_workbench.integrations.gitlab.repository import GitLabRepository
-from qa_workbench.integrations.guarded import GuardedGateway
+from qa_workbench.integrations.gitlab.wiki import DEFAULT_PREFIX, GitLabWiki
 from qa_workbench.integrations.http import HttpGateway, HttpxGateway
 from qa_workbench.integrations.untrusted import fence
 from qa_workbench.projects.errors import ProjectError
-from qa_workbench.projects.repository import ProjectRepository
-from qa_workbench.security.audit import AuditError, AuditLog
-from qa_workbench.security.guard import ActionGuard
-from qa_workbench.security.settings import SecuritySettingsError, load_settings
-from qa_workbench.workspace import open_repository
+from qa_workbench.security.audit import AuditError
+from qa_workbench.security.settings import SecuritySettingsError
 
 gitlab_app = typer.Typer(
     add_completion=False,
@@ -62,17 +59,7 @@ def _fail(message: str) -> NoReturn:
 
 def _client(project: str, url: str | None, token_env: str) -> GitLabClient:
     try:
-        config = AppConfig.load()
-        opened = ProjectRepository(config.data_dir).open(project)
-        source = url or opened.repository
-        if not source:
-            _fail(
-                f"{project} has no repository URL. Pass --url "
-                "https://gitlab.example.com/group/app"
-            )
-        connection = GitLabConnection.from_repository_url(source, token_env=token_env)
-        root = open_repository(project, writable=True).root
-        guard = ActionGuard(load_settings(root), AuditLog(root))
+        return open_client(project, default_gateway(), url=url, token_env=token_env)
     except (
         ConfigurationError,
         ProjectError,
@@ -81,7 +68,23 @@ def _client(project: str, url: str | None, token_env: str) -> GitLabClient:
         SecuritySettingsError,
     ) as error:
         _fail(str(error))
-    return GitLabClient(connection, GuardedGateway(default_gateway(), guard, "GitLab"))
+
+
+def client_for(project: str, url: str | None, token_env: str) -> GitLabClient:
+    """The guarded GitLab client of a project (shared with other commands)."""
+    return _client(project, url, token_env)
+
+
+def wiki_for(
+    project: str, url: str | None, token_env: str, group: str | None
+) -> tuple[GitLabWiki, str, str]:
+    """The group wiki of a project: the reader, the group, and the server URL."""
+    client = _client(project, url, token_env)
+    try:
+        wiki, chosen = open_wiki(client, group)
+    except IntegrationError as error:
+        _fail(str(error))
+    return wiki, chosen, client.base_url
 
 
 def _run(action):
@@ -93,6 +96,50 @@ def _run(action):
 
 def _seconds(value: float | None) -> str:
     return f"{value:.0f}s" if value is not None else "-"
+
+
+GroupOption = Annotated[
+    str | None,
+    typer.Option("--group", help="Group id or path. Defaults to the project's group."),
+]
+PrefixOption = Annotated[
+    str, typer.Option("--prefix", help="Only pages whose slug starts with this.")
+]
+
+
+@gitlab_app.command("wiki")
+def wiki_command(
+    project: ProjectOption,
+    query: Annotated[str, typer.Argument(help="Words in the title or slug.")] = "",
+    url: UrlOption = None,
+    token_env: TokenEnvOption = DEFAULT_TOKEN_ENV,
+    group: GroupOption = None,
+    prefix: PrefixOption = DEFAULT_PREFIX,
+) -> None:
+    """List the pages of the group wiki, or search them by title or slug."""
+    wiki, _, _ = wiki_for(project, url, token_env, group)
+    pages = _run(
+        lambda: wiki.search(query, prefix) if query else wiki.list_pages(prefix)
+    )
+    for page in pages:
+        typer.echo(f"{page.slug}  {page.title}")
+    if not pages:
+        typer.echo("No wiki pages match.")
+
+
+@gitlab_app.command("wiki-page")
+def wiki_page_command(
+    slug: Annotated[str, typer.Argument(help="Page slug, as `wiki` lists it.")],
+    project: ProjectOption,
+    url: UrlOption = None,
+    token_env: TokenEnvOption = DEFAULT_TOKEN_ENV,
+    group: GroupOption = None,
+) -> None:
+    """Show one wiki page. Its text is marked as untrusted data."""
+    wiki, _, _ = wiki_for(project, url, token_env, group)
+    page = _run(lambda: wiki.get_page(slug))
+    text = f"{page.title}\n\n{page.content}"
+    typer.echo(fence(text, source=f"GitLab wiki {slug}"))
 
 
 @gitlab_app.command("issues")

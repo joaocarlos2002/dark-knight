@@ -197,6 +197,12 @@ on your PATH or inside the VS Code extension; set `CLAUDE_CODE_PATH` if it lives
 elsewhere. Claude Code runs with every tool turned off, so it can only answer: it
 cannot read files or run commands. Like NVIDIA it is remote, so `auto` never uses it.
 
+Requirements can come from the GitLab group wiki: `batman gitlab wiki -p PROJ-001`
+lists the pages under `Requisitos/`, and `batman requirements import-wiki -p PROJ-001`
+imports them as draft requirements (or press `W` on the Requirements page). The
+group defaults to the project's group; pass `--group` to choose another. Run it
+again to pick up changes: pages that changed go back to draft for review.
+
 The code of the repository can be read without leaving the tool:
 `batman gitlab branches|tree|file|code ... -p PROJ-001` (add `--ref` for a
 branch, `--url` for another repository), or the Repository page in the menu.

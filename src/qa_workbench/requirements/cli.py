@@ -6,12 +6,16 @@ from typing import Annotated, NoReturn
 import typer
 
 from qa_workbench.core.config import ConfigurationError
+from qa_workbench.integrations.errors import IntegrationError
+from qa_workbench.integrations.gitlab.cli import wiki_for
+from qa_workbench.integrations.gitlab.wiki import DEFAULT_PREFIX
 from qa_workbench.projects.errors import ProjectError
 from qa_workbench.requirements.coverage import coverage
 from qa_workbench.requirements.importer import (
     RequirementImportError,
     import_requirements,
 )
+from qa_workbench.requirements.wiki_import import import_wiki_pages
 from qa_workbench.storage.errors import StorageError
 from qa_workbench.storage.repository import MarkdownRepository
 from qa_workbench.workspace import open_repository
@@ -37,6 +41,46 @@ def _open(project: str, *, writable: bool) -> MarkdownRepository:
         return open_repository(project, writable=writable)
     except (ConfigurationError, ProjectError) as error:
         _fail(str(error))
+
+
+@requirements_app.command("import-wiki")
+def import_wiki_command(
+    project: ProjectOption,
+    group: Annotated[
+        str | None,
+        typer.Option(help="Group id or path. Defaults to the project's group."),
+    ] = None,
+    prefix: Annotated[
+        str, typer.Option(help="Only pages whose slug starts with this.")
+    ] = DEFAULT_PREFIX,
+    url: Annotated[
+        str | None, typer.Option(help="GitLab project URL (defaults to the project's).")
+    ] = None,
+    token_env: Annotated[str, typer.Option(help="Variable that holds the token.")] = (
+        "GITLAB_TOKEN"
+    ),
+) -> None:
+    """Import the group wiki's requirement pages. Importing again updates pages
+    that changed (back to draft, for review) and skips the rest."""
+    repository = _open(project, writable=True)
+    wiki, chosen, base_url = wiki_for(project, url, token_env, group)
+    try:
+        pages = wiki.list_pages(prefix, with_content=True)
+        report = import_wiki_pages(repository, pages, base_url=base_url, group=chosen)
+    except (IntegrationError, StorageError) as error:
+        _fail(str(error))
+    for record in report.created:
+        typer.echo(f"Created {record.id}  {record.metadata['title']}")
+    for record in report.updated:
+        typer.echo(f"Updated {record.id}  {record.metadata['title']} (back to draft)")
+    for issue in report.issues:
+        typer.echo(f"Problem {issue.location}: {issue.message}", err=True)
+    typer.echo(
+        f"{len(report.created)} created, {len(report.updated)} updated, "
+        f"{len(report.skipped)} unchanged, {len(report.issues)} with problems."
+    )
+    if report.issues:
+        raise typer.Exit(1)
 
 
 @requirements_app.command("import")

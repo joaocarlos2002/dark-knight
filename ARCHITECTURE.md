@@ -378,6 +378,19 @@ code that uses them depends on the ports in `integrations/ports.py`
 `integrations/models.py`, so GitHub can be added later without touching it.
 Everything here is read-only; writing back is a separate, approved action.
 
+- **Group wiki and requirement import.** The team keeps its requirements in the
+  group wiki. `integrations/gitlab/wiki.py` reads it (`GET /groups/:id/wikis`,
+  `with_content` only when importing; slugs are passed unencoded and encoded
+  there; the group defaults to the project's path without its last segment) and
+  finds requirement codes (`GE01.01`, `S02`) and business rules
+  (`RN-GE01.01.08`). `integrations/gitlab/connect.py` opens the guarded client
+  for the CLI and the TUI alike. `requirements/wiki_import.py` turns one page
+  into one `REQ` record with its provenance (slug, URL, SHA-256, read time).
+  Importing again skips unchanged pages and updates a changed one in place, back
+  to draft so a person reviews the change; the history keeps the earlier text.
+  `batman gitlab wiki [QUERY]`, `gitlab wiki-page SLUG`, and `batman
+  requirements import-wiki` are the commands; `W` on the Requirements page
+  imports in a worker. Wiki text is fenced as untrusted data.
 - **Repository reading.** `integrations/gitlab/files.py` (`GitLabFiles`) reads
   branches (newest change first), the tree under a path (folders first), one
   file, and a code search with the matching line. A file over 256 KB, a file

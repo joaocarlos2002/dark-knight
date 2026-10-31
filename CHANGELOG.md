@@ -27,6 +27,11 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- Requirements from the GitLab group wiki: `batman gitlab wiki` and `wiki-page`
+  read it, `batman requirements import-wiki` (or `W` on the Requirements page)
+  imports each page as a draft requirement with its source, URL, and hash, and
+  business rules (`RN-...`) are recorded. Importing again skips unchanged pages
+  and updates a changed one in place, back to draft (#164).
 - Read a GitLab repository: `batman gitlab branches`, `tree`, `file`, and `code`
   (code search with path and line), plus a Repository page in the TUI. Files
   over 256 KB and binary files are refused with a reason, secrets are masked,
