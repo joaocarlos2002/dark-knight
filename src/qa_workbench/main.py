@@ -145,7 +145,11 @@ def _open_workbench(
             ensure_edits(config)
         play_startup_splash(config)
     WorkbenchApp(
-        opened, keymap, preview_channel(config), data_dir=config.data_dir
+        opened,
+        keymap,
+        preview_channel(config),
+        data_dir=config.data_dir,
+        welcome=True,
     ).run()
 
 

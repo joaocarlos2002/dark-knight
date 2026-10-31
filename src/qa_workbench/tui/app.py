@@ -15,7 +15,7 @@ from qa_workbench.core.config import AppConfig
 from qa_workbench.projects.errors import ProjectError
 from qa_workbench.projects.models import Project
 from qa_workbench.projects.repository import ProjectRepository
-from qa_workbench.tui import identity, navigation
+from qa_workbench.tui import identity, navigation, onboarding
 from qa_workbench.tui.commands import WorkbenchCommands
 from qa_workbench.tui.components.browser_preview import BrowserPreview
 from qa_workbench.tui.components.chrome import AppFooter, AppHeader
@@ -64,6 +64,7 @@ class WorkbenchApp(App[None]):
         keymap: Keymap | None = None,
         preview_channel: PreviewChannel | None = None,
         data_dir: Path | None = None,
+        welcome: bool = False,
     ) -> None:
         self._workbench_keymap = keymap or Keymap.default()
         # Read by Textual while it builds its default bindings.
@@ -73,6 +74,7 @@ class WorkbenchApp(App[None]):
             if shortcut.action != "command_palette":
                 self.bind(shortcut.key, shortcut.action, description=shortcut.label)
         self._project = project
+        self._welcome = welcome
         self._data_dir = data_dir or AppConfig.load().data_dir
         self._preview_channel = preview_channel or PreviewChannel(
             AppConfig.load().data_dir / "browser-preview"
@@ -108,6 +110,12 @@ class WorkbenchApp(App[None]):
         sidebar = self.query_one("#sidebar", OptionList)
         sidebar.highlighted = sidebar.get_option_index(self._current.key)
         sidebar.focus()
+        if (
+            self._welcome
+            and self._project is None
+            and onboarding.needs_welcome(ProjectRepository(self._data_dir))
+        ):
+            onboarding.start(self)
 
     def on_resize(self, event: Resize) -> None:
         self._apply_layout(event.size.width, event.size.height)
