@@ -927,6 +927,19 @@ by the CLI in another terminal show up. Pages without a class still show
   reason for a denial); the same rules as `batman security approve|deny` apply,
   so the requester cannot decide their own request and a decided request cannot
   be decided again.
+- **Reports.** Two sections: Saved Reports and Evidence Records. Saved Reports
+  lists generated reports (execution, traceability) with their source execution
+  and stale status. Evidence Records lists all `EVD` records with their verification
+  status (intact/tampered). Selecting an evidence record opens the `EvidenceViewer`
+  showing file, size, SHA-256, source, description, verification result with any
+  problems, and for text/JSON files the first 50 lines; images are rendered via
+  half-block characters. `G` regenerates the execution report for the selected
+  saved report.
+- **Settings.** Four categories: General (global config), Shortcuts (keyboard
+  overrides), Security (per-project autonomy mode, allowed hosts, rate limits),
+  Browser (default mode and capture settings). Security changes open a validated
+  form dialog and write an audit log entry on save. No secrets are stored in
+  settings files; only environment variable names are used.
 - **Read-only when archived.** On an archived project the lists work and `N`/`I`
   explain that it cannot be changed.
 - **Not here yet.** Executions and the integration pages are still
@@ -985,8 +998,9 @@ pure functions so it can be tested without a terminal.
 | `EmptyState`, `LoadingState`, `ErrorState` | No data, waiting, and failure; errors keep their diagnostic detail |
 | `ConfirmationDialog` | Modal confirm/cancel; Esc cancels, destructive dialogs start on Cancel |
 
-`BrowserPreview` exists (see the Browser Agent). Not built yet because their
-subsystems do not exist: `AgentChat` and `EvidenceViewer`.
+`BrowserPreview` exists (see the Browser Agent). Not built yet because its
+subsystem does not exist: `AgentChat`. `EvidenceViewer` displays evidence records
+with integrity verification and content preview.
 
 ### Browser Agent and Browser Preview
 
