@@ -17,6 +17,11 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- Requirements from the GitLab group wiki: `batman gitlab wiki` and `wiki-page`
+  read it, `batman requirements import-wiki` (or `W` on the Requirements page)
+  imports each page as a draft requirement with its source, URL, and hash, and
+  business rules (`RN-...`) are recorded. Importing again skips unchanged pages
+  and updates a changed one in place, back to draft (#164).
 - Claude as an AI engine through Claude Code, with no API key: `batman ai ask
   --engine claude [--model sonnet|opus|haiku]`, or `claude` under Engine in
   Alfred. It uses your own Claude login, is found automatically (PATH, the VS Code
