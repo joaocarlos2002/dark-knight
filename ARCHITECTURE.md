@@ -437,9 +437,17 @@ steps:
 - **HTTP port.** `HttpTransport` is replaceable; `HttpxTransport` is the real
   adapter and tests use scripted fakes or `httpx.MockTransport`, never the
   network.
-- **Not here yet.** Registering endpoints for reuse, OpenAPI import, and the
-  approval gate for requests to production or intrusive tests (REQ-030) arrive
-  with the approvals work.
+- **Scope and approvals (REQ-030).** `batman api run` sends every request through
+  `GuardedTransport`, which asks the action guard first: the host must be one the
+  project allows (a local server is always in scope), the per-host rate limit
+  applies, cancellation stops the run, and each request is written to the audit
+  log with its URL sanitized. By method, reading is a read; `POST`/`PUT`/`PATCH`
+  are routine work on a test target (they ask first only in `assisted` mode); and
+  `DELETE` is a data change that always needs approval. A request that is not
+  allowed is never sent: the step ends as an error saying why, with the approval
+  request id, and the flow stops. Approving it (`batman security approve`) and
+  running again lets exactly that request through, once.
+- **Not here yet.** Registering endpoints for reuse and OpenAPI import.
 
 ### Approvals, autonomy modes, and security controls
 
