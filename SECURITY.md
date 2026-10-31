@@ -67,6 +67,16 @@ This describes what the code does today, so reports can be checked against it.
 - **AI output is analysis, not evidence.** Text from issues, pages, and logs is
   handed to AI providers fenced as untrusted data, and a claim the assistant
   cannot source from a record it actually saw is shown as a hypothesis.
+- **A hosted AI engine is remote, opt-in, and guarded.** The `nvidia` engine
+  sends the question and the records it mentions to the NVIDIA API Catalog, so it
+  is never chosen by `auto`; it must be asked for by name, and the CLI and the TUI
+  say that data left the machine. Every engine request (local ones too) goes
+  through the action guard: a host that is not in the project's allowed hosts gets
+  nothing and the message says how to allow it, requests count against the rate
+  limit, and the audit log records the action and the URL, never the body or any
+  header. Text is passed through secret redaction before it is sent. The API key
+  (`NVIDIA_API_KEY`, or `batman config token set nvidia`) is never printed,
+  logged, audited, or put in an error message, even if the server echoes it.
 
 Known limits: browser traces and videos are not scrubbed of sensitive data,
 process isolation is not implemented, and intrusive security testing does not

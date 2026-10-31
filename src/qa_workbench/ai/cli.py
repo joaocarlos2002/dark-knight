@@ -4,7 +4,7 @@ from typing import Annotated, NoReturn
 
 import typer
 
-from qa_workbench.ai import ollama, opencode
+from qa_workbench.ai import nvidia, ollama, opencode
 from qa_workbench.ai.agent import (
     AgentAnswer,
     OwnAgent,
@@ -14,10 +14,13 @@ from qa_workbench.ai.agent import (
 )
 from qa_workbench.ai.contract import Provider, ToolSpec
 from qa_workbench.ai.errors import NoProviderAvailable, ProviderError
+from qa_workbench.ai.guarded import guarded_http
 from qa_workbench.ai.http import HttpxJson, JsonHttp
-from qa_workbench.ai.selection import MODES, select_engine
+from qa_workbench.ai.selection import MODES, REMOTE, select_engine
 from qa_workbench.core.config import ConfigurationError
 from qa_workbench.projects.errors import ProjectError
+from qa_workbench.security.audit import AuditError
+from qa_workbench.security.settings import SecuritySettingsError
 from qa_workbench.storage.errors import StorageError
 from qa_workbench.storage.repository import MarkdownRepository
 from qa_workbench.workspace import open_repository
@@ -33,6 +36,12 @@ OllamaUrl = Annotated[
 ]
 OpenCodeUrl = Annotated[
     str, typer.Option("--opencode-url", envvar="OPENCODE_URL", help="opencode serve.")
+]
+NvidiaUrl = Annotated[
+    str, typer.Option("--nvidia-url", envvar="NVIDIA_BASE_URL", help="NVIDIA API.")
+]
+ProjectOption = Annotated[
+    str, typer.Option("--project", "-p", help="Project id (its security settings).")
 ]
 
 
@@ -94,6 +103,7 @@ def _factories(
     http: JsonHttp,
     ollama_url: str,
     opencode_url: str,
+    nvidia_url: str,
     model: str,
     tools: ToolRegistry,
 ):
@@ -105,13 +115,37 @@ def _factories(
         provider = opencode.OpenCodeProvider(http, base_url=opencode_url, model=model)
         return provider, SingleShotAgent(provider, model=model)
 
-    return {"own": own, "opencode": external}
+    def hosted() -> tuple[Provider, SingleShotAgent]:
+        provider = nvidia.NvidiaProvider(http, base_url=nvidia_url, model=model)
+        return provider, SingleShotAgent(provider, model=model)
+
+    return {"own": own, "opencode": external, "nvidia": hosted}
+
+
+def _guarded(
+    project: str, writable: bool = False
+) -> tuple[JsonHttp, MarkdownRepository]:
+    """The HTTP client behind the project's action guard, and its repository."""
+    try:
+        repository = open_repository(project, writable=writable)
+        return guarded_http(default_http(), repository.root), repository
+    except (
+        ConfigurationError,
+        ProjectError,
+        AuditError,
+        SecuritySettingsError,
+    ) as error:
+        _fail(str(error))
 
 
 @ai_app.command("status")
 def status_command(
+    project: Annotated[
+        str, typer.Option("--project", "-p", help="Also check the remote NVIDIA API.")
+    ] = "",
     ollama_url: OllamaUrl = ollama.DEFAULT_URL,
     opencode_url: OpenCodeUrl = opencode.DEFAULT_URL,
+    nvidia_url: NvidiaUrl = nvidia.DEFAULT_URL,
 ) -> None:
     """Show which engines are reachable (nothing is sent to a model)."""
     http = default_http()
@@ -125,8 +159,49 @@ def status_command(
         any_up = any_up or availability.available
         mark = "available  " if availability.available else "unavailable"
         typer.echo(f"{provider.name:<9} {mark} {availability.detail}")
+    hosted = nvidia.NvidiaProvider(http, base_url=nvidia_url)
+    key = "present" if hosted.key_present() else "missing"
+    if not project:
+        # A remote engine is only contacted through a project's action guard.
+        typer.echo(
+            f"{hosted.name:<9} not checked  remote engine; API key {key}. "
+            "Pass --project to check it."
+        )
+    else:
+        guarded, _ = _guarded(project)
+        hosted = nvidia.NvidiaProvider(guarded, base_url=nvidia_url)
+        availability = hosted.check_availability()
+        any_up = any_up or availability.available
+        mark = "available  " if availability.available else "unavailable"
+        typer.echo(f"{hosted.name:<9} {mark} {availability.detail}; API key {key}")
     if not any_up:
         raise typer.Exit(1)
+
+
+@ai_app.command("models")
+def models_command(
+    project: ProjectOption,
+    engine: Annotated[str, typer.Option(help="own, opencode, or nvidia.")] = "nvidia",
+    ollama_url: OllamaUrl = ollama.DEFAULT_URL,
+    opencode_url: OpenCodeUrl = opencode.DEFAULT_URL,
+    nvidia_url: NvidiaUrl = nvidia.DEFAULT_URL,
+) -> None:
+    """List the models an engine offers (pass one with `ask --model`)."""
+    if engine not in ("own", "opencode", "nvidia"):
+        _fail(f"engine must be own, opencode, or nvidia; got {engine!r}.")
+    http, repository = _guarded(project)
+    factories = _factories(
+        http, ollama_url, opencode_url, nvidia_url, "", record_tools(repository)
+    )
+    try:
+        provider, _ = factories[engine]()
+        models = provider.list_models()
+    except ProviderError as error:
+        _fail(str(error))
+    if engine in REMOTE:
+        typer.echo(f"Remote engine: {nvidia.host_of(nvidia_url)}")
+    for model in models:
+        typer.echo(model)
 
 
 def _print(answer: AgentAnswer) -> None:
@@ -140,24 +215,29 @@ def _print(answer: AgentAnswer) -> None:
 def ask_command(
     question: Annotated[str, typer.Argument(help="What to ask.")],
     project: Annotated[str, typer.Option("--project", "-p", help="Project id.")],
-    engine: Annotated[str, typer.Option(help="own, opencode, or auto.")] = "auto",
+    engine: Annotated[
+        str, typer.Option(help="own, opencode, nvidia (remote), or auto.")
+    ] = "auto",
     model: Annotated[str, typer.Option(help="Model name for the engine.")] = "",
     ollama_url: OllamaUrl = ollama.DEFAULT_URL,
     opencode_url: OpenCodeUrl = opencode.DEFAULT_URL,
+    nvidia_url: NvidiaUrl = nvidia.DEFAULT_URL,
 ) -> None:
     """Ask a question. The engine can read the project's records (read-only)."""
     if engine not in MODES:
         _fail(f"engine must be one of {', '.join(MODES)}; got {engine!r}.")
-    try:
-        repository = open_repository(project, writable=False)
-    except (ConfigurationError, ProjectError) as error:
-        _fail(str(error))
+    http, repository = _guarded(project)
     factories = _factories(
-        default_http(), ollama_url, opencode_url, model, record_tools(repository)
+        http, ollama_url, opencode_url, nvidia_url, model, record_tools(repository)
     )
     try:
         choice = select_engine(engine, factories)
         typer.echo(f"Engine: {choice.mode} ({choice.detail})")
+        if choice.mode in REMOTE:
+            typer.echo(
+                "Remote engine: the question and project context leave this machine "
+                "(secrets are redacted first)."
+            )
         answer = choice.engine.ask(question)
     except (NoProviderAvailable, ProviderError, StorageError) as error:
         _fail(str(error))

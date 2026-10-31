@@ -39,3 +39,15 @@ def test_missing_factory_and_bad_mode_are_explicit() -> None:
         select_engine("opencode", {})
     with pytest.raises(ValueError, match="mode must be one of"):
         select_engine("magic", {})
+
+
+def test_auto_never_picks_a_remote_engine_and_nvidia_must_be_asked_for() -> None:
+    factories = {
+        "own": _factory(False, "own"),
+        "opencode": _factory(False, "oc"),
+        "nvidia": _factory(True, "nv"),
+    }
+
+    with pytest.raises(NoProviderAvailable, match="No AI engine"):
+        select_engine("auto", factories)
+    assert select_engine("nvidia", factories).mode == "nvidia"
