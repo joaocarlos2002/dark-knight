@@ -358,8 +358,10 @@ Everything here is read-only; writing back is a separate, approved action.
 
 - **Connection.** The server and project come from the project's repository URL
   (`https://gitlab.example.com/group/app`) or `--url`. The token is read from
-  `GITLAB_TOKEN` (or `--token-env NAME`) and sent in a header; it is never stored,
-  put in a URL, or printed, and is masked if an error message would contain it.
+  `GITLAB_TOKEN` (or `--token-env NAME`), or from the value kept with
+  `batman config token set gitlab` (the environment wins), and sent in a header;
+  it is never put in a URL, printed, or logged, and is masked if an error message
+  would contain it. See "Tokens" in the security section.
   Redirects are not followed, so the token is never replayed to another host.
 - **Scope (REQ-030).** `GuardedGateway` asks the action guard before every
   request: the GitLab host must be one the project allows (a local server is
@@ -490,6 +492,14 @@ steps:
 - **Limits and cancellation.** A per-host rolling-minute rate limit raises
   `RateLimitExceeded` with a retry time instead of waiting silently.
   `cancel()` is recorded and refuses every later action.
+- **Tokens.** `security/credentials.py` keeps API tokens in `credentials.json` in
+  the configuration directory, keyed by the name of the environment variable that
+  would carry them. `StoredEnvironment` is the process environment with the store
+  behind it, so every integration that reads its token from the environment
+  (GitLab, API tests) finds a stored one unchanged, and the environment wins. The
+  file is written atomically and owner-only where supported; a damaged file is an
+  explicit error, never an empty store. Not stored in a project, so exporting or
+  sharing one never carries a token. The OS keyring is not used yet.
 - **Who calls it.** Browser navigation, API tests, GitLab reads, security checks,
   release analysis, and comment publishing (REQ-027) ask the guard before they
   send anything. Not wired yet: the AI engines (`ApprovalGate` in the AI agent is
