@@ -30,6 +30,7 @@ from qa_workbench.requirements.cli import requirements_app
 from qa_workbench.review.cli import review_app
 from qa_workbench.sectest.cli import security_tests_app
 from qa_workbench.security.cli import security_app
+from qa_workbench.security.credentials_cli import config_app
 from qa_workbench.suites.cli import suites_app
 from qa_workbench.testcases.cli import cases_app
 
@@ -56,6 +57,7 @@ app.add_typer(evidence_app, name="evidence")
 app.add_typer(reports_app, name="reports")
 app.add_typer(ai_app, name="ai")
 app.add_typer(security_app, name="security")
+app.add_typer(config_app, name="config")
 app.add_typer(edits_app, name="edits")
 app.add_typer(api_app, name="api")
 app.add_typer(browser_app, name="browser")
