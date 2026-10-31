@@ -1,4 +1,4 @@
-"""Choosing the engine: ``own``, ``opencode``, or ``auto`` (spec 7.1)."""
+"""Choosing the engine: ``own``, ``opencode``, ``nvidia``, or ``auto`` (spec 7.1)."""
 
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -8,8 +8,11 @@ from qa_workbench.ai.agent import AgentAnswer
 from qa_workbench.ai.contract import Provider
 from qa_workbench.ai.errors import NoProviderAvailable
 
-MODES = ("own", "opencode", "auto")
+MODES = ("own", "opencode", "nvidia", "auto")
+# ``auto`` only prefers engines that run on this machine. A remote engine sends
+# data off it, so it is used only when it is asked for by name.
 AUTO_ORDER = ("own", "opencode")
+REMOTE = frozenset({"nvidia"})
 
 
 class Engine(Protocol):
@@ -20,7 +23,7 @@ class Engine(Protocol):
 
 @dataclass(frozen=True)
 class EngineChoice:
-    mode: str  # which engine was chosen: "own" or "opencode"
+    mode: str  # which engine was chosen: "own", "opencode", or "nvidia"
     provider: Provider
     engine: Engine
     detail: str
