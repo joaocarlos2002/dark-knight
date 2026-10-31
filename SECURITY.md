@@ -49,7 +49,12 @@ This describes what the code does today, so reports can be checked against it.
   cannot read, but it is not encrypted. A token is never printed, logged,
   audited, or put in an error message, and an environment variable of the same
   name always wins. Anyone who can read your user profile can read the file; use
-  the environment variable if that is not acceptable.
+  the environment variable if that is not acceptable. The operating system
+  keyring is not used, on purpose: a file behaves the same on all three
+  platforms and adds no dependency. Tokens can be set, listed, and removed from
+  the CLI and from the Settings page of the TUI (typed hidden), and the first-run
+  welcome offers to keep the GitLab token. `batman doctor` shows, per service,
+  whether a token is set and where it comes from, never the value.
 - **Nothing external happens by surprise.** The browser opens only hosts a
   project allows (without a project, only local addresses), and the same scope
   and a per-host rate limit apply to API tests, GitLab reads, and security

@@ -516,7 +516,11 @@ steps:
   (GitLab, API tests) finds a stored one unchanged, and the environment wins. The
   file is written atomically and owner-only where supported; a damaged file is an
   explicit error, never an empty store. Not stored in a project, so exporting or
-  sharing one never carries a token. The OS keyring is not used yet.
+  sharing one never carries a token. The OS keyring is not used: it would add a
+  dependency and behave differently on each platform, and a file in the user's
+  configuration folder is the same on all three. `token_report` says, for each
+  service, whether a token is set and where it comes from (never the value); the
+  CLI `show`, `batman doctor`, and the Settings page all use it.
 - **Who calls it.** Browser navigation, API tests, GitLab reads, security checks,
   release analysis, and comment publishing (REQ-027) ask the guard before they
   send anything. Not wired yet: the AI engines (`ApprovalGate` in the AI agent is
@@ -978,9 +982,11 @@ by the CLI in another terminal show up. Pages without a class still show
   problems, and for text/JSON files the first 50 lines; images are rendered via
   half-block characters. `G` regenerates the execution report for the selected
   saved report.
-- **Settings.** Four categories: General (global config), Shortcuts (keyboard
+- **Settings.** Five categories: General (global config), Shortcuts (keyboard
   overrides), Security (per-project autonomy mode, allowed hosts, rate limits),
-  Browser (default mode and capture settings). Security changes open a validated
+  Browser (default mode and capture settings), and API tokens (which tokens are
+  set and from where; Save Changes sets one and Reset removes a stored one, with
+  the token typed hidden and never shown again). Security changes open a validated
   form dialog and write an audit log entry on save. No secrets are stored in
   settings files; only environment variable names are used.
 - **Read-only when archived.** On an archived project the lists work and `N`/`I`

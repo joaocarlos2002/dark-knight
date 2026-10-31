@@ -172,7 +172,10 @@ your configuration folder, `batman config token show` lists which ones are set
 environment variable of the same name (`GITLAB_TOKEN`) still takes precedence.
 The password of a protected OpenCode server is kept the same way:
 `batman config token set opencode` (the user name stays `opencode` unless
-`OPENCODE_SERVER_USERNAME` says otherwise).
+`OPENCODE_SERVER_USERNAME` says otherwise). The same can be done in the TUI,
+under Settings > API tokens, and the first-run welcome offers to keep the GitLab
+token after your project is created. `batman doctor` lists each token as set or
+not, and whether it comes from the environment or from the stored value.
 
 A hosted model is available through the NVIDIA API Catalog. It is remote, so it
 is opt-in: keep the key with `batman config token set nvidia` (or set
