@@ -79,10 +79,16 @@ def _run(*args: str):
     return result, _plain(result.output)
 
 
+def _allow_host(project_id: str, host: str = "gitlab.test") -> None:
+    scope = ["security", "set", "-p", project_id, "--allow-host", host, "--by", "Ana"]
+    assert runner.invoke(app, scope).exit_code == 0
+
+
 @pytest.fixture
 def project(isolated: Path) -> None:
     created = runner.invoke(app, ["project", "create", "Demo", "--repository", URL])
     assert created.exit_code == 0, created.output
+    _allow_host("PROJ-001")
 
 
 @pytest.mark.usefixtures("project", "gateway")
@@ -152,6 +158,7 @@ def test_project_without_repository_asks_for_a_url(
     isolated: Path, gateway: FakeGateway
 ) -> None:
     runner.invoke(app, ["project", "create", "NoRepo"])
+    _allow_host("PROJ-001")
 
     result, out = _run("issues", "-p", "PROJ-001")
     assert result.exit_code == 1 and "--url" in out

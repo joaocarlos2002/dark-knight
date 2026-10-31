@@ -40,6 +40,10 @@ class NotConfiguredError(IntegrationError):
     """The integration has no URL, project, or token to work with."""
 
 
+class NotAuthorizedError(IntegrationError):
+    """The action guard did not allow the request, so nothing was sent."""
+
+
 class AuthenticationError(IntegrationError):
     """The token is missing, invalid, expired, or lacks permission."""
 
