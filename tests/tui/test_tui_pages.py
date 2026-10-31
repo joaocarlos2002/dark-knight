@@ -30,10 +30,23 @@ def _run(data_dir: Path, scenario, project=None, size=(140, 50)) -> None:
 
 
 async def _click(pilot, selector: str) -> None:
-    """Click, then let the resulting messages run (a button handler is async)."""
-    await pilot.click(selector)
+    """Press a button of the open dialog, then let its async handler run.
+
+    The button is pressed directly rather than by pointer position: the layout
+    moves when an error line appears, which made pointer clicks unreliable.
+    """
+    pilot.app.screen.query_one(selector, Button).press()
     await pilot.pause()
     await pilot.pause()
+
+
+async def _until(pilot, condition, tries: int = 50) -> None:
+    """Wait for something that happens after a dialog's callback has run."""
+    for _ in range(tries):
+        if condition():
+            return
+        await pilot.pause(0.05)
+    raise AssertionError("the expected change never happened")
 
 
 def _text(app: WorkbenchApp, selector: str) -> str:
@@ -120,7 +133,7 @@ def test_projects_page_lists_and_opens_the_selected_project(tmp_path: Path) -> N
         table = app.query_one("#projects-table").query_one(TextualDataTable)
         table.focus()
         await pilot.press("down", "enter")
-        await pilot.pause()
+        await _until(pilot, lambda: app.project is not None)
 
         assert app.project is not None and app.project.id == "PROJ-002"
         assert _text(app, "#header-project").startswith("PROJ-002")
@@ -156,6 +169,7 @@ def test_new_project_dialog_validates_then_creates_and_opens_it(tmp_path: Path) 
         app.screen.query_one("#field-url", Input).value = "https://staging.example.com"
         await pilot.pause()
         await _click(pilot, "#submit")
+        await _until(pilot, lambda: app.project is not None)
 
         assert app.project is not None and app.project.name == "Checkout service"
         assert [e.name for e in app.project.environments] == ["staging"]
@@ -193,7 +207,10 @@ def test_archiving_asks_first_and_updates_the_open_project(tmp_path: Path) -> No
         await pilot.press("x")
         await pilot.pause()
         app.screen.query_one("#confirm", Button).press()
-        await pilot.pause()
+        await _until(
+            pilot,
+            lambda: ProjectRepository(tmp_path).open("PROJ-001").archived,
+        )
         assert ProjectRepository(tmp_path).open("PROJ-001").archived is True
         assert app.project is not None and app.project.archived
 
