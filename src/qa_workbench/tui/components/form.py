@@ -17,6 +17,7 @@ class FormField:
     placeholder: str = ""
     required: bool = False
     default: str = ""  # typed in already; a placeholder is only a hint
+    secret: bool = False  # typed hidden, for a token
 
 
 Validator = Callable[[dict[str, str]], str | None]
@@ -63,6 +64,7 @@ class FormDialog(ModalScreen["dict[str, str] | None"]):
                 yield Input(
                     value=field.default,
                     placeholder=field.placeholder,
+                    password=field.secret,
                     id=f"field-{field.key}",
                 )
             yield Static("", id="form-error")
