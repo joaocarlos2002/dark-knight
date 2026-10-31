@@ -64,6 +64,17 @@ class Cancelled(SecurityError):
     pass
 
 
+LOOPBACK_HOSTS = ("localhost", "127.0.0.1", "::1")
+
+
+def is_loopback(url: str) -> bool:
+    """A web URL on this very machine: always in scope, never external."""
+    parts = urlsplit(url)
+    return parts.scheme in ("http", "https") and (
+        (parts.hostname or "").lower() in LOOPBACK_HOSTS
+    )
+
+
 def fingerprint(action: ActionRequest) -> str:
     text = "\n".join(
         (action.action, action.category.value, action.detail, action.target_url)
