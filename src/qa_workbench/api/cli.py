@@ -7,11 +7,15 @@ import typer
 
 from qa_workbench.api.definition import load_definition
 from qa_workbench.api.errors import ApiError
+from qa_workbench.api.guarded import GuardedTransport
 from qa_workbench.api.records import save_flow
 from qa_workbench.api.runner import ApiRunner
 from qa_workbench.api.transport import HttpTransport, HttpxTransport
 from qa_workbench.core.config import ConfigurationError
 from qa_workbench.projects.errors import ProjectError
+from qa_workbench.security.audit import AuditError, AuditLog
+from qa_workbench.security.guard import ActionGuard
+from qa_workbench.security.settings import SecuritySettingsError, load_settings
 from qa_workbench.storage.errors import StorageError
 from qa_workbench.workspace import open_repository
 
@@ -50,7 +54,11 @@ def run_command(
         repository = open_repository(project, writable=True)
     except (ApiError, ConfigurationError, ProjectError) as error:
         _fail(str(error))
-    flow = ApiRunner(default_transport()).run(definition)
+    try:
+        guard = ActionGuard(load_settings(repository.root), AuditLog(repository.root))
+    except (SecuritySettingsError, AuditError) as error:
+        _fail(str(error))
+    flow = ApiRunner(GuardedTransport(default_transport(), guard)).run(definition)
     try:
         record = save_flow(repository, flow, execution=execution)
     except (ApiError, StorageError) as error:
