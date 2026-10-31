@@ -361,6 +361,12 @@ Everything here is read-only; writing back is a separate, approved action.
   `GITLAB_TOKEN` (or `--token-env NAME`) and sent in a header; it is never stored,
   put in a URL, or printed, and is masked if an error message would contain it.
   Redirects are not followed, so the token is never replayed to another host.
+- **Scope (REQ-030).** `GuardedGateway` asks the action guard before every
+  request: the GitLab host must be one the project allows (a local server is
+  always in scope), the per-host rate limit applies, cancellation stops the read,
+  and each request is audited. A host that is not allowed never receives the
+  token; the command says so and how to allow it
+  (`batman security set --allow-host`). This also covers `--url`.
 - **Failures are explicit (NFR-010).** No token or project, rejected token (401),
   missing permission (403), not found (404), rate limit (429, with the retry
   delay), server error, unreachable server, a non-JSON answer, and a malformed
@@ -484,10 +490,10 @@ steps:
 - **Limits and cancellation.** A per-host rolling-minute rate limit raises
   `RateLimitExceeded` with a retry time instead of waiting silently.
   `cancel()` is recorded and refuses every later action.
-- **Not here yet.** The browser, API, GitLab, and AI code do not call the guard
-  yet; wiring each external action to it (and comment publishing, REQ-027) is
-  separate work. `ApprovalGate` in the AI agent is the matching hook.
-  Process isolation is not implemented.
+- **Who calls it.** Browser navigation, API tests, GitLab reads, security checks,
+  release analysis, and comment publishing (REQ-027) ask the guard before they
+  send anything. Not wired yet: the AI engines (`ApprovalGate` in the AI agent is
+  the matching hook). Process isolation is not implemented.
 
 ### Bug hunting, release analysis, and security checks
 
