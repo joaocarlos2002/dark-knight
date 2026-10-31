@@ -1,4 +1,4 @@
-"""``batman gitlab`` commands (read-only)."""
+"""``batman gitlab`` commands (read-only, authorized by the action guard)."""
 
 from pathlib import Path
 from typing import Annotated, NoReturn
@@ -16,10 +16,15 @@ from qa_workbench.integrations.gitlab.client import (
 from qa_workbench.integrations.gitlab.issues import GitLabIssues
 from qa_workbench.integrations.gitlab.pipelines import GitLabPipelines
 from qa_workbench.integrations.gitlab.repository import GitLabRepository
+from qa_workbench.integrations.guarded import GuardedGateway
 from qa_workbench.integrations.http import HttpGateway, HttpxGateway
 from qa_workbench.integrations.untrusted import fence
 from qa_workbench.projects.errors import ProjectError
 from qa_workbench.projects.repository import ProjectRepository
+from qa_workbench.security.audit import AuditError, AuditLog
+from qa_workbench.security.guard import ActionGuard
+from qa_workbench.security.settings import SecuritySettingsError, load_settings
+from qa_workbench.workspace import open_repository
 
 gitlab_app = typer.Typer(
     add_completion=False,
@@ -65,9 +70,17 @@ def _client(project: str, url: str | None, token_env: str) -> GitLabClient:
                 "https://gitlab.example.com/group/app"
             )
         connection = GitLabConnection.from_repository_url(source, token_env=token_env)
-    except (ConfigurationError, ProjectError, IntegrationError) as error:
+        root = open_repository(project, writable=True).root
+        guard = ActionGuard(load_settings(root), AuditLog(root))
+    except (
+        ConfigurationError,
+        ProjectError,
+        IntegrationError,
+        AuditError,
+        SecuritySettingsError,
+    ) as error:
         _fail(str(error))
-    return GitLabClient(connection, default_gateway())
+    return GitLabClient(connection, GuardedGateway(default_gateway(), guard, "GitLab"))
 
 
 def _run(action):

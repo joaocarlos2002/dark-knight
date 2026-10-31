@@ -56,6 +56,9 @@ use the `vMAJOR.MINOR.PATCH` format.
 - `batman api run` now goes through the action guard: requests only reach the
   hosts a project allows, are rate-limited and audited, and a `DELETE` always
   needs approval; a request that is not allowed is never sent.
+- `batman gitlab ...` reads now go through the action guard: the token is only
+  sent to hosts the project allows (also for `--url`), reads are rate-limited and
+  audited, and a host that is not allowed never receives a request.
 - Authorized browser navigation: every navigation goes through the action guard,
   a project's allowed hosts are enforced inside Chromium (including redirects and
   subresources), and without a project only local addresses open (#41, #44).
