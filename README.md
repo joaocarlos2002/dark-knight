@@ -165,26 +165,34 @@ lives and how to change it is described under Contributing below.
 
 ## Current status
 
-**Foundation phase // v0.2.0**
+**Working prototype // v0.2.0**
 
-The product specification, requirements, visual direction, issue catalog, and
-repository collaboration standards are established. Core application modules
-are intentionally being implemented in small, reviewable phases.
+The workbench installs as one package and runs on Linux, Windows, and macOS (CI
+tests all three and smoke-tests the installed wheel). The CLI covers the whole
+workflow, and the terminal interface has a page for each area. It is not
+published to PyPI yet and has not had a stable release.
 
 ### Roadmap
 
-- [ ] CLI, TUI shell, and project lifecycle
-- [ ] Markdown storage and knowledge base
-- [ ] Requirements and test case management
-- [ ] Test planning and reusable suites
-- [ ] Recoverable execution engine
-- [ ] Playwright browser agent and terminal preview
-- [ ] API testing and evidence collection
-- [ ] CI/CD pipeline analysis
-- [ ] GitHub and GitLab integrations
-- [ ] Bug hunting and release analysis
-- [ ] Authorized security testing
-- [ ] Advanced AI provider orchestration
+- [x] CLI, TUI shell, and project lifecycle
+- [x] Markdown storage and knowledge base
+- [x] Requirements and test case management
+- [x] Test planning and reusable suites
+- [x] Recoverable execution engine
+- [x] Playwright browser agent and terminal preview
+- [x] API testing and evidence collection
+- [x] CI/CD pipeline analysis (GitLab)
+- [ ] GitHub and GitLab integrations (GitLab only: reads and approved comments;
+      there is no GitHub adapter yet)
+- [x] Bug hunting and release analysis
+- [x] Authorized security testing
+- [ ] Advanced AI provider orchestration (providers, tools, and the evidence rule
+      exist; AI actions do not go through the action guard yet)
+
+Every external action the tool takes on its own (browser, API tests, GitLab
+reads, security checks, comments) is checked against the project's authorized
+hosts, rate-limited, and written to a tamper-evident audit log. Risky ones wait
+for a person's approval.
 
 ## Documentation and operations
 
