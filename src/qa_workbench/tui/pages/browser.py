@@ -44,6 +44,10 @@ class BrowserPage(Page):
     def describe(self, key: str) -> str:
         raise NotImplementedError
 
+    def summary_suffix(self) -> str:
+        """Extra text for the summary line (for example a health check)."""
+        return ""
+
     # -- layout ------------------------------------------------------------------
 
     def compose(self) -> ComposeResult:
@@ -105,6 +109,7 @@ class BrowserPage(Page):
         summary = message or (
             f"{shown} {self.noun}(s)   status filter: {self._status} (F)"
             + (f"   {self.shortcuts_hint}" if self.shortcuts_hint else "")
+            + self.summary_suffix()
         )
         self.query_one("#browse-summary", Static).update(summary)
         problems = self.query_one("#browse-problems", Static)
