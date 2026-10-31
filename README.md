@@ -159,6 +159,12 @@ do it ahead of time with `batman doctor --fix`, and `batman doctor` tells you
 whether it is ready. `batman browser run URL` opens a page, saves a screenshot,
 and shows the browser inside the workbench (`Ctrl+B`).
 
+API tokens (GitLab, AI providers) do not have to be exported in every terminal:
+`batman config token set gitlab` asks for the token without echo and keeps it in
+your configuration folder, `batman config token show` lists which ones are set
+(never their values), and `batman config token remove gitlab` deletes it. An
+environment variable of the same name (`GITLAB_TOKEN`) still takes precedence.
+
 To upgrade, run `uv tool upgrade dark-knight-qa` (or `pipx upgrade
 dark-knight-qa`). The first run creates its data folder on its own; where it
 lives and how to change it is described under Contributing below.

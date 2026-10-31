@@ -41,6 +41,15 @@ This describes what the code does today, so reports can be checked against it.
   credential. Requests, responses, logs, console output, and URLs are sanitized
   before they are saved, and a saved result that still looks like it holds a
   credential is not written at all.
+- **Tokens kept by the application.** `batman config token set` stores a token
+  in `credentials.json` in the user's configuration directory (never in a
+  project, a record, an export, or the repository). The file is created
+  readable by its owner only on Linux and macOS; on Windows it relies on the
+  per-user permissions of the configuration folder, which other standard users
+  cannot read, but it is not encrypted. A token is never printed, logged,
+  audited, or put in an error message, and an environment variable of the same
+  name always wins. Anyone who can read your user profile can read the file; use
+  the environment variable if that is not acceptable.
 - **Nothing external happens by surprise.** The browser opens only hosts a
   project allows (without a project, only local addresses), and the same scope
   and a per-host rate limit apply to API tests, GitLab reads, and security
