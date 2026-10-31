@@ -19,5 +19,9 @@ class ApiTransportError(ApiError):
         self.reason = message
 
 
+class ApiNotAuthorized(ApiTransportError):
+    """The security policy did not allow the request, so nothing was sent."""
+
+
 class UnsafeToPersistError(ApiError):
     """Output still looked like it held a credential, so it was not saved."""

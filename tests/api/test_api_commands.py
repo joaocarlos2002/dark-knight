@@ -49,6 +49,13 @@ def isolated(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
 @pytest.fixture
 def project(isolated: Path) -> None:
     assert runner.invoke(app, ["project", "create", "Demo"]).exit_code == 0
+    # The API host is authorized, and creating things on a test target is routine.
+    scope = runner.invoke(
+        app,
+        ["security", "set", "-p", "PROJ-001", "--mode", "semi_autonomous",
+         "--allow-host", "api.test", "--by", "Ana"],
+    )  # fmt: skip
+    assert scope.exit_code == 0, scope.output
 
 
 def _run(*args: str):

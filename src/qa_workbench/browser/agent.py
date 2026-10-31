@@ -31,7 +31,7 @@ from qa_workbench.browser.preview import (
     PreviewState,
     utc_now,
 )
-from qa_workbench.security.guard import ActionGuard
+from qa_workbench.security.guard import ActionGuard, is_loopback
 from qa_workbench.security.policy import ActionRequest, Category
 from qa_workbench.storage.atomic import write_text_atomic
 from qa_workbench.storage.evidence import EvidenceStore
@@ -412,14 +412,7 @@ def write_logs(directory: Path, observations: Observations) -> tuple[Path, Path]
 
 def is_local(url: str) -> bool:
     """A loopback address or a local file: always reachable, never external."""
-    parts = urlsplit(url)
-    if parts.scheme == "file":
-        return True
-    return parts.scheme in ("http", "https") and (parts.hostname or "").lower() in (
-        "localhost",
-        "127.0.0.1",
-        "::1",
-    )
+    return urlsplit(url).scheme == "file" or is_loopback(url)
 
 
 def register_artifacts(
