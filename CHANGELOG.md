@@ -27,6 +27,11 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- GitLab test cases: `batman gitlab test-cases` and `test-case` read them, and
+  `batman cases push` (or `G` in the TUI) creates or updates a `test_case` issue
+  in the team's standard layout, after a person approves the exact content. It
+  never duplicates (unchanged is skipped, same title is updated) and an update
+  rewrites only the changed sections (#165).
 - Requirements from the GitLab group wiki: `batman gitlab wiki` and `wiki-page`
   read it, `batman requirements import-wiki` (or `W` on the Requirements page)
   imports each page as a draft requirement with its source, URL, and hash, and

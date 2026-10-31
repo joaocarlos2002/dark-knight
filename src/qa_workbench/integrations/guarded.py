@@ -43,3 +43,6 @@ class GuardedGateway:
     def post(self, request: GatewayRequest) -> GatewayResponse:
         # Writes have their own approval flow (publishing); a reader never posts.
         raise NotAuthorizedError(self._system, "this reader only sends GET requests")
+
+    def put(self, request: GatewayRequest) -> GatewayResponse:
+        raise NotAuthorizedError(self._system, "this reader only sends GET requests")
