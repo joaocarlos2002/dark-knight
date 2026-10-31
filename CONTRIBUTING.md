@@ -59,6 +59,22 @@ uv run ruff check .
 uv run ruff format --check .
 ```
 
+### Checking the installed package
+
+CI runs the tests on Linux, Windows, and macOS, and installs the built wheel
+into a clean environment on each of them. To reproduce that locally:
+
+```bash
+rm -rf build dist src/*.egg-info   # stale build output leaks old modules into the wheel
+uv build --wheel
+uv venv /tmp/clean-env              # outside the repository
+uv pip install --python /tmp/clean-env/bin/python dist/*.whl
+cd /tmp && /tmp/clean-env/bin/python /path/to/repo/.github/scripts/smoke_installed.py
+```
+
+On Windows use `Scripts\python.exe` instead of `bin/python`. The script runs the
+installed commands and opens every page of the TUI headlessly.
+
 ## Design expectations
 
 - Preserve the Markdown-first source of truth.

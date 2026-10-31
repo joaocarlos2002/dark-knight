@@ -9,6 +9,9 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- CI now runs the tests on Windows and macOS and installs the built wheel into a
+  clean environment on all three platforms, smoke-testing the installed commands
+  and every TUI page.
 - TUI Reports page (spec 4.16): browse saved execution and traceability reports,
   list all evidence records with integrity status (intact/tampered), and inspect
   evidence with the new `EvidenceViewer` component showing file metadata, SHA-256
