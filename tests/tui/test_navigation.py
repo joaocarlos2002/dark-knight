@@ -25,6 +25,7 @@ def test_sections_follow_the_visual_specification() -> None:
         "INTELLIGENCE",
     ]
     assert [item.title for item in all_items()] == [
+        "Projects",
         "Overview",
         "Requirements",
         "Test Cases",
