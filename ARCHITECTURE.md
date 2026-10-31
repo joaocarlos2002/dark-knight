@@ -857,6 +857,14 @@ by the CLI in another terminal show up. Pages without a class still show
   estimate, and the recorded reason for each inclusion), and risks. A plan with no
   selection says so and points to `batman plans recommend`. `N` creates a draft
   plan from a form that checks the suites exist.
+- **Knowledge Base.** Full-text search over every record kind through
+  `RecordIndex` (SQLite FTS5), a disposable cache of the Markdown files: Enter
+  searches (every word as a prefix, ignoring case and accents), `F` narrows to one
+  record kind, and the detail shows the match snippet and the whole record. With
+  no index the page says so and `B` builds it; opening or reloading the page
+  syncs only the files that changed. A damaged index is reported as "Search is
+  unavailable" with the reason, never as an empty result, and damaged records are
+  counted as not indexed.
 - **Read-only when archived.** On an archived project the lists work and `N`/`I`
   explain that it cannot be changed.
 - **Not here yet.** Executions and the integration pages are still
