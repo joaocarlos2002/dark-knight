@@ -214,6 +214,11 @@ approve, `X` to reject, or `C` to ask for changes. The same steps exist as
 `batman review pending|submit|decide`. A record cannot be approved by whoever
 wrote it or generated it.
 
+In the TUI, the GitLab page reads issues, merge requests, and commits (`R`); on
+an issue, `C` drafts a comment that cites evidence, and the Comments page
+publishes it (`P`) only after someone else approves that exact text on the
+Security page. On Pipelines, `L` shows a job log and `A` its artifacts.
+
 To upgrade, run `uv tool upgrade dark-knight-qa` (or `pipx upgrade
 dark-knight-qa`). The first run creates its data folder on its own; where it
 lives and how to change it is described under Contributing below.

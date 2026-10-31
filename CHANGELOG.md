@@ -27,6 +27,10 @@ use the `vMAJOR.MINOR.PATCH` format.
 
 ### Added
 
+- GitLab in the TUI: a GitLab page for issues, merge requests, and commits; job
+  logs and artifacts on Pipelines; and drafting (`C`) and publishing (`P`) of
+  issue comments through a Comments page, with the same approval, evidence, and
+  audit rules as `batman comments` (#176).
 - A Review page in the TUI to read, submit, approve, reject, or ask changes on
   the records the AI generated, with its findings and sources, and the same
   rules as `batman review` (no self-approval, a reason for a rejection). The
