@@ -23,6 +23,7 @@ class BrowserPage(Page):
     (:meth:`describe`); search, filtering, and selection are handled here."""
 
     noun = "record"
+    screen_kind = "browser"
     columns: Sequence[str] = ()
     empty_message = "No records."
     empty_hint = ""

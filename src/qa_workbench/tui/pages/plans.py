@@ -51,6 +51,7 @@ class PlansPage(BrowserPage):
     shortcuts_hint = "N new   E edit   D cancel"
 
     BINDINGS = [
+        *BrowserPage.BINDINGS,
         Binding("n", "new_plan", "New"),
         Binding("e", "edit_plan", "Edit"),
         Binding("d", "cancel_plan", "Cancel"),

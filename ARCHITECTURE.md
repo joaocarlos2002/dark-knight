@@ -163,6 +163,7 @@ src/qa_workbench/
     errors.py      ProjectError hierarchy with diagnostic context
     cli.py         `qa-workbench project ...` commands
   tui/
+    pages/registry.py  Screen contracts keep navigation and implementations aligned
     app.py         WorkbenchApp: the three-area shell and status bar
     keymap.py      Shortcuts: defaults, overrides, conflict detection (pure)
     palette.py     Command palette entries (pure)

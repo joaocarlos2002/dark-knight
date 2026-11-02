@@ -46,6 +46,7 @@ class ReviewPage(BrowserPage):
     shortcuts_hint = "S submit   A approve   X reject   C changes"
 
     BINDINGS = [
+        *BrowserPage.BINDINGS,
         Binding("s", "submit", "Submit"),
         Binding("a", "approve", "Approve"),
         Binding("x", "reject", "Reject"),

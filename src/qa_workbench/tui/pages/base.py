@@ -29,6 +29,7 @@ class Page(Vertical):
     """A page: built from a context, redrawn by :meth:`refresh_data`."""
 
     can_focus = True
+    screen_kind = "custom"
 
     def __init__(self, context: PageContext, **kwargs) -> None:
         super().__init__(**kwargs)

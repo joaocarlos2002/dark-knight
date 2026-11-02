@@ -47,6 +47,7 @@ class SuitesPage(BrowserPage):
     shortcuts_hint = "N new   A add cases   R remove cases   E edit   D archive"
 
     BINDINGS = [
+        *BrowserPage.BINDINGS,
         Binding("n", "new_suite", "New"),
         Binding("a", "add_cases", "Add"),
         Binding("r", "remove_cases", "Remove"),

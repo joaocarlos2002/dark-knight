@@ -45,6 +45,7 @@ class ExecutionsPage(BrowserPage):
     shortcuts_hint = "N new   M move   E edit"
 
     BINDINGS = [
+        *BrowserPage.BINDINGS,
         Binding("n", "new_execution", "New"),
         Binding("m", "move_execution", "Move"),
         Binding("e", "edit_execution", "Edit"),

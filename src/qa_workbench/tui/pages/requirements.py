@@ -60,6 +60,7 @@ class RequirementsPage(BrowserPage):
     shortcuts_hint = "I import   W wiki   E edit   D archive"
 
     BINDINGS = [
+        *BrowserPage.BINDINGS,
         Binding("i", "import_requirements", "Import"),
         Binding("w", "import_wiki", "Wiki"),
         Binding("e", "edit_requirement", "Edit"),
