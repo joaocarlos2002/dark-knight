@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 
+from qa_workbench.i18n import tr
 from qa_workbench.tui import navigation
 from qa_workbench.tui.keymap import Keymap, display_key
 
@@ -26,14 +27,18 @@ class PaletteEntry:
 def palette_entries(keymap: Keymap) -> list[PaletteEntry]:
     """Every command the palette offers: destinations first, then actions."""
     entries = [
-        PaletteEntry(f"Go to {item.title}", section.title.title(), GO_PREFIX + item.key)
+        PaletteEntry(
+            tr("Go to {place}", place=tr(item.title)),
+            tr(section.title).title(),
+            GO_PREFIX + item.key,
+        )
         for section in navigation.SECTIONS
         for item in section.items
     ]
     entries.extend(
         PaletteEntry(
-            shortcut.description,
-            f"Shortcut: {display_key(shortcut.key)}",
+            tr(shortcut.description),
+            tr("Shortcut: {key}", key=display_key(shortcut.key)),
             shortcut.action,
         )
         for shortcut in keymap.shortcuts

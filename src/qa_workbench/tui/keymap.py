@@ -5,6 +5,8 @@ from dataclasses import dataclass
 
 from textual.binding import Binding
 
+from qa_workbench.i18n import tr
+
 
 class KeymapError(ValueError):
     """Raised when a shortcut configuration is invalid."""
@@ -40,6 +42,7 @@ _DEFAULTS: tuple[Shortcut, ...] = (
     Shortcut(
         "toggle_browser_pause", "f6", "Pause or resume the running browser", "Pause"
     ),
+    Shortcut("language", "f4", "Choose the interface language", "Language"),
     Shortcut("refresh", "ctrl+r", "Reload the current page from disk", "Refresh"),
     Shortcut("go_back", "escape", "Close a dialog or go back one level", "Back"),
     Shortcut("help", "question_mark", "Show the keyboard shortcuts", "Help"),
@@ -125,7 +128,7 @@ class Keymap:
     def bindings(self) -> list[Binding]:
         """Textual bindings for every shortcut."""
         return [
-            Binding(shortcut.key, shortcut.action, shortcut.label)
+            Binding(shortcut.key, shortcut.action, tr(shortcut.label))
             for shortcut in self.shortcuts
         ]
 
@@ -135,13 +138,13 @@ class Keymap:
         parts = []
         for shortcut in self.shortcuts:
             if shortcut.action in shown:
-                parts.append(f"{display_key(shortcut.key)} {shortcut.label}")
+                parts.append(f"{display_key(shortcut.key)} {tr(shortcut.label)}")
         return " │ ".join(parts)
 
     def help_text(self) -> str:
         """Multi-line reference listing every shortcut."""
         width = max(len(display_key(shortcut.key)) for shortcut in self.shortcuts)
         return "\n".join(
-            f"{display_key(shortcut.key):<{width}}  {shortcut.description}"
+            f"{display_key(shortcut.key):<{width}}  {tr(shortcut.description)}"
             for shortcut in self.shortcuts
         )

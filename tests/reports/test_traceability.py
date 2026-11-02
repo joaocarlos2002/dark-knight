@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+
 from conftest import (
     make_case,
     make_evidence,
@@ -8,7 +9,6 @@ from conftest import (
     pass_execution,
     run_execution,
 )
-
 from qa_workbench.executions.service import move
 from qa_workbench.reports.traceability import build_graph, matrix, trace
 from qa_workbench.storage.repository import MarkdownRepository

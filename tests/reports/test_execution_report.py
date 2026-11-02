@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from conftest import make_case, make_evidence, pass_execution, run_execution
-
 from qa_workbench.executions.recording import (
     check_preconditions,
     finish_step,

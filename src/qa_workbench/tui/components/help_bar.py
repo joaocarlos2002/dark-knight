@@ -6,6 +6,7 @@ from textual.binding import Binding
 from textual.containers import Horizontal
 from textual.widgets import Static
 
+from qa_workbench.i18n import tr
 from qa_workbench.tui.keymap import Keymap, display_key
 
 
@@ -38,7 +39,7 @@ class HelpBar(Horizontal):
         for binding in self._page_bindings:
             key_display = display_key(binding.key)
             items.append(
-                Static(f"{key_display} {binding.description}", classes="help-item")
+                Static(f"{key_display} {tr(binding.description)}", classes="help-item")
             )
 
         return items

@@ -258,6 +258,13 @@ they cannot be deleted from here); then run the command again. A finding that is
 not reproduced with evidence is refused, and a finding that already has an issue
 reports it instead of creating a second one.
 
+The interface can be in Portuguese: press `F4` (or open Settings) and pick a
+language from the list, or run `batman config language set pt-BR`. It applies at
+once, keeps the open project and page, and is remembered; `DARK_KNIGHT_LANGUAGE`
+overrides it. For now the menu, the shortcuts, the palette, and the shell are
+translated; the pages and the command line follow in later releases and show
+English until then. A text with no translation always shows in English.
+
 To upgrade, run `uv tool upgrade dark-knight-qa` (or `pipx upgrade
 dark-knight-qa`). The first run creates its data folder on its own; where it
 lives and how to change it is described under Contributing below.

@@ -5,6 +5,7 @@ from typing import Annotated, NoReturn
 
 import typer
 
+from qa_workbench.i18n.cli import language_app
 from qa_workbench.security.credentials import (
     SERVICES,
     CredentialError,
@@ -25,6 +26,7 @@ token_app = typer.Typer(
     help="Keep API tokens in the application instead of exporting them each time.",
 )
 config_app.add_typer(token_app, name="token")
+config_app.add_typer(language_app, name="language")
 
 NameArgument = Annotated[
     str,

@@ -6,6 +6,14 @@ from dataclasses import dataclass, field
 from os import environ
 from pathlib import Path
 
+from qa_workbench.i18n import (
+    ENGLISH,
+    ENVIRONMENT_VARIABLE,
+    UnknownLanguageError,
+    normalize,
+    stored_language,
+)
+
 
 class ConfigurationError(ValueError):
     """Raised when application configuration is invalid."""
@@ -79,6 +87,7 @@ class AppConfig:
     edits_repo: str | None = None
     edits_ref: str | None = None
     edits_sha256: str | None = None
+    language: str = ENGLISH
 
     def __post_init__(self) -> None:
         if self.log_level.upper() not in {
@@ -173,6 +182,14 @@ class AppConfig:
         log_file = (
             Path(str(configured_log_file)).expanduser() if configured_log_file else None
         )
+        try:
+            language = (
+                normalize(environ[ENVIRONMENT_VARIABLE])
+                if environ.get(ENVIRONMENT_VARIABLE)
+                else stored_language(config_dir) or ENGLISH
+            )
+        except UnknownLanguageError as error:
+            raise ConfigurationError(f"{ENVIRONMENT_VARIABLE}: {error}") from error
         return cls(
             config_dir=config_dir,
             data_dir=data_dir,
@@ -185,4 +202,5 @@ class AppConfig:
             edits_repo=edits_repo,
             edits_ref=edits_ref,
             edits_sha256=edits_sha256,
+            language=language,
         )
