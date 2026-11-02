@@ -43,6 +43,7 @@ class SecurityPage(BrowserPage):
     shortcuts_hint = "A approve   D deny   U authorize   T run checks   K revoke"
 
     BINDINGS = [
+        *BrowserPage.BINDINGS,
         Binding("a", "approve", "Approve"),
         Binding("d", "deny", "Deny"),
         Binding("u", "authorize_checks", "Authorize"),

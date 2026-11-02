@@ -84,6 +84,7 @@ class TestCasesPage(BrowserPage):
     shortcuts_hint = "N new   E edit   D deprecate   G push to GitLab"
 
     BINDINGS = [
+        *BrowserPage.BINDINGS,
         Binding("n", "new_case", "New"),
         Binding("e", "edit_case", "Edit"),
         Binding("d", "deprecate_case", "Deprecate"),

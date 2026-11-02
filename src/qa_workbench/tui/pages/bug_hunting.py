@@ -46,6 +46,7 @@ class BugHuntingPage(BrowserPage):
     shortcuts_hint = "N new   C reclassify   E attach evidence   U open in GitLab"
 
     BINDINGS = [
+        *BrowserPage.BINDINGS,
         Binding("n", "new_finding", "New"),
         Binding("c", "reclassify", "Reclassify"),
         Binding("e", "attach_evidence", "Evidence"),

@@ -25,6 +25,7 @@ class EvidencePage(BrowserPage):
     shortcuts_hint = "A add   V verify all"
 
     BINDINGS = [
+        *BrowserPage.BINDINGS,
         Binding("a", "add", "Add"),
         Binding("v", "verify", "Verify"),
     ]
