@@ -9,6 +9,8 @@ from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Static
 
+from qa_workbench.i18n import tr
+
 
 @dataclass(frozen=True)
 class FormField:
@@ -60,7 +62,7 @@ class FormDialog(ModalScreen["dict[str, str] | None"]):
             yield Static(self._title, id="dialog-title")
             for field in self._fields:
                 suffix = " *" if field.required else ""
-                yield Static(f"{field.label}{suffix}", classes="form-label")
+                yield Static(f"{tr(field.label)}{suffix}", classes="form-label")
                 yield Input(
                     value=field.default,
                     placeholder=field.placeholder,
@@ -69,8 +71,8 @@ class FormDialog(ModalScreen["dict[str, str] | None"]):
                 )
             yield Static("", id="form-error")
             with Horizontal():
-                yield Button("Cancel", id="cancel")
-                yield Button(self._submit_label, id="submit", variant="primary")
+                yield Button(tr("Cancel"), id="cancel")
+                yield Button(tr(self._submit_label), id="submit", variant="primary")
 
     def on_mount(self) -> None:
         self.query_one(f"#field-{self._fields[0].key}", Input).focus()

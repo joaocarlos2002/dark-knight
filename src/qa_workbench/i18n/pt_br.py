@@ -84,4 +84,11 @@ PT_BR: dict[str, str] = {
         "{variable} está definida e vale na próxima execução."
     ),
     "Language: {name}  (F4 changes it)": "Idioma: {name}  (F4 muda)",
+    # shared components
+    "Cancel": "Cancelar",
+    "Save": "Salvar",
+    "Next step": "Próximo passo",
+    "Loading": "Carregando",
+    "No records.": "Nenhum registro.",
+    "No project is open.": "Nenhum projeto está aberto.",
 }

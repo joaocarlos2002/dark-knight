@@ -8,6 +8,7 @@ from textual.containers import Vertical
 from textual.message import Message
 from textual.widgets import DataTable as TextualDataTable
 
+from qa_workbench.i18n import tr
 from qa_workbench.tui.components.states import EmptyState
 
 Row = tuple[str, Sequence[str]]
@@ -70,7 +71,7 @@ class DataTable(Vertical):
         table: TextualDataTable[str] = TextualDataTable(cursor_type="row")
         table.add_columns(*self._columns)
         yield table
-        yield EmptyState(self._empty_message, self._empty_hint)
+        yield EmptyState(tr(self._empty_message), tr(self._empty_hint))
 
     def on_mount(self) -> None:
         self._refresh()
